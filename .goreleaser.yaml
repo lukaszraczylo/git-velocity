@@ -73,17 +73,3 @@ dockers_v2:
     extra_files:
       - config.example.yaml
 
-brews:
-  - name: git-velocity
-    repository:
-      owner: lukaszraczylo
-      name: homebrew-tap
-      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
-    directory: Formula
-    homepage: https://github.com/lukaszraczylo/git-velocity
-    description: "Developer velocity metrics analyzer with gamification dashboards"
-    license: MIT
-    install: |
-      bin.install "git-velocity"
-    test: |
-      system "#{bin}/git-velocity", "version"
