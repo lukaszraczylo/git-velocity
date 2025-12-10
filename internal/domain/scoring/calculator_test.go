@@ -646,9 +646,10 @@ func TestCalculator_MultipleRepositories(t *testing.T) {
 	// 50 + 30 = 80 commits * 10 = 800
 	assert.Equal(t, 800, result.Leaderboard[0].Score)
 
-	// Both repos should be tracked
+	// Per-repo scores should reflect repo-specific metrics, not global
+	// Repo1 has 50 commits * 10 = 500
 	contributor := result.Repositories[0].Contributors[0]
-	assert.Equal(t, 800, contributor.Score.Total)
+	assert.Equal(t, 500, contributor.Score.Total)
 }
 
 func TestCalculator_EmptyMetrics(t *testing.T) {

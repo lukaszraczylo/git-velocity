@@ -383,6 +383,13 @@ func (a *Aggregator) Aggregate(data *models.RawData, dateRange *config.ParsedDat
 		if !contains(cm.RepositoriesContributed, issue.Repository) {
 			cm.RepositoriesContributed = append(cm.RepositoriesContributed, issue.Repository)
 		}
+
+		// Update per-repo contributor metrics
+		rcm := getRepoContributor(issue.Repository, login, cm.Name, cm.AvatarURL)
+		rcm.IssuesOpened++
+		if issue.IsClosed() && issue.ClosedBy != nil && issue.ClosedBy.Login == login {
+			rcm.IssuesClosed++
+		}
 	}
 
 	// Calculate averages and finalize contributor metrics

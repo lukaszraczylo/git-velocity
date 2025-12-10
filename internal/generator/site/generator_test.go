@@ -100,7 +100,7 @@ func TestGenerator_GenerateGlobalJSON(t *testing.T) {
 		TotalReviews      int       `json:"total_reviews"`
 		TotalLinesAdded   int       `json:"total_lines_added"`
 		TotalLinesDeleted int       `json:"total_lines_deleted"`
-		GeneratedAt       time.Time `json:"GeneratedAt"`
+		GeneratedAt       time.Time `json:"generated_at"`
 	}
 	err = json.Unmarshal(data, &result)
 	require.NoError(t, err)
