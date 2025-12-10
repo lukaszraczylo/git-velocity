@@ -53,6 +53,7 @@ $ git-velocity serve --port 8080
 - **34 Achievements**: From "First Steps" to "Code Warrior"
 - **Leaderboards**: Compete with your team
 - **Tier Progression**: Bronze → Silver → Gold → Diamond
+- **General velocity chart**: Visualize your velocity over time
 
 ### 👥 Team Analytics
 - Configure teams and see aggregated metrics
