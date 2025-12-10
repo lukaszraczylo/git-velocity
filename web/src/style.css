@@ -1,78 +1,148 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
-@layer components {
-  .glass {
-    @apply bg-white/70 dark:bg-gray-900/70 backdrop-blur-md border border-white/20 dark:border-white/10;
+@theme {
+  --font-family-sans: 'Inter', sans-serif;
+  --font-family-mono: 'JetBrains Mono', monospace;
+
+  --color-primary-50: #fdf2f8;
+  --color-primary-100: #fce7f3;
+  --color-primary-200: #fbcfe8;
+  --color-primary-300: #f9a8d4;
+  --color-primary-400: #f472b6;
+  --color-primary-500: #ec4899;
+  --color-primary-600: #db2777;
+  --color-primary-700: #be185d;
+  --color-primary-800: #9d174d;
+  --color-primary-900: #831843;
+
+  --color-accent-50: #faf5ff;
+  --color-accent-100: #f3e8ff;
+  --color-accent-200: #e9d5ff;
+  --color-accent-300: #d8b4fe;
+  --color-accent-400: #c084fc;
+  --color-accent-500: #a855f7;
+  --color-accent-600: #9333ea;
+  --color-accent-700: #7e22ce;
+  --color-accent-800: #6b21a8;
+  --color-accent-900: #581c87;
+
+  --animate-fade-in-up: fadeInUp 0.6s ease-out;
+  --animate-float: float 3s ease-in-out infinite;
+
+  @keyframes fadeInUp {
+    0% { opacity: 0; transform: translateY(20px); }
+    100% { opacity: 1; transform: translateY(0); }
   }
 
-  .gradient-text {
-    @apply bg-gradient-to-r from-primary-400 to-accent-400 bg-clip-text text-transparent;
-  }
-
-  .shadow-modern {
-    box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.15);
-  }
-
-  .dark .shadow-modern {
-    box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.4);
-  }
-
-  .score-card {
-    @apply bg-gradient-to-r from-primary-400/10 to-accent-400/10 border border-primary-400/20;
-  }
-
-  .dark .score-card {
-    @apply from-primary-400/5 to-accent-400/5 border-primary-400/10;
-  }
-
-  .rank-1 {
-    @apply bg-gradient-to-r from-yellow-400 to-amber-500;
-  }
-
-  .rank-2 {
-    @apply bg-gradient-to-r from-slate-400 to-slate-500;
-  }
-
-  .rank-3 {
-    @apply bg-gradient-to-r from-amber-600 to-amber-700;
-  }
-
-  .achievement-badge {
-    @apply inline-flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-r from-primary-400 to-accent-400 text-white shadow-md;
-  }
-
-  .btn-primary {
-    @apply inline-flex items-center px-6 py-3 bg-gradient-to-r from-primary-500 to-accent-500 text-white font-medium rounded-lg hover:from-primary-600 hover:to-accent-600 transition shadow-modern;
-  }
-
-  .card {
-    @apply glass rounded-xl p-6 shadow-modern;
-  }
-
-  .nav-link {
-    @apply text-gray-700 dark:text-gray-200 hover:text-primary-500 dark:hover:text-primary-400 transition;
-  }
-
-  .nav-link-active {
-    @apply text-primary-500 font-medium;
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
   }
 }
 
-@layer utilities {
-  .animate-fade-in-up {
-    animation: fadeInUp 0.6s ease-out;
-  }
+@utility glass {
+  background-color: rgb(255 255 255 / 0.7);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgb(255 255 255 / 0.2);
+}
 
-  @keyframes fadeInUp {
-    from {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
+.dark .glass {
+  background-color: rgb(17 24 39 / 0.7);
+  border-color: rgb(255 255 255 / 0.1);
+}
+
+@utility gradient-text {
+  background-image: linear-gradient(to right, var(--color-primary-400), var(--color-accent-400));
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+@utility shadow-modern {
+  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.15);
+}
+
+.dark .shadow-modern {
+  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.4);
+}
+
+@utility score-card {
+  background-image: linear-gradient(to right, rgb(244 114 182 / 0.1), rgb(192 132 252 / 0.1));
+  border: 1px solid rgb(244 114 182 / 0.2);
+}
+
+.dark .score-card {
+  background-image: linear-gradient(to right, rgb(244 114 182 / 0.05), rgb(192 132 252 / 0.05));
+  border-color: rgb(244 114 182 / 0.1);
+}
+
+@utility rank-1 {
+  background-image: linear-gradient(to right, #facc15, #f59e0b);
+}
+
+@utility rank-2 {
+  background-image: linear-gradient(to right, #94a3b8, #64748b);
+}
+
+@utility rank-3 {
+  background-image: linear-gradient(to right, #d97706, #b45309);
+}
+
+@utility achievement-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 9999px;
+  background-image: linear-gradient(to right, var(--color-primary-400), var(--color-accent-400));
+  color: white;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+}
+
+@utility btn-primary {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.75rem 1.5rem;
+  background-image: linear-gradient(to right, var(--color-primary-500), var(--color-accent-500));
+  color: white;
+  font-weight: 500;
+  border-radius: 0.5rem;
+  transition: all 0.2s;
+  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.15);
+}
+
+.btn-primary:hover {
+  background-image: linear-gradient(to right, var(--color-primary-600), var(--color-accent-600));
+}
+
+@utility card {
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+}
+
+@utility nav-link {
+  color: #374151;
+  transition: color 0.2s;
+}
+
+.nav-link:hover {
+  color: var(--color-primary-500);
+}
+
+.dark .nav-link {
+  color: #e5e7eb;
+}
+
+.dark .nav-link:hover {
+  color: var(--color-primary-400);
+}
+
+@utility nav-link-active {
+  color: var(--color-primary-500);
+  font-weight: 500;
+}
+
+@utility animate-fade-in-up {
+  animation: fadeInUp 0.6s ease-out;
 }
