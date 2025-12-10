@@ -6,8 +6,14 @@
         <title>Git Velocity - Developer Metrics & Gamification Dashboard</title>
         <meta
             name="description"
-            content="Analyze Git repositories for developer velocity metrics with gamification. Generate beautiful dashboards with leaderboards, achievements, and team insights."
+            content="Turn your GitHub activity into a game. Track velocity metrics, earn achievements, and compete on leaderboards with beautiful dashboards."
         />
+        <meta name="keywords" content="git, github, velocity, metrics, developer, productivity, gamification, leaderboard, achievements, dashboard" />
+        <meta name="author" content="Lukasz Raczylo" />
+        <meta property="og:title" content="Git Velocity - Developer Metrics & Gamification" />
+        <meta property="og:description" content="Turn your GitHub activity into a game. Track velocity, earn achievements, win at development." />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://lukaszraczylo.github.io/git-velocity/" />
         <script src="https://cdn.tailwindcss.com"></script>
         <script>
             tailwind.config = {
@@ -38,8 +44,13 @@
                 0%, 100% { transform: translateY(0px); }
                 50% { transform: translateY(-10px); }
             }
+            @keyframes pulse-glow {
+                0%, 100% { box-shadow: 0 0 20px rgba(244, 114, 182, 0.4); }
+                50% { box-shadow: 0 0 40px rgba(192, 132, 252, 0.6); }
+            }
             .animate-fade-in-up { animation: fadeInUp 0.6s ease-out; }
             .animate-float { animation: float 3s ease-in-out infinite; }
+            .animate-pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
             .glass {
                 background: rgba(255, 255, 255, 0.7);
                 backdrop-filter: blur(10px);
@@ -62,9 +73,28 @@
                 -webkit-text-fill-color: transparent;
                 background-clip: text;
             }
+            .gradient-border {
+                position: relative;
+                background: linear-gradient(135deg, #f472b6, #c084fc);
+                padding: 2px;
+                border-radius: 1rem;
+            }
+            .gradient-border > div {
+                background: white;
+                border-radius: calc(1rem - 2px);
+            }
+            .dark .gradient-border > div {
+                background: #1f2937;
+            }
             .shadow-modern { box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.1); }
             .dark .shadow-modern { box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.4); }
             html { scroll-behavior: smooth; }
+            .achievement-card {
+                transition: all 0.3s ease;
+            }
+            .achievement-card:hover {
+                transform: translateY(-4px) scale(1.02);
+            }
         </style>
         <script>
             if (localStorage.theme === "dark" || (!("theme" in localStorage) && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
@@ -85,8 +115,9 @@
                     </a>
                     <div class="hidden md:flex space-x-6">
                         <a href="#features" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 font-medium">Features</a>
+                        <a href="#achievements" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 font-medium">Achievements</a>
                         <a href="#installation" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 font-medium">Installation</a>
-                        <a href="#usage" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 font-medium">Usage</a>
+                        <a href="#github-action" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 font-medium">GitHub Action</a>
                         <a href="#configuration" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 font-medium">Configuration</a>
                     </div>
                     <div class="flex items-center space-x-4">
@@ -107,8 +138,9 @@
             <div id="mobile-menu" class="hidden md:hidden border-t border-gray-200 dark:border-gray-700">
                 <div class="px-4 py-3 space-y-1 bg-white dark:bg-gray-800">
                     <a href="#features" class="block px-3 py-3 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700 rounded font-medium">Features</a>
+                    <a href="#achievements" class="block px-3 py-3 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700 rounded font-medium">Achievements</a>
                     <a href="#installation" class="block px-3 py-3 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700 rounded font-medium">Installation</a>
-                    <a href="#usage" class="block px-3 py-3 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700 rounded font-medium">Usage</a>
+                    <a href="#github-action" class="block px-3 py-3 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700 rounded font-medium">GitHub Action</a>
                     <a href="#configuration" class="block px-3 py-3 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700 rounded font-medium">Configuration</a>
                 </div>
             </div>
@@ -129,23 +161,23 @@
                         </div>
                     </div>
                     <h1 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 dark:text-gray-100 mb-4 sm:mb-6 leading-tight animate-fade-in-up" style="animation-delay: 0.1s;">
-                        Developer Velocity<br /><span class="gradient-text">Dashboard</span>
+                        Turn Your GitHub Activity<br /><span class="gradient-text">Into a Game</span>
                     </h1>
                     <p class="text-base sm:text-lg md:text-xl text-gray-600 dark:text-gray-300 mb-8 sm:mb-10 max-w-2xl mx-auto leading-relaxed px-4 animate-fade-in-up" style="animation-delay: 0.2s;">
-                        Analyze GitHub repositories for developer metrics with gamification. Generate beautiful dashboards with leaderboards, achievements, and team insights.
+                        Track velocity metrics, earn achievements, compete on leaderboards. Generate beautiful dashboards that make your contributions shine.
                     </p>
                     <div class="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center mb-8 sm:mb-12 px-4 animate-fade-in-up" style="animation-delay: 0.3s;">
                         <a href="#installation" class="group relative bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white px-8 py-3 rounded-lg font-medium transition-all duration-300 min-h-[48px] flex items-center justify-center shadow-lg hover:shadow-xl hover:scale-105">
-                            <span class="relative z-10">Get Started</span>
+                            <span class="relative z-10"><i class="fas fa-download mr-2"></i>Get Started</span>
                         </a>
                         <a href="https://github.com/lukaszraczylo/git-velocity" class="group glass hover:shadow-lg text-gray-900 dark:text-gray-100 px-8 py-3 rounded-lg font-medium transition-all duration-300 min-h-[48px] flex items-center justify-center hover:scale-105">
                             <i class="fab fa-github mr-2"></i>View on GitHub
                         </a>
                     </div>
                     <div class="flex flex-wrap justify-center gap-2 sm:gap-4 text-sm px-4">
-                        <img src="https://img.shields.io/github/v/release/lukaszraczylo/git-velocity" alt="Version" class="h-5" />
-                        <img src="https://img.shields.io/github/license/lukaszraczylo/git-velocity" alt="License" class="h-5" />
-                        <img src="https://goreportcard.com/badge/github.com/lukaszraczylo/git-velocity" alt="Go Report" class="h-5" />
+                        <img src="https://img.shields.io/github/v/release/lukaszraczylo/git-velocity?style=flat-square&color=f472b6" alt="Version" class="h-5" />
+                        <img src="https://img.shields.io/github/license/lukaszraczylo/git-velocity?style=flat-square&color=a855f7" alt="License" class="h-5" />
+                        <img src="https://goreportcard.com/badge/github.com/lukaszraczylo/git-velocity?style=flat-square" alt="Go Report" class="h-5" />
                     </div>
                     <div class="mt-12 sm:mt-16 max-w-3xl mx-auto px-4 animate-fade-in-up" style="animation-delay: 0.4s;">
                         <div class="relative group">
@@ -157,9 +189,10 @@
                                     <div class="w-3 h-3 rounded-full bg-green-500"></div>
                                     <span class="ml-2 text-gray-400 text-sm">terminal</span>
                                 </div>
-                                <pre class="text-gray-100 text-sm sm:text-base overflow-x-auto"><code><span class="text-gray-400">$</span> git-velocity analyze --config config.yaml
+                                <pre class="text-gray-100 text-sm sm:text-base overflow-x-auto"><code><span class="text-gray-400">$</span> git-velocity analyze --config .git-velocity.yaml
 <span class="text-pink-400">Fetching data from GitHub...</span>
 <span class="text-purple-400">Processing 3 repositories...</span>
+<span class="text-yellow-400">Calculating scores and achievements...</span>
 <span class="text-green-400">Generated dashboard at ./dist</span>
 
 <span class="text-gray-400">$</span> git-velocity serve --port 8080
@@ -171,12 +204,36 @@
             </div>
         </section>
 
+        <!-- Stats Section -->
+        <section class="py-8 bg-white dark:bg-gray-900 border-y border-gray-200 dark:border-gray-800 theme-transition">
+            <div class="max-w-6xl mx-auto px-4 sm:px-6">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+                    <div>
+                        <div class="text-3xl sm:text-4xl font-bold gradient-text">34</div>
+                        <div class="text-sm text-gray-600 dark:text-gray-400">Achievements</div>
+                    </div>
+                    <div>
+                        <div class="text-3xl sm:text-4xl font-bold gradient-text">15+</div>
+                        <div class="text-sm text-gray-600 dark:text-gray-400">Metrics Tracked</div>
+                    </div>
+                    <div>
+                        <div class="text-3xl sm:text-4xl font-bold gradient-text">10x</div>
+                        <div class="text-sm text-gray-600 dark:text-gray-400">Faster with Local Git</div>
+                    </div>
+                    <div>
+                        <div class="text-3xl sm:text-4xl font-bold gradient-text">100%</div>
+                        <div class="text-sm text-gray-600 dark:text-gray-400">Open Source</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- Features Section -->
-        <section id="features" class="py-12 sm:py-16 md:py-20 bg-white dark:bg-gray-900 theme-transition">
+        <section id="features" class="py-12 sm:py-16 md:py-20 bg-gray-50 dark:bg-gray-800 theme-transition">
             <div class="max-w-6xl mx-auto px-4 sm:px-6">
                 <div class="text-center mb-8 sm:mb-12">
-                    <h2 class="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-gray-100 mb-3 sm:mb-4">Features</h2>
-                    <p class="text-base sm:text-lg text-gray-600 dark:text-gray-300 px-4">Everything you need to track developer productivity</p>
+                    <h2 class="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-gray-100 mb-3 sm:mb-4">Powerful Features</h2>
+                    <p class="text-base sm:text-lg text-gray-600 dark:text-gray-300 px-4">Everything you need to track and gamify developer productivity</p>
                 </div>
                 <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     <div class="glass p-5 rounded-xl group hover:shadow-lg transition-all duration-300">
@@ -185,8 +242,8 @@
                                 <i class="fas fa-chart-line text-white"></i>
                             </div>
                             <div>
-                                <h3 class="font-semibold text-gray-900 dark:text-gray-100 mb-1">Velocity Metrics</h3>
-                                <p class="text-sm text-gray-600 dark:text-gray-400">Track commits, PRs, reviews, and code changes over time</p>
+                                <h3 class="font-semibold text-gray-900 dark:text-gray-100 mb-1">Comprehensive Metrics</h3>
+                                <p class="text-sm text-gray-600 dark:text-gray-400">Track commits, PRs, reviews, issues, lines of code, and more across all repositories</p>
                             </div>
                         </div>
                     </div>
@@ -196,8 +253,8 @@
                                 <i class="fas fa-trophy text-white"></i>
                             </div>
                             <div>
-                                <h3 class="font-semibold text-gray-900 dark:text-gray-100 mb-1">Gamification</h3>
-                                <p class="text-sm text-gray-600 dark:text-gray-400">Score points, earn achievements, and compete on leaderboards</p>
+                                <h3 class="font-semibold text-gray-900 dark:text-gray-100 mb-1">Gamification Engine</h3>
+                                <p class="text-sm text-gray-600 dark:text-gray-400">Earn points, unlock 34 achievements, climb leaderboards, progress through tiers</p>
                             </div>
                         </div>
                     </div>
@@ -207,8 +264,8 @@
                                 <i class="fas fa-users text-white"></i>
                             </div>
                             <div>
-                                <h3 class="font-semibold text-gray-900 dark:text-gray-100 mb-1">Team Insights</h3>
-                                <p class="text-sm text-gray-600 dark:text-gray-400">Configure teams and see aggregated team metrics</p>
+                                <h3 class="font-semibold text-gray-900 dark:text-gray-100 mb-1">Team Analytics</h3>
+                                <p class="text-sm text-gray-600 dark:text-gray-400">Configure teams, see aggregated metrics, team leaderboards, and member breakdowns</p>
                             </div>
                         </div>
                     </div>
@@ -219,18 +276,18 @@
                             </div>
                             <div>
                                 <h3 class="font-semibold text-gray-900 dark:text-gray-100 mb-1">GitHub Action</h3>
-                                <p class="text-sm text-gray-600 dark:text-gray-400">Run analysis automatically in your CI/CD pipeline</p>
+                                <p class="text-sm text-gray-600 dark:text-gray-400">Automate analysis in CI/CD, deploy to GitHub Pages, upload as artifacts</p>
                             </div>
                         </div>
                     </div>
                     <div class="glass p-5 rounded-xl group hover:shadow-lg transition-all duration-300">
                         <div class="flex items-start gap-4">
                             <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300">
-                                <i class="fas fa-file-code text-white"></i>
+                                <i class="fas fa-palette text-white"></i>
                             </div>
                             <div>
-                                <h3 class="font-semibold text-gray-900 dark:text-gray-100 mb-1">Static Site</h3>
-                                <p class="text-sm text-gray-600 dark:text-gray-400">Generate a beautiful Vue.js SPA dashboard</p>
+                                <h3 class="font-semibold text-gray-900 dark:text-gray-100 mb-1">Beautiful Dashboard</h3>
+                                <p class="text-sm text-gray-600 dark:text-gray-400">Modern Vue.js SPA with dark/light mode, responsive design, interactive charts</p>
                             </div>
                         </div>
                     </div>
@@ -240,8 +297,41 @@
                                 <i class="fas fa-bolt text-white"></i>
                             </div>
                             <div>
-                                <h3 class="font-semibold text-gray-900 dark:text-gray-100 mb-1">Fast & Cached</h3>
-                                <p class="text-sm text-gray-600 dark:text-gray-400">File-based caching and concurrent API requests</p>
+                                <h3 class="font-semibold text-gray-900 dark:text-gray-100 mb-1">Blazing Fast</h3>
+                                <p class="text-sm text-gray-600 dark:text-gray-400">Local git analysis, smart caching, concurrent API requests for maximum speed</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="glass p-5 rounded-xl group hover:shadow-lg transition-all duration-300">
+                        <div class="flex items-start gap-4">
+                            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300">
+                                <i class="fas fa-robot text-white"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-gray-900 dark:text-gray-100 mb-1">Bot Filtering</h3>
+                                <p class="text-sm text-gray-600 dark:text-gray-400">Automatically excludes Dependabot, Renovate, and other bot contributions</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="glass p-5 rounded-xl group hover:shadow-lg transition-all duration-300">
+                        <div class="flex items-start gap-4">
+                            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300">
+                                <i class="fas fa-key text-white"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-gray-900 dark:text-gray-100 mb-1">Flexible Auth</h3>
+                                <p class="text-sm text-gray-600 dark:text-gray-400">Personal Access Token or GitHub App authentication with env var support</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="glass p-5 rounded-xl group hover:shadow-lg transition-all duration-300">
+                        <div class="flex items-start gap-4">
+                            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-yellow-500 to-yellow-600 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300">
+                                <i class="fas fa-user-group text-white"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-gray-900 dark:text-gray-100 mb-1">User Aliases</h3>
+                                <p class="text-sm text-gray-600 dark:text-gray-400">Map multiple git emails and names to single GitHub accounts for accurate stats</p>
                             </div>
                         </div>
                     </div>
@@ -249,18 +339,192 @@
             </div>
         </section>
 
+        <!-- Metrics Section -->
+        <section class="py-12 sm:py-16 md:py-20 bg-white dark:bg-gray-900 theme-transition">
+            <div class="max-w-6xl mx-auto px-4 sm:px-6">
+                <div class="text-center mb-8 sm:mb-12">
+                    <h2 class="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-gray-100 mb-3 sm:mb-4">What Gets Tracked</h2>
+                    <p class="text-base sm:text-lg text-gray-600 dark:text-gray-300 px-4">Comprehensive developer activity metrics in real-time</p>
+                </div>
+                <div class="max-w-4xl mx-auto">
+                    <div class="grid sm:grid-cols-2 gap-4">
+                        <div class="glass p-5 rounded-xl">
+                            <div class="flex items-center gap-3 mb-3">
+                                <div class="w-10 h-10 rounded-lg bg-pink-100 dark:bg-pink-900/30 flex items-center justify-center">
+                                    <i class="fas fa-code-commit text-pink-500"></i>
+                                </div>
+                                <h3 class="font-semibold text-gray-900 dark:text-gray-100">Commits</h3>
+                            </div>
+                            <ul class="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                                <li><i class="fas fa-check text-green-500 mr-2"></i>Total commit count</li>
+                                <li><i class="fas fa-check text-green-500 mr-2"></i>Lines added & deleted</li>
+                                <li><i class="fas fa-check text-green-500 mr-2"></i>Files changed</li>
+                                <li><i class="fas fa-check text-green-500 mr-2"></i>Commits with tests</li>
+                            </ul>
+                        </div>
+                        <div class="glass p-5 rounded-xl">
+                            <div class="flex items-center gap-3 mb-3">
+                                <div class="w-10 h-10 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+                                    <i class="fas fa-code-pull-request text-purple-500"></i>
+                                </div>
+                                <h3 class="font-semibold text-gray-900 dark:text-gray-100">Pull Requests</h3>
+                            </div>
+                            <ul class="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                                <li><i class="fas fa-check text-green-500 mr-2"></i>PRs opened, merged, closed</li>
+                                <li><i class="fas fa-check text-green-500 mr-2"></i>Average PR size</li>
+                                <li><i class="fas fa-check text-green-500 mr-2"></i>Time to merge</li>
+                                <li><i class="fas fa-check text-green-500 mr-2"></i>Perfect PRs (no changes requested)</li>
+                            </ul>
+                        </div>
+                        <div class="glass p-5 rounded-xl">
+                            <div class="flex items-center gap-3 mb-3">
+                                <div class="w-10 h-10 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
+                                    <i class="fas fa-eye text-indigo-500"></i>
+                                </div>
+                                <h3 class="font-semibold text-gray-900 dark:text-gray-100">Code Reviews</h3>
+                            </div>
+                            <ul class="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                                <li><i class="fas fa-check text-green-500 mr-2"></i>Reviews given</li>
+                                <li><i class="fas fa-check text-green-500 mr-2"></i>Review comments</li>
+                                <li><i class="fas fa-check text-green-500 mr-2"></i>Approvals & change requests</li>
+                                <li><i class="fas fa-check text-green-500 mr-2"></i>Average response time</li>
+                            </ul>
+                        </div>
+                        <div class="glass p-5 rounded-xl">
+                            <div class="flex items-center gap-3 mb-3">
+                                <div class="w-10 h-10 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                                    <i class="fas fa-calendar-alt text-green-500"></i>
+                                </div>
+                                <h3 class="font-semibold text-gray-900 dark:text-gray-100">Activity Patterns</h3>
+                            </div>
+                            <ul class="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                                <li><i class="fas fa-check text-green-500 mr-2"></i>Active days & streaks</li>
+                                <li><i class="fas fa-check text-green-500 mr-2"></i>Early bird / night owl commits</li>
+                                <li><i class="fas fa-check text-green-500 mr-2"></i>Weekend activity</li>
+                                <li><i class="fas fa-check text-green-500 mr-2"></i>Repositories contributed</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Achievements Section -->
+        <section id="achievements" class="py-12 sm:py-16 md:py-20 bg-gray-50 dark:bg-gray-800 theme-transition">
+            <div class="max-w-6xl mx-auto px-4 sm:px-6">
+                <div class="text-center mb-8 sm:mb-12">
+                    <h2 class="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-gray-100 mb-3 sm:mb-4">Unlock Achievements</h2>
+                    <p class="text-base sm:text-lg text-gray-600 dark:text-gray-300 px-4">34 achievements to earn across multiple categories</p>
+                </div>
+                <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <!-- Commit Achievements -->
+                    <div class="achievement-card glass p-4 rounded-xl">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-pink-400 to-pink-600 flex items-center justify-center">
+                                <i class="fas fa-baby text-white text-lg"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-gray-900 dark:text-gray-100">First Steps</h4>
+                                <p class="text-xs text-gray-500 dark:text-gray-400">1 commit</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="achievement-card glass p-4 rounded-xl">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center">
+                                <i class="fas fa-fire text-white text-lg"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-gray-900 dark:text-gray-100">Committed</h4>
+                                <p class="text-xs text-gray-500 dark:text-gray-400">100 commits</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="achievement-card glass p-4 rounded-xl">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-yellow-400 to-yellow-600 flex items-center justify-center">
+                                <i class="fas fa-crown text-white text-lg"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-gray-900 dark:text-gray-100">Code Warrior</h4>
+                                <p class="text-xs text-gray-500 dark:text-gray-400">1000 commits</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="achievement-card glass p-4 rounded-xl">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center">
+                                <i class="fas fa-code-merge text-white text-lg"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-gray-900 dark:text-gray-100">Merge Master</h4>
+                                <p class="text-xs text-gray-500 dark:text-gray-400">50 PRs opened</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="achievement-card glass p-4 rounded-xl">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-400 to-indigo-600 flex items-center justify-center">
+                                <i class="fas fa-user-graduate text-white text-lg"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-gray-900 dark:text-gray-100">Review Guru</h4>
+                                <p class="text-xs text-gray-500 dark:text-gray-400">100 reviews</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="achievement-card glass p-4 rounded-xl">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center">
+                                <i class="fas fa-bolt text-white text-lg"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-gray-900 dark:text-gray-100">Speed Demon</h4>
+                                <p class="text-xs text-gray-500 dark:text-gray-400">&lt;1h review time</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="achievement-card glass p-4 rounded-xl">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center">
+                                <i class="fas fa-calendar-check text-white text-lg"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-gray-900 dark:text-gray-100">Month Master</h4>
+                                <p class="text-xs text-gray-500 dark:text-gray-400">30-day streak</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="achievement-card glass p-4 rounded-xl">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-gray-600 to-gray-800 flex items-center justify-center">
+                                <i class="fas fa-skull text-white text-lg"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-gray-900 dark:text-gray-100">Nosferatu</h4>
+                                <p class="text-xs text-gray-500 dark:text-gray-400">25 midnight commits</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="text-center mt-8">
+                    <p class="text-gray-600 dark:text-gray-400">...and 26 more achievements to unlock!</p>
+                </div>
+            </div>
+        </section>
+
         <!-- Installation Section -->
-        <section id="installation" class="py-12 sm:py-16 md:py-20 bg-gray-50 dark:bg-gray-800 theme-transition">
+        <section id="installation" class="py-12 sm:py-16 md:py-20 bg-white dark:bg-gray-900 theme-transition">
             <div class="max-w-6xl mx-auto px-4 sm:px-6">
                 <div class="text-center mb-8 sm:mb-12">
                     <h2 class="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-gray-100 mb-3 sm:mb-4">Installation</h2>
-                    <p class="text-base sm:text-lg text-gray-600 dark:text-gray-300 px-4">Get started in seconds</p>
+                    <p class="text-base sm:text-lg text-gray-600 dark:text-gray-300 px-4">Get started in under a minute</p>
                 </div>
                 <div class="max-w-3xl mx-auto space-y-6">
                     <div class="glass p-6 rounded-xl">
                         <h3 class="font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center">
                             <i class="fas fa-download mr-2 text-pink-500"></i>
-                            Go Install
+                            Go Install (Recommended)
                         </h3>
                         <pre class="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto"><code>go install github.com/lukaszraczylo/git-velocity/cmd/git-velocity@latest</code></pre>
                     </div>
@@ -270,129 +534,79 @@
                             Download Binary
                         </h3>
                         <p class="text-gray-600 dark:text-gray-400 mb-3">Download from the <a href="https://github.com/lukaszraczylo/git-velocity/releases/latest" class="text-pink-600 dark:text-pink-400 hover:underline">releases page</a>.</p>
-                        <p class="text-sm text-gray-500 dark:text-gray-400">Supported: macOS, Linux, Windows (amd64, arm64)</p>
-                    </div>
-                    <div class="glass p-6 rounded-xl">
-                        <h3 class="font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center">
-                            <i class="fab fa-github mr-2 text-indigo-500"></i>
-                            GitHub Action
-                        </h3>
-                        <pre class="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto text-sm"><code>- uses: lukaszraczylo/git-velocity/.github/actions/git-velocity@main
-  with:
-    github_token: ${{ secrets.GITHUB_TOKEN }}
-    config_file: '.git-velocity.yaml'</code></pre>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded-full text-sm">macOS (amd64, arm64)</span>
+                            <span class="px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded-full text-sm">Linux (amd64, arm64)</span>
+                            <span class="px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded-full text-sm">Windows (amd64)</span>
+                        </div>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- Usage Section -->
-        <section id="usage" class="py-12 sm:py-16 md:py-20 bg-white dark:bg-gray-900 theme-transition">
+        <!-- GitHub Action Section -->
+        <section id="github-action" class="py-12 sm:py-16 md:py-20 bg-gray-50 dark:bg-gray-800 theme-transition">
             <div class="max-w-6xl mx-auto px-4 sm:px-6">
                 <div class="text-center mb-8 sm:mb-12">
-                    <h2 class="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-gray-100 mb-3 sm:mb-4">Usage</h2>
-                    <p class="text-base sm:text-lg text-gray-600 dark:text-gray-300 px-4">Simple CLI commands</p>
+                    <h2 class="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-gray-100 mb-3 sm:mb-4">GitHub Action</h2>
+                    <p class="text-base sm:text-lg text-gray-600 dark:text-gray-300 px-4">Automate your velocity reports in CI/CD</p>
                 </div>
-                <div class="max-w-4xl mx-auto space-y-8">
-                    <div class="glass p-6 rounded-xl">
-                        <h3 class="font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center text-xl">
-                            <i class="fas fa-terminal mr-2 text-pink-500"></i>
-                            CLI Commands
-                        </h3>
-                        <pre class="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto mb-4"><code><span class="text-gray-400"># Analyze repositories and generate dashboard</span>
-git-velocity analyze --config config.yaml --output ./dist
-
-<span class="text-gray-400"># Start local preview server</span>
-git-velocity serve --directory ./dist --port 8080
-
-<span class="text-gray-400"># Show version</span>
-git-velocity version</code></pre>
-                        <div class="grid sm:grid-cols-2 gap-4 text-sm">
-                            <div>
-                                <h4 class="font-medium text-gray-900 dark:text-gray-100 mb-2">Analyze Flags</h4>
-                                <ul class="space-y-1 text-gray-600 dark:text-gray-400">
-                                    <li><code class="text-pink-600 dark:text-pink-400">-c, --config</code> Path to config file</li>
-                                    <li><code class="text-pink-600 dark:text-pink-400">-o, --output</code> Output directory</li>
-                                    <li><code class="text-pink-600 dark:text-pink-400">-v, --verbose</code> Verbose output</li>
-                                </ul>
-                            </div>
-                            <div>
-                                <h4 class="font-medium text-gray-900 dark:text-gray-100 mb-2">Serve Flags</h4>
-                                <ul class="space-y-1 text-gray-600 dark:text-gray-400">
-                                    <li><code class="text-pink-600 dark:text-pink-400">-d, --directory</code> Directory to serve</li>
-                                    <li><code class="text-pink-600 dark:text-pink-400">-p, --port</code> Port to listen on</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="glass p-6 rounded-xl">
+                <div class="max-w-4xl mx-auto">
+                    <div class="glass p-6 rounded-xl mb-6">
                         <h3 class="font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center text-xl">
                             <i class="fab fa-github mr-2 text-purple-500"></i>
-                            GitHub Action Example
+                            Workflow Example
                         </h3>
-                        <pre class="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto text-sm"><code>name: Git Velocity Analysis
+                        <pre class="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto text-sm"><code><span class="text-purple-400">name:</span> Git Velocity Report
 
-on:
-  schedule:
-    - cron: '0 0 * * 1'  # Weekly on Monday
-  workflow_dispatch:
+<span class="text-purple-400">on:</span>
+  <span class="text-pink-400">schedule:</span>
+    - <span class="text-indigo-400">cron:</span> '0 0 * * 1'  <span class="text-gray-500"># Weekly on Monday</span>
+  <span class="text-pink-400">workflow_dispatch:</span>      <span class="text-gray-500"># Manual trigger</span>
 
-jobs:
-  analyze:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+<span class="text-purple-400">jobs:</span>
+  <span class="text-pink-400">analyze:</span>
+    <span class="text-indigo-400">runs-on:</span> ubuntu-latest
+    <span class="text-indigo-400">steps:</span>
+      - <span class="text-blue-400">uses:</span> actions/checkout@v4
 
-      - name: Run Git Velocity Analysis
-        uses: lukaszraczylo/git-velocity/.github/actions/git-velocity@main
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          config_file: '.git-velocity.yaml'
-          output_dir: './dist'
-          deploy_gh_pages: 'true'
-          upload_artifact: 'true'</code></pre>
+      - <span class="text-blue-400">name:</span> Run Git Velocity Analysis
+        <span class="text-blue-400">uses:</span> lukaszraczylo/git-velocity/.github/actions/git-velocity@main
+        <span class="text-blue-400">with:</span>
+          <span class="text-green-400">github_token:</span> ${{ secrets.GITHUB_TOKEN }}
+          <span class="text-green-400">config_file:</span> '.git-velocity.yaml'
+          <span class="text-green-400">output_dir:</span> './velocity-report'
+          <span class="text-green-400">deploy_gh_pages:</span> 'true'
+          <span class="text-green-400">upload_artifact:</span> 'true'</code></pre>
                     </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Metrics Section -->
-        <section class="py-12 sm:py-16 md:py-20 bg-gray-50 dark:bg-gray-800 theme-transition">
-            <div class="max-w-6xl mx-auto px-4 sm:px-6">
-                <div class="text-center mb-8 sm:mb-12">
-                    <h2 class="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-gray-100 mb-3 sm:mb-4">What Gets Tracked</h2>
-                    <p class="text-base sm:text-lg text-gray-600 dark:text-gray-300 px-4">Comprehensive developer activity metrics</p>
-                </div>
-                <div class="max-w-3xl mx-auto">
                     <div class="grid sm:grid-cols-2 gap-4">
                         <div class="glass p-4 rounded-xl">
-                            <div class="flex items-center gap-3 mb-2">
-                                <i class="fas fa-code-commit text-pink-500"></i>
-                                <h3 class="font-semibold text-gray-900 dark:text-gray-100">Commits</h3>
-                            </div>
-                            <p class="text-sm text-gray-600 dark:text-gray-400">Total commits, lines added/deleted, files changed</p>
+                            <h4 class="font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center">
+                                <i class="fas fa-arrow-right-to-bracket mr-2 text-pink-500"></i>Inputs
+                            </h4>
+                            <ul class="text-sm text-gray-600 dark:text-gray-400 space-y-2">
+                                <li><code class="text-pink-600 dark:text-pink-400">github_token</code> - API access (required)</li>
+                                <li><code class="text-pink-600 dark:text-pink-400">config_file</code> - Config path</li>
+                                <li><code class="text-pink-600 dark:text-pink-400">output_dir</code> - Output directory</li>
+                                <li><code class="text-pink-600 dark:text-pink-400">deploy_gh_pages</code> - Auto-deploy</li>
+                                <li><code class="text-pink-600 dark:text-pink-400">upload_artifact</code> - Save artifact</li>
+                            </ul>
                         </div>
                         <div class="glass p-4 rounded-xl">
-                            <div class="flex items-center gap-3 mb-2">
-                                <i class="fas fa-code-pull-request text-purple-500"></i>
-                                <h3 class="font-semibold text-gray-900 dark:text-gray-100">Pull Requests</h3>
+                            <h4 class="font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center">
+                                <i class="fas fa-arrow-right-from-bracket mr-2 text-purple-500"></i>Outputs
+                            </h4>
+                            <ul class="text-sm text-gray-600 dark:text-gray-400 space-y-2">
+                                <li><code class="text-purple-600 dark:text-purple-400">output_dir</code> - Generated dashboard path</li>
+                            </ul>
+                            <div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
+                                <h5 class="font-medium text-gray-900 dark:text-gray-100 mb-2">Features</h5>
+                                <ul class="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                                    <li><i class="fas fa-check text-green-500 mr-2"></i>Auto GitHub Pages deploy</li>
+                                    <li><i class="fas fa-check text-green-500 mr-2"></i>Artifact retention (30 days)</li>
+                                    <li><i class="fas fa-check text-green-500 mr-2"></i>Go 1.23 + Node 20</li>
+                                </ul>
                             </div>
-                            <p class="text-sm text-gray-600 dark:text-gray-400">PRs opened, merged, closed, average size</p>
-                        </div>
-                        <div class="glass p-4 rounded-xl">
-                            <div class="flex items-center gap-3 mb-2">
-                                <i class="fas fa-eye text-indigo-500"></i>
-                                <h3 class="font-semibold text-gray-900 dark:text-gray-100">Code Reviews</h3>
-                            </div>
-                            <p class="text-sm text-gray-600 dark:text-gray-400">Reviews given, comments, approvals, response time</p>
-                        </div>
-                        <div class="glass p-4 rounded-xl">
-                            <div class="flex items-center gap-3 mb-2">
-                                <i class="fas fa-exclamation-circle text-green-500"></i>
-                                <h3 class="font-semibold text-gray-900 dark:text-gray-100">Issues</h3>
-                            </div>
-                            <p class="text-sm text-gray-600 dark:text-gray-400">Issues opened, closed, comments</p>
                         </div>
                     </div>
                 </div>
@@ -406,36 +620,133 @@ jobs:
                     <h2 class="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-gray-100 mb-3 sm:mb-4">Configuration</h2>
                     <p class="text-base sm:text-lg text-gray-600 dark:text-gray-300 px-4">Customize everything via YAML</p>
                 </div>
-                <div class="max-w-3xl mx-auto">
+                <div class="max-w-4xl mx-auto">
                     <div class="glass p-6 rounded-xl">
                         <h3 class="font-semibold text-gray-900 dark:text-gray-100 mb-4">.git-velocity.yaml</h3>
                         <pre class="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto text-sm"><code><span class="text-pink-400">version:</span> "1.0"
 
 <span class="text-pink-400">auth:</span>
   <span class="text-purple-400">github_token:</span> "${GITHUB_TOKEN}"
+  <span class="text-gray-500"># Or use GitHub App authentication:</span>
+  <span class="text-gray-500"># github_app:</span>
+  <span class="text-gray-500">#   app_id: 123456</span>
+  <span class="text-gray-500">#   installation_id: 789012</span>
+  <span class="text-gray-500">#   private_key_path: "./private-key.pem"</span>
 
 <span class="text-pink-400">repositories:</span>
   - <span class="text-purple-400">owner:</span> "your-org"
     <span class="text-purple-400">name:</span> "your-repo"
+  - <span class="text-purple-400">owner:</span> "your-org"
+    <span class="text-purple-400">pattern:</span> "*"  <span class="text-gray-500"># All repos in org</span>
+
+<span class="text-pink-400">date_range:</span>
+  <span class="text-purple-400">start:</span> "2024-01-01"
+  <span class="text-purple-400">end:</span> "2024-12-31"
 
 <span class="text-pink-400">teams:</span>
   - <span class="text-purple-400">name:</span> "Backend Team"
-    <span class="text-purple-400">members:</span> ["dev1", "dev2"]
+    <span class="text-purple-400">members:</span> ["dev1", "dev2", "dev3"]
     <span class="text-purple-400">color:</span> "#3B82F6"
+  - <span class="text-purple-400">name:</span> "Frontend Team"
+    <span class="text-purple-400">members:</span> ["dev4", "dev5"]
+    <span class="text-purple-400">color:</span> "#10B981"
 
 <span class="text-pink-400">scoring:</span>
   <span class="text-purple-400">enabled:</span> true
   <span class="text-purple-400">points:</span>
     <span class="text-indigo-400">commit:</span> 10
+    <span class="text-indigo-400">commit_with_tests:</span> 15
     <span class="text-indigo-400">pr_opened:</span> 25
     <span class="text-indigo-400">pr_merged:</span> 50
     <span class="text-indigo-400">pr_reviewed:</span> 30
+    <span class="text-indigo-400">review_comment:</span> 5
+    <span class="text-indigo-400">fast_review_1h:</span> 50
+    <span class="text-indigo-400">fast_review_4h:</span> 25
 
 <span class="text-pink-400">output:</span>
   <span class="text-purple-400">directory:</span> "./dist"
+  <span class="text-purple-400">format:</span> ["html", "json"]
   <span class="text-purple-400">deploy:</span>
-    <span class="text-indigo-400">gh_pages:</span> true</code></pre>
+    <span class="text-indigo-400">gh_pages:</span> true
+    <span class="text-indigo-400">artifact:</span> true
+
+<span class="text-pink-400">cache:</span>
+  <span class="text-purple-400">enabled:</span> true
+  <span class="text-purple-400">directory:</span> "./.cache"
+  <span class="text-purple-400">ttl:</span> "24h"
+
+<span class="text-pink-400">options:</span>
+  <span class="text-purple-400">concurrent_requests:</span> 5
+  <span class="text-purple-400">include_bots:</span> false
+  <span class="text-purple-400">use_local_git:</span> true
+  <span class="text-purple-400">user_aliases:</span>
+    - <span class="text-indigo-400">github_login:</span> "johndoe"
+      <span class="text-indigo-400">emails:</span> ["john@work.com", "john@personal.com"]</code></pre>
                     </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CLI Section -->
+        <section class="py-12 sm:py-16 md:py-20 bg-gray-50 dark:bg-gray-800 theme-transition">
+            <div class="max-w-6xl mx-auto px-4 sm:px-6">
+                <div class="text-center mb-8 sm:mb-12">
+                    <h2 class="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-gray-100 mb-3 sm:mb-4">CLI Commands</h2>
+                    <p class="text-base sm:text-lg text-gray-600 dark:text-gray-300 px-4">Simple and powerful command-line interface</p>
+                </div>
+                <div class="max-w-3xl mx-auto space-y-4">
+                    <div class="glass p-5 rounded-xl">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-10 h-10 rounded-lg bg-pink-100 dark:bg-pink-900/30 flex items-center justify-center">
+                                <i class="fas fa-chart-bar text-pink-500"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-gray-900 dark:text-gray-100">analyze</h3>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">Analyze repositories and generate dashboard</p>
+                            </div>
+                        </div>
+                        <pre class="bg-gray-900 text-gray-100 p-3 rounded-lg text-sm overflow-x-auto"><code>git-velocity analyze --config .git-velocity.yaml --output ./dist --verbose</code></pre>
+                    </div>
+                    <div class="glass p-5 rounded-xl">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-10 h-10 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+                                <i class="fas fa-server text-purple-500"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-gray-900 dark:text-gray-100">serve</h3>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">Start local preview server</p>
+                            </div>
+                        </div>
+                        <pre class="bg-gray-900 text-gray-100 p-3 rounded-lg text-sm overflow-x-auto"><code>git-velocity serve --directory ./dist --port 8080</code></pre>
+                    </div>
+                    <div class="glass p-5 rounded-xl">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-10 h-10 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
+                                <i class="fas fa-info-circle text-indigo-500"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-gray-900 dark:text-gray-100">version</h3>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">Print version information</p>
+                            </div>
+                        </div>
+                        <pre class="bg-gray-900 text-gray-100 p-3 rounded-lg text-sm overflow-x-auto"><code>git-velocity version</code></pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CTA Section -->
+        <section class="py-16 sm:py-20 bg-gradient-to-br from-pink-500 via-purple-500 to-indigo-500 text-white">
+            <div class="max-w-4xl mx-auto px-4 sm:px-6 text-center">
+                <h2 class="text-2xl sm:text-3xl md:text-4xl font-bold mb-4">Ready to Gamify Your Git?</h2>
+                <p class="text-lg sm:text-xl opacity-90 mb-8 max-w-2xl mx-auto">Start tracking your velocity, earn achievements, and make development more engaging today.</p>
+                <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                    <a href="#installation" class="bg-white text-purple-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105">
+                        <i class="fas fa-download mr-2"></i>Get Started
+                    </a>
+                    <a href="https://github.com/lukaszraczylo/git-velocity" class="bg-transparent border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white/10 transition-all duration-300">
+                        <i class="fab fa-github mr-2"></i>Star on GitHub
+                    </a>
                 </div>
             </div>
         </section>
@@ -457,6 +768,9 @@ jobs:
                         </a>
                         <a href="https://github.com/lukaszraczylo/git-velocity/releases" class="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 text-sm">
                             Releases
+                        </a>
+                        <a href="https://github.com/lukaszraczylo" class="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 text-sm">
+                            Author
                         </a>
                     </div>
                     <p class="text-gray-500 dark:text-gray-400 text-sm">MIT License</p>
@@ -494,6 +808,25 @@ jobs:
                     document.getElementById('menu-open-icon').classList.remove('hidden');
                     document.getElementById('menu-close-icon').classList.add('hidden');
                 });
+            });
+
+            // Intersection Observer for scroll animations
+            const observerOptions = {
+                threshold: 0.1,
+                rootMargin: '0px 0px -50px 0px'
+            };
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('animate-fade-in-up');
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, observerOptions);
+
+            document.querySelectorAll('section > div').forEach(el => {
+                observer.observe(el);
             });
         </script>
     </body>
