@@ -26,7 +26,7 @@ outputs:
     description: 'Path to the generated dashboard'
 runs:
   using: 'docker'
-  image: 'docker://ghcr.io/lukaszraczylo/git-velocity:latest'
+  image: 'docker://ghcr.io/lukaszraczylo/git-velocity:v1'
   args:
     - analyze
     - --config
