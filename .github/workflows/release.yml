@@ -1,9 +1,14 @@
-name: Release
+name: Test, build, release
 
 on:
+  workflow_dispatch:
   push:
-    tags:
-      - 'v*'
+    paths-ignore:
+      - '**.md'
+      - '**/release.yml'
+      - 'action.yml'
+    branches:
+      - main
 
 permissions:
   contents: write
@@ -11,42 +16,9 @@ permissions:
 
 jobs:
   release:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: '1.23'
-          cache: true
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Build Vue SPA
-        working-directory: web
-        run: |
-          npm ci
-          npm run build
-
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v5
-        with:
-          distribution: goreleaser
-          version: latest
-          args: release --clean
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+    uses: lukaszraczylo/shared-actions/.github/workflows/go-release.yaml@main
+    with:
+      go-version: "1.24"
+      docker-enabled: true
+      rolling-release-tag: "v1"
+    secrets: inherit

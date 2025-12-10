@@ -1,0 +1,14 @@
+FROM alpine:3.21
+ARG TARGETPLATFORM
+
+RUN apk add --no-cache ca-certificates tzdata git
+
+COPY ${TARGETPLATFORM}/git-velocity /usr/local/bin/git-velocity
+COPY config.example.yaml /etc/git-velocity/config.example.yaml
+
+RUN chmod +x /usr/local/bin/git-velocity
+
+WORKDIR /workspace
+
+ENTRYPOINT ["/usr/local/bin/git-velocity"]
+CMD ["--help"]

@@ -69,24 +69,21 @@ dockers_v2:
     platforms:
       - linux/amd64
       - linux/arm64
-    dockerfile: Dockerfile
+    dockerfile: Dockerfile.goreleaser
     extra_files:
       - config.example.yaml
 
-homebrew_casks:
+brews:
   - name: git-velocity
     repository:
       owner: lukaszraczylo
-      name: homebrew-taps
+      name: homebrew-tap
       token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
-    directory: Casks
+    directory: Formula
     homepage: https://github.com/lukaszraczylo/git-velocity
     description: "Developer velocity metrics analyzer with gamification dashboards"
     license: MIT
-    hooks:
-      post:
-        install: |
-          if OS.mac?
-            system_command "/usr/bin/xattr",
-                           args: ["-dr", "com.apple.quarantine", "#{staged_path}/git-velocity"]
-          end
+    install: |
+      bin.install "git-velocity"
+    test: |
+      system "#{bin}/git-velocity", "version"

@@ -1,0 +1,37 @@
+# action.yml
+name: 'Git Velocity Analyser'
+description: 'Analyze Git repositories for developer velocity metrics and generate beautiful dashboards'
+author: 'Lukasz Raczylo'
+branding:
+  icon: 'activity'
+  color: 'purple'
+inputs:
+  github_token:
+    description: 'GitHub token for API access'
+    required: true
+  config_file:
+    description: 'Path to configuration file'
+    required: false
+    default: '.git-velocity.yaml'
+  output_dir:
+    description: 'Output directory for generated dashboard'
+    required: false
+    default: './dist'
+  verbose:
+    description: 'Enable verbose output'
+    required: false
+    default: 'false'
+outputs:
+  output_dir:
+    description: 'Path to the generated dashboard'
+runs:
+  using: 'docker'
+  image: 'docker://ghcr.io/lukaszraczylo/git-velocity:latest'
+  args:
+    - analyze
+    - --config
+    - ${{ inputs.config_file }}
+    - --output
+    - ${{ inputs.output_dir }}
+  env:
+    GITHUB_TOKEN: ${{ inputs.github_token }}

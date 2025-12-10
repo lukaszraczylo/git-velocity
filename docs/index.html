@@ -109,9 +109,8 @@
         <nav class="fixed w-full glass shadow-modern z-50 theme-transition">
             <div class="max-w-6xl mx-auto px-4 sm:px-6">
                 <div class="flex justify-between h-16 items-center">
-                    <a href="#" class="flex items-center hover:opacity-80 transition-opacity duration-300 gap-2">
-                        <i class="fas fa-rocket text-2xl gradient-text"></i>
-                        <span class="text-xl font-bold gradient-text">git-velocity</span>
+                    <a href="#" class="flex items-center hover:opacity-80 transition-opacity duration-300">
+                        <img src="git-velocity-logo.png" alt="Git Velocity" class="h-8 w-auto" />
                     </a>
                     <div class="hidden md:flex space-x-6">
                         <a href="#features" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 font-medium">Features</a>
@@ -156,9 +155,7 @@
             <div class="relative max-w-6xl mx-auto px-4 sm:px-6">
                 <div class="text-center">
                     <div class="mb-8 sm:mb-10 flex justify-center animate-fade-in-up">
-                        <div class="text-8xl sm:text-9xl animate-float">
-                            <i class="fas fa-rocket gradient-text"></i>
-                        </div>
+                        <img src="git-velocity-logo.png" alt="Git Velocity Logo" class="w-64 sm:w-80 md:w-96 h-auto animate-float" />
                     </div>
                     <h1 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 dark:text-gray-100 mb-4 sm:mb-6 leading-tight animate-fade-in-up" style="animation-delay: 0.1s;">
                         Turn Your GitHub Activity<br /><span class="gradient-text">Into a Game</span>
@@ -571,13 +568,17 @@
       - <span class="text-blue-400">uses:</span> actions/checkout@v4
 
       - <span class="text-blue-400">name:</span> Run Git Velocity Analysis
-        <span class="text-blue-400">uses:</span> lukaszraczylo/git-velocity/.github/actions/git-velocity@main
+        <span class="text-blue-400">uses:</span> lukaszraczylo/git-velocity@v1
         <span class="text-blue-400">with:</span>
           <span class="text-green-400">github_token:</span> ${{ secrets.GITHUB_TOKEN }}
           <span class="text-green-400">config_file:</span> '.git-velocity.yaml'
           <span class="text-green-400">output_dir:</span> './velocity-report'
-          <span class="text-green-400">deploy_gh_pages:</span> 'true'
-          <span class="text-green-400">upload_artifact:</span> 'true'</code></pre>
+
+      - <span class="text-blue-400">name:</span> Deploy to GitHub Pages
+        <span class="text-blue-400">uses:</span> peaceiris/actions-gh-pages@v4
+        <span class="text-blue-400">with:</span>
+          <span class="text-green-400">github_token:</span> ${{ secrets.GITHUB_TOKEN }}
+          <span class="text-green-400">publish_dir:</span> ./velocity-report</code></pre>
                     </div>
                     <div class="grid sm:grid-cols-2 gap-4">
                         <div class="glass p-4 rounded-xl">
@@ -588,8 +589,7 @@
                                 <li><code class="text-pink-600 dark:text-pink-400">github_token</code> - API access (required)</li>
                                 <li><code class="text-pink-600 dark:text-pink-400">config_file</code> - Config path</li>
                                 <li><code class="text-pink-600 dark:text-pink-400">output_dir</code> - Output directory</li>
-                                <li><code class="text-pink-600 dark:text-pink-400">deploy_gh_pages</code> - Auto-deploy</li>
-                                <li><code class="text-pink-600 dark:text-pink-400">upload_artifact</code> - Save artifact</li>
+                                <li><code class="text-pink-600 dark:text-pink-400">verbose</code> - Verbose output</li>
                             </ul>
                         </div>
                         <div class="glass p-4 rounded-xl">
@@ -602,9 +602,9 @@
                             <div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
                                 <h5 class="font-medium text-gray-900 dark:text-gray-100 mb-2">Features</h5>
                                 <ul class="text-sm text-gray-600 dark:text-gray-400 space-y-1">
-                                    <li><i class="fas fa-check text-green-500 mr-2"></i>Auto GitHub Pages deploy</li>
-                                    <li><i class="fas fa-check text-green-500 mr-2"></i>Artifact retention (30 days)</li>
-                                    <li><i class="fas fa-check text-green-500 mr-2"></i>Go 1.23 + Node 20</li>
+                                    <li><i class="fas fa-check text-green-500 mr-2"></i>Docker-based (fast startup)</li>
+                                    <li><i class="fas fa-check text-green-500 mr-2"></i>Multi-arch (amd64/arm64)</li>
+                                    <li><i class="fas fa-check text-green-500 mr-2"></i>Pre-built image from GHCR</li>
                                 </ul>
                             </div>
                         </div>
@@ -755,9 +755,8 @@
         <footer class="py-8 bg-gray-100 dark:bg-gray-800 theme-transition">
             <div class="max-w-6xl mx-auto px-4 sm:px-6">
                 <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
-                    <div class="flex items-center gap-2">
-                        <i class="fas fa-rocket text-xl gradient-text"></i>
-                        <span class="font-semibold gradient-text">git-velocity</span>
+                    <div class="flex items-center">
+                        <img src="git-velocity-logo.png" alt="Git Velocity" class="h-6 w-auto" />
                     </div>
                     <div class="flex items-center gap-6">
                         <a href="https://github.com/lukaszraczylo/git-velocity" class="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100">

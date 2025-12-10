@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://img.icons8.com/fluency/96/rocket.png" alt="Git Velocity Logo" width="96" height="96"/>
+  <img src="docs/git-velocity-logo.png" alt="Git Velocity Logo" width="200"/>
 </p>
 
 <h1 align="center">Git Velocity</h1>
@@ -160,14 +160,23 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Run Git Velocity Analysis
-        uses: lukaszraczylo/git-velocity/.github/actions/git-velocity@main
+        uses: lukaszraczylo/git-velocity@v1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           config_file: '.git-velocity.yaml'
           output_dir: './velocity-report'
-          deploy_gh_pages: 'true'
-          upload_artifact: 'true'
-          artifact_name: 'velocity-dashboard'
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: velocity-dashboard
+          path: ./velocity-report
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./velocity-report
 ```
 
 ### Action Inputs
@@ -177,15 +186,15 @@ jobs:
 | `github_token` | GitHub token for API access | **Required** |
 | `config_file` | Path to configuration file | `.git-velocity.yaml` |
 | `output_dir` | Output directory for dashboard | `./dist` |
-| `deploy_gh_pages` | Deploy to GitHub Pages | `false` |
-| `upload_artifact` | Upload as workflow artifact | `true` |
-| `artifact_name` | Name for the artifact | `git-velocity-dashboard` |
+| `verbose` | Enable verbose output | `false` |
 
 ### Action Outputs
 
 | Output | Description |
 |--------|-------------|
 | `output_dir` | Path to the generated dashboard |
+
+> **Note**: The action runs as a Docker container for fast execution. Use separate steps for artifact upload and GitHub Pages deployment as shown in the example above.
 
 ## 🏆 Achievements
 

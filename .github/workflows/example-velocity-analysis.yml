@@ -10,7 +10,7 @@ jobs:
   analyze:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       pages: write
       id-token: write
 
@@ -19,11 +19,22 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Run Git Velocity Analysis
-        uses: lukaszraczylo/git-velocity/.github/actions/git-velocity@main
+        uses: lukaszraczylo/git-velocity@v1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           config_file: '.git-velocity.yaml'
           output_dir: './dist'
-          deploy_gh_pages: 'true'
-          upload_artifact: 'true'
-          artifact_name: 'velocity-dashboard'
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: velocity-dashboard
+          path: ./dist
+          retention-days: 30
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          force_orphan: true
