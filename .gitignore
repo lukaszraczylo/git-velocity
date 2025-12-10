@@ -2,7 +2,7 @@ node_modules/
 git-velocity
 .repos/
 .cache/
-dist/
+/dist/
 web/dist/
 web/public/data
 config.yaml
