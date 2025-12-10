@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/git-velocity-logo.png" alt="Git Velocity Logo" width="200"/>
+  <img src="docs/git-velocity-logo.png" alt="Git Velocity Logo" width="400"/>
 </p>
 
 <h1 align="center">Git Velocity</h1>
@@ -154,6 +154,11 @@ on:
     - cron: '0 0 * * 1'  # Weekly on Monday
   workflow_dispatch:      # Manual trigger
 
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
 jobs:
   analyze:
     runs-on: ubuntu-latest
@@ -162,22 +167,35 @@ jobs:
 
       - name: Run Git Velocity Analysis
         uses: lukaszraczylo/git-velocity@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           config_file: '.git-velocity.yaml'
           output_dir: './velocity-report'
 
+      # Fix permissions - Docker container runs as root
+      - name: Fix permissions
+        run: sudo chown -R $USER:$USER ./velocity-report
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-pages-artifact@v3
         with:
-          name: velocity-dashboard
           path: ./velocity-report
 
+  deploy:
+    runs-on: ubuntu-latest
+    needs: analyze
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
       - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./velocity-report
+        id: deployment
+        uses: actions/deploy-pages@v4
 ```
 
 ### Action Inputs
@@ -195,7 +213,10 @@ jobs:
 |--------|-------------|
 | `output_dir` | Path to the generated dashboard |
 
-> **Note**: The action runs as a Docker container for fast execution. Use separate steps for artifact upload and GitHub Pages deployment as shown in the example above.
+> **Important**: The action runs as a Docker container. Note the following:
+> - Your config file **must** include the `auth` section with `github_token: "${GITHUB_TOKEN}"` - the action input does not automatically populate the config
+> - You must set the `GITHUB_TOKEN` environment variable on the action step (in addition to the `github_token` input)
+> - The "Fix permissions" step is required because the Docker container runs as root, which causes permission errors when uploading artifacts
 
 ## 🏆 Achievements
 
