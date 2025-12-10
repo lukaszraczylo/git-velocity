@@ -1,0 +1,9 @@
+node_modules/
+git-velocity
+.repos/
+.cache/
+dist/
+web/dist/
+web/public/data
+config.yaml
+.claude

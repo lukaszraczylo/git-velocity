@@ -1,0 +1,29 @@
+name: Git Velocity Analysis
+
+on:
+  schedule:
+    # Run weekly on Monday at 00:00 UTC
+    - cron: '0 0 * * 1'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run Git Velocity Analysis
+        uses: lukaszraczylo/git-velocity/.github/actions/git-velocity@main
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          config_file: '.git-velocity.yaml'
+          output_dir: './dist'
+          deploy_gh_pages: 'true'
+          upload_artifact: 'true'
+          artifact_name: 'velocity-dashboard'

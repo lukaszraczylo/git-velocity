@@ -1,0 +1,78 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  .glass {
+    @apply bg-white/70 dark:bg-gray-900/70 backdrop-blur-md border border-white/20 dark:border-white/10;
+  }
+
+  .gradient-text {
+    @apply bg-gradient-to-r from-primary-400 to-accent-400 bg-clip-text text-transparent;
+  }
+
+  .shadow-modern {
+    box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.15);
+  }
+
+  .dark .shadow-modern {
+    box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.4);
+  }
+
+  .score-card {
+    @apply bg-gradient-to-r from-primary-400/10 to-accent-400/10 border border-primary-400/20;
+  }
+
+  .dark .score-card {
+    @apply from-primary-400/5 to-accent-400/5 border-primary-400/10;
+  }
+
+  .rank-1 {
+    @apply bg-gradient-to-r from-yellow-400 to-amber-500;
+  }
+
+  .rank-2 {
+    @apply bg-gradient-to-r from-slate-400 to-slate-500;
+  }
+
+  .rank-3 {
+    @apply bg-gradient-to-r from-amber-600 to-amber-700;
+  }
+
+  .achievement-badge {
+    @apply inline-flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-r from-primary-400 to-accent-400 text-white shadow-md;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center px-6 py-3 bg-gradient-to-r from-primary-500 to-accent-500 text-white font-medium rounded-lg hover:from-primary-600 hover:to-accent-600 transition shadow-modern;
+  }
+
+  .card {
+    @apply glass rounded-xl p-6 shadow-modern;
+  }
+
+  .nav-link {
+    @apply text-gray-700 dark:text-gray-200 hover:text-primary-500 dark:hover:text-primary-400 transition;
+  }
+
+  .nav-link-active {
+    @apply text-primary-500 font-medium;
+  }
+}
+
+@layer utilities {
+  .animate-fade-in-up {
+    animation: fadeInUp 0.6s ease-out;
+  }
+
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}

@@ -1,0 +1,92 @@
+version: 2
+
+before:
+  hooks:
+    - go mod tidy
+    - go generate ./...
+
+builds:
+  - id: git-velocity
+    main: ./cmd/git-velocity
+    binary: git-velocity
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X github.com/lukaszraczylo/git-velocity/pkg/version.Version={{.Version}}
+      - -X github.com/lukaszraczylo/git-velocity/pkg/version.Commit={{.Commit}}
+      - -X github.com/lukaszraczylo/git-velocity/pkg/version.BuildDate={{.Date}}
+
+archives:
+  - id: git-velocity
+    formats: [tar.gz]
+    name_template: "git-velocity-{{ .Os }}-{{ .Arch }}"
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    files:
+      - LICENSE
+      - README.md
+      - config.example.yaml
+
+checksum:
+  name_template: "git-velocity-checksums.txt"
+  algorithm: sha256
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^Merge'
+      - '^WIP'
+      - '^Update go.mod'
+      - '^chore:'
+
+release:
+  github:
+    owner: lukaszraczylo
+    name: git-velocity
+  name_template: "v{{.Version}}"
+  draft: false
+  prerelease: auto
+
+dockers_v2:
+  - images:
+      - "ghcr.io/lukaszraczylo/git-velocity"
+    tags:
+      - "{{ .Version }}"
+      - "latest"
+      - "v1"
+    platforms:
+      - linux/amd64
+      - linux/arm64
+    dockerfile: Dockerfile
+    extra_files:
+      - config.example.yaml
+
+homebrew_casks:
+  - name: git-velocity
+    repository:
+      owner: lukaszraczylo
+      name: homebrew-taps
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
+    directory: Casks
+    homepage: https://github.com/lukaszraczylo/git-velocity
+    description: "Developer velocity metrics analyzer with gamification dashboards"
+    license: MIT
+    hooks:
+      post:
+        install: |
+          if OS.mac?
+            system_command "/usr/bin/xattr",
+                           args: ["-dr", "com.apple.quarantine", "#{staged_path}/git-velocity"]
+          end

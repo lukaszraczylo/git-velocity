@@ -1,0 +1,136 @@
+# Git Velocity Configuration Example
+# Copy this file to .git-velocity.yaml and customize for your needs
+
+version: "1.0"
+
+# Authentication (one method required)
+auth:
+  # Option 1: Personal Access Token (simplest)
+  github_token: "${GITHUB_TOKEN}"
+
+  # Option 2: GitHub App (for organizations/enterprises)
+  # github_app:
+  #   app_id: 123456
+  #   installation_id: 12345678
+  #   private_key_path: "/path/to/private-key.pem"
+  #   # OR inline base64-encoded key:
+  #   # private_key: "base64-encoded-private-key"
+
+# Repositories to analyze
+repositories:
+  # Explicit repository
+  - owner: "your-org"
+    name: "your-repo"
+
+  # Multiple repos
+  - owner: "your-org"
+    name: "another-repo"
+
+  # Pattern matching (all repos in org matching pattern)
+  # - owner: "your-org"
+  #   pattern: "backend-*"
+
+# Date range for analysis (optional)
+# Supports both absolute dates and relative dates
+date_range:
+  # Absolute date format: YYYY-MM-DD
+  # start: "2024-01-01"
+
+  # Relative date formats:
+  #   -Nd  = N days ago    (e.g., -90d = 90 days ago)
+  #   -Nw  = N weeks ago   (e.g., -2w = 2 weeks ago)
+  #   -Nm  = N months ago  (e.g., -3m = 3 months ago)
+  #   -Ny  = N years ago   (e.g., -1y = 1 year ago)
+  start: "-90d"           # Analyze last 90 days
+  end: ""                 # Empty = now
+
+# Time granularity for metrics aggregation
+granularity:
+  - daily
+  - weekly
+  - monthly
+
+# Custom time periods (optional)
+# custom_periods:
+#   - name: "Q1 2024"
+#     start: "2024-01-01"
+#     end: "2024-03-31"
+#   - name: "Q2 2024"
+#     start: "2024-04-01"
+#     end: "2024-06-30"
+
+# Team definitions (optional)
+teams:
+  - name: "Backend Team"
+    members:
+      - "dev1"
+      - "dev2"
+      - "dev3"
+    color: "#3B82F6"  # Blue
+
+  - name: "Frontend Team"
+    members:
+      - "dev4"
+      - "dev5"
+    color: "#10B981"  # Green
+
+  # - name: "DevOps Team"
+  #   members:
+  #     - "devops1"
+  #   color: "#F59E0B"  # Yellow
+
+# Gamification scoring configuration
+scoring:
+  enabled: true
+
+  # Point values for different activities
+  points:
+    commit: 10
+    commit_with_tests: 15
+    lines_added: 0.1
+    lines_deleted: 0.05
+    pr_opened: 25
+    pr_merged: 50
+    pr_reviewed: 30
+    review_comment: 5
+    issue_opened: 15
+    issue_closed: 20
+    fast_review_1h: 50    # Review response under 1 hour
+    fast_review_4h: 25    # Review response under 4 hours
+    fast_review_24h: 10   # Review response under 24 hours
+
+  # Achievement badges (optional, uses defaults if not specified)
+  # achievements:
+  #   - id: "custom-achievement"
+  #     name: "Custom Badge"
+  #     description: "Earned for custom condition"
+  #     icon: "fa-star"
+  #     condition:
+  #       type: "commit_count"  # commit_count, pr_opened_count, review_count, etc.
+  #       threshold: 100
+
+# Output configuration
+output:
+  directory: "./dist"
+  format:
+    - html
+    - json
+  deploy:
+    gh_pages: true
+    artifact: true
+
+# Caching configuration
+cache:
+  enabled: true
+  directory: "./.cache"
+  ttl: "24h"
+
+# Advanced options
+options:
+  concurrent_requests: 5  # Max parallel API requests (1-20)
+  include_bots: false     # Include bot accounts in metrics
+  bot_patterns:           # Patterns to identify bot accounts
+    - "*[bot]"
+    - "dependabot*"
+    - "renovate*"
+    - "github-actions*"
