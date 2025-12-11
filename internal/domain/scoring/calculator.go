@@ -118,6 +118,7 @@ func (c *Calculator) Calculate(metrics *models.GlobalMetrics) *models.GlobalMetr
 	// Update the metrics
 	metrics.Leaderboard = leaderboard
 	metrics.TopAchievers = topAchievers
+	metrics.Contributors = contributors // Update global contributors with scored data
 
 	// Calculate per-repository scores (based on repo-specific metrics, not global)
 	for i := range metrics.Repositories {

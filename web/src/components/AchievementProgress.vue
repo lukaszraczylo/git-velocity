@@ -226,10 +226,10 @@ const progressItems = computed(() => {
     })
   }
 
-  // Sort by progress (closest to completion first)
+  // Sort by progress descending (closest to next tier first - highest % complete)
   results.sort((a, b) => b.progress - a.progress)
 
-  return results.slice(0, props.maxDisplay)
+  return results
 })
 
 // Get count of remaining achievements (all unearned across all types)

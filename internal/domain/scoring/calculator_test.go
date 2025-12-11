@@ -98,6 +98,108 @@ func TestCalculator_BasicScoring(t *testing.T) {
 	assert.Equal(t, 840, entry.Score)
 }
 
+func TestCalculator_GlobalContributorsPopulatedWithScores(t *testing.T) {
+	t.Parallel()
+
+	cfg := config.DefaultConfig()
+	cfg.Scoring.Enabled = true
+	cfg.Scoring.Points = config.PointsConfig{
+		Commit:        10,
+		PROpened:      25,
+		PRMerged:      50,
+		PRReviewed:    30,
+		ReviewComment: 5,
+		LinesAdded:    0.1,
+		LinesDeleted:  0.05,
+	}
+	calc := NewCalculator(cfg)
+
+	// Contributor appears in multiple repos with different stats
+	metrics := &models.GlobalMetrics{
+		Repositories: []models.RepositoryMetrics{
+			{
+				FullName: "owner/repo1",
+				Contributors: []models.ContributorMetrics{
+					{
+						Login:       "alice",
+						Name:        "Alice",
+						CommitCount: 50,
+						PRsOpened:   5,
+						PRsMerged:   3,
+					},
+					{
+						Login:       "bob",
+						Name:        "Bob",
+						CommitCount: 20,
+						PRsOpened:   2,
+					},
+				},
+			},
+			{
+				FullName: "owner/repo2",
+				Contributors: []models.ContributorMetrics{
+					{
+						Login:       "alice",
+						Name:        "Alice",
+						CommitCount: 30, // Additional commits in second repo
+						PRsOpened:   3,
+						PRsMerged:   2,
+					},
+				},
+			},
+		},
+	}
+
+	result := calc.Calculate(metrics)
+
+	// Verify metrics.Contributors is populated
+	require.NotEmpty(t, result.Contributors, "metrics.Contributors should be populated")
+	require.Len(t, result.Contributors, 2, "Should have 2 unique contributors")
+
+	// Find alice in Contributors
+	var alice *models.ContributorMetrics
+	for i := range result.Contributors {
+		if result.Contributors[i].Login == "alice" {
+			alice = &result.Contributors[i]
+			break
+		}
+	}
+	require.NotNil(t, alice, "Alice should be in Contributors")
+
+	// Verify alice has AGGREGATED stats
+	assert.Equal(t, 80, alice.CommitCount, "Alice should have aggregated commits (50+30)")
+	assert.Equal(t, 8, alice.PRsOpened, "Alice should have aggregated PRs opened (5+3)")
+	assert.Equal(t, 5, alice.PRsMerged, "Alice should have aggregated PRs merged (3+2)")
+
+	// Verify alice has a calculated score with breakdown
+	assert.Greater(t, alice.Score.Total, 0, "Alice should have a calculated score")
+	assert.Greater(t, alice.Score.Breakdown.Commits, 0, "Score breakdown should have commits")
+	assert.Greater(t, alice.Score.Breakdown.PRs, 0, "Score breakdown should have PRs")
+
+	// Verify score calculation:
+	// Commits: 80 * 10 = 800
+	// PRs: 8 * 25 + 5 * 50 = 200 + 250 = 450
+	// Total: 800 + 450 = 1250
+	assert.Equal(t, 800, alice.Score.Breakdown.Commits, "Commit points should be 80 * 10 = 800")
+	assert.Equal(t, 450, alice.Score.Breakdown.PRs, "PR points should be 8*25 + 5*50 = 450")
+	assert.Equal(t, 1250, alice.Score.Total, "Total score should be 1250")
+
+	// Verify rank is assigned
+	assert.Equal(t, 1, alice.Score.Rank, "Alice should be rank 1 (highest scorer)")
+
+	// Verify bob also has scores
+	var bob *models.ContributorMetrics
+	for i := range result.Contributors {
+		if result.Contributors[i].Login == "bob" {
+			bob = &result.Contributors[i]
+			break
+		}
+	}
+	require.NotNil(t, bob, "Bob should be in Contributors")
+	assert.Greater(t, bob.Score.Total, 0, "Bob should have a calculated score")
+	assert.Equal(t, 2, bob.Score.Rank, "Bob should be rank 2")
+}
+
 func TestCalculator_FastReviewBonus(t *testing.T) {
 	t.Parallel()
 

@@ -125,11 +125,12 @@ type TeamMetrics struct {
 
 // GlobalMetrics holds metrics aggregated across all repositories
 type GlobalMetrics struct {
-	Period       Period              `json:"period"`
-	Repositories []RepositoryMetrics `json:"repositories"`
-	Teams        []TeamMetrics       `json:"teams"`
-	Leaderboard  []LeaderboardEntry  `json:"leaderboard"`
-	TopAchievers map[string]string   `json:"top_achievers"` // category -> login
+	Period       Period               `json:"period"`
+	Repositories []RepositoryMetrics  `json:"repositories"`
+	Contributors []ContributorMetrics `json:"contributors"` // Aggregated across all repos
+	Teams        []TeamMetrics        `json:"teams"`
+	Leaderboard  []LeaderboardEntry   `json:"leaderboard"`
+	TopAchievers map[string]string    `json:"top_achievers"` // category -> login
 
 	// Summary stats
 	TotalContributors int `json:"total_contributors"`

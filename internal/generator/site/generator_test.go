@@ -254,17 +254,14 @@ func TestGenerator_GenerateContributorJSON(t *testing.T) {
 	gen, err := NewGenerator(tempDir, cfg)
 	require.NoError(t, err)
 
+	// Generator now uses global Contributors, not per-repo Contributors
 	metrics := &models.GlobalMetrics{
-		Repositories: []models.RepositoryMetrics{
+		Contributors: []models.ContributorMetrics{
 			{
-				Contributors: []models.ContributorMetrics{
-					{
-						Login:       "john-doe",
-						Name:        "John Doe",
-						CommitCount: 50,
-						PRsOpened:   10,
-					},
-				},
+				Login:       "john-doe",
+				Name:        "John Doe",
+				CommitCount: 50,
+				PRsOpened:   10,
 			},
 		},
 	}
@@ -287,33 +284,43 @@ func TestGenerator_GenerateContributorJSON(t *testing.T) {
 	assert.Equal(t, 10, result.PRsOpened)
 }
 
-func TestGenerator_ContributorDeduplication(t *testing.T) {
+func TestGenerator_UsesGlobalContributorsNotPerRepo(t *testing.T) {
 	tempDir := t.TempDir()
 
 	cfg := config.DefaultConfig()
 	gen, err := NewGenerator(tempDir, cfg)
 	require.NoError(t, err)
 
-	// Same contributor in multiple repos
+	// Same contributor in multiple repos with different per-repo stats
+	// But GlobalMetrics.Contributors should have AGGREGATED stats
 	metrics := &models.GlobalMetrics{
+		// Per-repo data (used for repository-specific pages)
 		Repositories: []models.RepositoryMetrics{
 			{
+				Owner: "org",
+				Name:  "repo1",
 				Contributors: []models.ContributorMetrics{
-					{Login: "user1", CommitCount: 50},
+					{Login: "user1", CommitCount: 50, PRsOpened: 5},
 				},
 			},
 			{
+				Owner: "org",
+				Name:  "repo2",
 				Contributors: []models.ContributorMetrics{
-					{Login: "user1", CommitCount: 75}, // Same user, different count
+					{Login: "user1", CommitCount: 75, PRsOpened: 10}, // Same user, different count
 				},
 			},
+		},
+		// Global aggregated data (this is what the generator should use for contributor files)
+		Contributors: []models.ContributorMetrics{
+			{Login: "user1", CommitCount: 125, PRsOpened: 15}, // Sum: 50+75=125, 5+10=15
 		},
 	}
 
 	err = gen.Generate(metrics)
 	require.NoError(t, err)
 
-	// Should only have one contributor file (first one seen)
+	// Contributor file should have AGGREGATED data from GlobalMetrics.Contributors
 	contributorPath := filepath.Join(tempDir, "data", "contributors", "user1.json")
 	data, err := os.ReadFile(contributorPath)
 	require.NoError(t, err)
@@ -322,8 +329,84 @@ func TestGenerator_ContributorDeduplication(t *testing.T) {
 	err = json.Unmarshal(data, &result)
 	require.NoError(t, err)
 
-	// Should be the first one (50 commits)
-	assert.Equal(t, 50, result.CommitCount)
+	// Should be the aggregated count (125 commits, 15 PRs), NOT 50 or 75
+	assert.Equal(t, 125, result.CommitCount, "Should use aggregated commits from GlobalMetrics.Contributors")
+	assert.Equal(t, 15, result.PRsOpened, "Should use aggregated PRs from GlobalMetrics.Contributors")
+}
+
+func TestGenerator_MultipleContributorsAcrossRepos(t *testing.T) {
+	tempDir := t.TempDir()
+
+	cfg := config.DefaultConfig()
+	gen, err := NewGenerator(tempDir, cfg)
+	require.NoError(t, err)
+
+	// Multiple contributors across multiple repos with aggregated global data
+	metrics := &models.GlobalMetrics{
+		Repositories: []models.RepositoryMetrics{
+			{
+				Owner: "org",
+				Name:  "repo1",
+				Contributors: []models.ContributorMetrics{
+					{Login: "alice", CommitCount: 100, LinesAdded: 5000},
+					{Login: "bob", CommitCount: 50, LinesAdded: 2000},
+				},
+			},
+			{
+				Owner: "org",
+				Name:  "repo2",
+				Contributors: []models.ContributorMetrics{
+					{Login: "alice", CommitCount: 50, LinesAdded: 3000},
+					{Login: "charlie", CommitCount: 75, LinesAdded: 4000},
+				},
+			},
+		},
+		// Aggregated global contributors
+		Contributors: []models.ContributorMetrics{
+			{Login: "alice", CommitCount: 150, LinesAdded: 8000},  // 100+50, 5000+3000
+			{Login: "bob", CommitCount: 50, LinesAdded: 2000},     // Only in repo1
+			{Login: "charlie", CommitCount: 75, LinesAdded: 4000}, // Only in repo2
+		},
+	}
+
+	err = gen.Generate(metrics)
+	require.NoError(t, err)
+
+	// Verify alice has aggregated data
+	alicePath := filepath.Join(tempDir, "data", "contributors", "alice.json")
+	aliceData, err := os.ReadFile(alicePath)
+	require.NoError(t, err)
+
+	var aliceResult models.ContributorMetrics
+	err = json.Unmarshal(aliceData, &aliceResult)
+	require.NoError(t, err)
+
+	assert.Equal(t, 150, aliceResult.CommitCount, "Alice should have aggregated commits")
+	assert.Equal(t, 8000, aliceResult.LinesAdded, "Alice should have aggregated lines added")
+
+	// Verify bob exists with his data
+	bobPath := filepath.Join(tempDir, "data", "contributors", "bob.json")
+	bobData, err := os.ReadFile(bobPath)
+	require.NoError(t, err)
+
+	var bobResult models.ContributorMetrics
+	err = json.Unmarshal(bobData, &bobResult)
+	require.NoError(t, err)
+
+	assert.Equal(t, 50, bobResult.CommitCount)
+	assert.Equal(t, 2000, bobResult.LinesAdded)
+
+	// Verify charlie exists with his data
+	charliePath := filepath.Join(tempDir, "data", "contributors", "charlie.json")
+	charlieData, err := os.ReadFile(charliePath)
+	require.NoError(t, err)
+
+	var charlieResult models.ContributorMetrics
+	err = json.Unmarshal(charlieData, &charlieResult)
+	require.NoError(t, err)
+
+	assert.Equal(t, 75, charlieResult.CommitCount)
+	assert.Equal(t, 4000, charlieResult.LinesAdded)
 }
 
 func TestGenerator_NoTeamsDoesNotCreateTeamDir(t *testing.T) {
@@ -466,6 +549,12 @@ func TestGenerator_GenerateWithFullMetrics(t *testing.T) {
 				},
 			},
 		},
+		// Global aggregated contributors (used for individual contributor files)
+		Contributors: []models.ContributorMetrics{
+			{Login: "alice", Name: "Alice", CommitCount: 150},     // 100+50 aggregated
+			{Login: "bob", Name: "Bob", CommitCount: 200},         // Only in repo1
+			{Login: "charlie", Name: "Charlie", CommitCount: 150}, // Only in repo2
+		},
 		Teams: []models.TeamMetrics{
 			{
 				Name:       "Core Team",
@@ -499,4 +588,15 @@ func TestGenerator_GenerateWithFullMetrics(t *testing.T) {
 		_, err := os.Stat(path)
 		assert.NoError(t, err, "Expected file to exist: %s", path)
 	}
+
+	// Verify alice's file has aggregated data (150 commits, not 100 from first repo)
+	alicePath := filepath.Join(tempDir, "data", "contributors", "alice.json")
+	aliceData, err := os.ReadFile(alicePath)
+	require.NoError(t, err)
+
+	var aliceResult models.ContributorMetrics
+	err = json.Unmarshal(aliceData, &aliceResult)
+	require.NoError(t, err)
+
+	assert.Equal(t, 150, aliceResult.CommitCount, "Alice should have aggregated commits from global Contributors")
 }

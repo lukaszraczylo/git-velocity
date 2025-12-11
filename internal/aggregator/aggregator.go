@@ -562,6 +562,7 @@ func (a *Aggregator) Aggregate(data *models.RawData, dateRange *config.ParsedDat
 	return &models.GlobalMetrics{
 		Period:                      period,
 		Repositories:                repositories,
+		Contributors:                contributors,
 		Teams:                       teams,
 		TotalContributors:           len(contributors),
 		TotalCommits:                totalCommits,

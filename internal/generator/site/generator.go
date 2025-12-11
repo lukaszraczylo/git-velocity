@@ -106,23 +106,15 @@ func (g *Generator) generateDataFiles(metrics *models.GlobalMetrics) error {
 		}
 	}
 
-	// Per-contributor data
-	contributorsSeen := make(map[string]bool)
+	// Per-contributor data (use aggregated global contributors, not per-repo)
 	contributorDir := filepath.Join(dataDir, "contributors")
 	if err := os.MkdirAll(contributorDir, 0750); err != nil {
 		return err
 	}
 
-	for _, repo := range metrics.Repositories {
-		for _, contributor := range repo.Contributors {
-			if contributorsSeen[contributor.Login] {
-				continue
-			}
-			contributorsSeen[contributor.Login] = true
-
-			if err := writeJSON(filepath.Join(contributorDir, contributor.Login+".json"), contributor); err != nil {
-				return err
-			}
+	for _, contributor := range metrics.Contributors {
+		if err := writeJSON(filepath.Join(contributorDir, contributor.Login+".json"), contributor); err != nil {
+			return err
 		}
 	}
 
