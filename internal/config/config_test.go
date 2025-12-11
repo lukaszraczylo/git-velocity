@@ -825,7 +825,7 @@ func TestDefaultConfig(t *testing.T) {
 	assert.True(t, cfg.Scoring.Enabled)
 	assert.Equal(t, 10, cfg.Scoring.Points.Commit)
 	assert.Equal(t, 50, cfg.Scoring.Points.PRMerged)
-	assert.NotEmpty(t, cfg.Scoring.Achievements)
+	assert.NotEmpty(t, cfg.Scoring.GetAchievements())
 	assert.Equal(t, "./dist", cfg.Output.Directory)
 	assert.True(t, cfg.Cache.Enabled)
 	assert.Equal(t, "./.cache", cfg.Cache.Directory)

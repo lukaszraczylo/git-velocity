@@ -233,61 +233,8 @@ func TestValidate(t *testing.T) {
 			expectError: true,
 			errorField:  "teams[0].members",
 		},
-		{
-			name: "duplicate achievement id",
-			config: &Config{
-				Auth: AuthConfig{
-					GithubToken: "ghp_test123",
-				},
-				Repositories: []RepositoryConfig{
-					{Owner: "testorg", Name: "testrepo"},
-				},
-				Scoring: ScoringConfig{
-					Enabled: true,
-					Achievements: []AchievementConfig{
-						{ID: "test-achievement", Name: "Test 1", Condition: AchievementCondition{Type: "commit_count", Threshold: 10}},
-						{ID: "test-achievement", Name: "Test 2", Condition: AchievementCondition{Type: "commit_count", Threshold: 20}},
-					},
-				},
-				Granularity: []string{"daily"},
-				Output: OutputConfig{
-					Directory: "./dist",
-					Format:    []string{"html"},
-				},
-				Options: OptionsConfig{
-					ConcurrentRequests: 5,
-				},
-			},
-			expectError: true,
-			errorField:  "scoring.achievements[1].id",
-		},
-		{
-			name: "invalid achievement condition type",
-			config: &Config{
-				Auth: AuthConfig{
-					GithubToken: "ghp_test123",
-				},
-				Repositories: []RepositoryConfig{
-					{Owner: "testorg", Name: "testrepo"},
-				},
-				Scoring: ScoringConfig{
-					Enabled: true,
-					Achievements: []AchievementConfig{
-						{ID: "test", Name: "Test", Condition: AchievementCondition{Type: "invalid_type", Threshold: 10}},
-					},
-				},
-				Granularity: []string{"daily"},
-				Output: OutputConfig{
-					Directory: "./dist",
-					Format:    []string{"html"},
-				},
-				Options: OptionsConfig{
-					ConcurrentRequests: 5,
-				},
-			},
-			expectError: true,
-			errorField:  "scoring.achievements[0].condition.type",
-		},
+		// Note: Achievement validation tests removed because achievements are now hardcoded
+		// and not user-configurable to prevent manipulation
 		{
 			name: "missing output directory",
 			config: &Config{

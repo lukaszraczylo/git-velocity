@@ -290,40 +290,7 @@ func TestCalculator_Achievements(t *testing.T) {
 
 	cfg := config.DefaultConfig()
 	cfg.Scoring.Enabled = true
-	cfg.Scoring.Achievements = []config.AchievementConfig{
-		{
-			ID:   "commit-10",
-			Name: "10 Commits",
-			Condition: config.AchievementCondition{
-				Type:      "commit_count",
-				Threshold: 10,
-			},
-		},
-		{
-			ID:   "pr-master",
-			Name: "PR Master",
-			Condition: config.AchievementCondition{
-				Type:      "pr_opened_count",
-				Threshold: 5,
-			},
-		},
-		{
-			ID:   "reviewer",
-			Name: "Reviewer",
-			Condition: config.AchievementCondition{
-				Type:      "review_count",
-				Threshold: 10,
-			},
-		},
-		{
-			ID:   "speed-demon",
-			Name: "Speed Demon",
-			Condition: config.AchievementCondition{
-				Type:      "avg_review_time_hours",
-				Threshold: 1.0,
-			},
-		},
-	}
+	// Achievements are now hardcoded, no need to set them
 	calc := NewCalculator(cfg)
 
 	metrics := &models.GlobalMetrics{
@@ -333,10 +300,10 @@ func TestCalculator_Achievements(t *testing.T) {
 				Contributors: []models.ContributorMetrics{
 					{
 						Login:                   "user1",
-						CommitCount:             15,
-						PRsOpened:               6,
-						ReviewsGiven:            5,
-						AvgReviewTime:           0.5,
+						CommitCount:             15,  // Should earn commit-1, commit-10
+						PRsOpened:               6,   // Should earn pr-1
+						ReviewsGiven:            5,   // Should earn review-1
+						AvgReviewTime:           0.5, // Should earn review-time-1h, review-time-4h, review-time-24h
 						RepositoriesContributed: []string{"owner/repo"},
 					},
 				},
@@ -347,12 +314,16 @@ func TestCalculator_Achievements(t *testing.T) {
 	result := calc.Calculate(metrics)
 
 	contributor := result.Repositories[0].Contributors[0]
-	// Should have commit-10, pr-master, and speed-demon
-	// Should NOT have reviewer (only 5 reviews, need 10)
+	// Should have hardcoded achievements based on thresholds
+	assert.Contains(t, contributor.Achievements, "commit-1")
 	assert.Contains(t, contributor.Achievements, "commit-10")
-	assert.Contains(t, contributor.Achievements, "pr-master")
-	assert.Contains(t, contributor.Achievements, "speed-demon")
-	assert.NotContains(t, contributor.Achievements, "reviewer")
+	assert.Contains(t, contributor.Achievements, "pr-1")
+	assert.Contains(t, contributor.Achievements, "review-1")
+	assert.Contains(t, contributor.Achievements, "review-time-1h") // 0.5h < 1h threshold
+	// Should NOT have commit-50 (only 15 commits)
+	assert.NotContains(t, contributor.Achievements, "commit-50")
+	// Should NOT have review-10 (only 5 reviews)
+	assert.NotContains(t, contributor.Achievements, "review-10")
 }
 
 func TestCalculator_AllAchievementTypes(t *testing.T) {
@@ -360,18 +331,7 @@ func TestCalculator_AllAchievementTypes(t *testing.T) {
 
 	cfg := config.DefaultConfig()
 	cfg.Scoring.Enabled = true
-	cfg.Scoring.Achievements = []config.AchievementConfig{
-		{ID: "commits", Condition: config.AchievementCondition{Type: "commit_count", Threshold: 10}},
-		{ID: "prs-opened", Condition: config.AchievementCondition{Type: "pr_opened_count", Threshold: 5}},
-		{ID: "prs-merged", Condition: config.AchievementCondition{Type: "pr_merged_count", Threshold: 3}},
-		{ID: "reviews", Condition: config.AchievementCondition{Type: "review_count", Threshold: 8}},
-		{ID: "comments", Condition: config.AchievementCondition{Type: "comment_count", Threshold: 20}},
-		{ID: "lines-added", Condition: config.AchievementCondition{Type: "lines_added", Threshold: 1000}},
-		{ID: "lines-deleted", Condition: config.AchievementCondition{Type: "lines_deleted", Threshold: 500}},
-		{ID: "fast-review", Condition: config.AchievementCondition{Type: "avg_review_time_hours", Threshold: 2}},
-		{ID: "multi-repo", Condition: config.AchievementCondition{Type: "repo_count", Threshold: 2}},
-		{ID: "team-player", Condition: config.AchievementCondition{Type: "unique_reviewees", Threshold: 5}},
-	}
+	// Achievements are now hardcoded
 	calc := NewCalculator(cfg)
 
 	metrics := &models.GlobalMetrics{
@@ -400,18 +360,23 @@ func TestCalculator_AllAchievementTypes(t *testing.T) {
 	result := calc.Calculate(metrics)
 
 	contributor := result.Repositories[0].Contributors[0]
-	// Should have all achievements
-	assert.Len(t, contributor.Achievements, 10)
-	assert.Contains(t, contributor.Achievements, "commits")
-	assert.Contains(t, contributor.Achievements, "prs-opened")
-	assert.Contains(t, contributor.Achievements, "prs-merged")
-	assert.Contains(t, contributor.Achievements, "reviews")
-	assert.Contains(t, contributor.Achievements, "comments")
-	assert.Contains(t, contributor.Achievements, "lines-added")
-	assert.Contains(t, contributor.Achievements, "lines-deleted")
-	assert.Contains(t, contributor.Achievements, "fast-review")
-	assert.Contains(t, contributor.Achievements, "multi-repo")
-	assert.Contains(t, contributor.Achievements, "team-player")
+	// Should have various hardcoded achievements based on thresholds
+	// Check some key achievements are earned
+	assert.Contains(t, contributor.Achievements, "commit-1")
+	assert.Contains(t, contributor.Achievements, "commit-10")
+	assert.Contains(t, contributor.Achievements, "pr-1")
+	assert.Contains(t, contributor.Achievements, "review-1")
+	assert.Contains(t, contributor.Achievements, "review-10")
+	assert.Contains(t, contributor.Achievements, "comment-10")
+	assert.Contains(t, contributor.Achievements, "lines-added-100")
+	assert.Contains(t, contributor.Achievements, "lines-added-1000")
+	assert.Contains(t, contributor.Achievements, "lines-deleted-100")
+	assert.Contains(t, contributor.Achievements, "lines-deleted-500")
+	assert.Contains(t, contributor.Achievements, "review-time-4h") // 1.5h < 4h
+	assert.Contains(t, contributor.Achievements, "repo-2")         // 2 repos
+	assert.Contains(t, contributor.Achievements, "reviewees-3")    // 7 reviewees >= 3
+	// Should have earned multiple achievements (more than 10)
+	assert.Greater(t, len(contributor.Achievements), 10)
 }
 
 func TestCalculator_TopAchievers(t *testing.T) {

@@ -117,60 +117,7 @@ func Validate(cfg *Config) error {
 		// Additional point validations can be added here
 	}
 
-	// Validate achievements
-	achievementIDs := make(map[string]bool)
-	for i, achievement := range cfg.Scoring.Achievements {
-		if achievement.ID == "" {
-			errs = append(errs, ValidationError{
-				Field:   fmt.Sprintf("scoring.achievements[%d].id", i),
-				Message: "achievement ID is required",
-			})
-		}
-		if achievementIDs[achievement.ID] {
-			errs = append(errs, ValidationError{
-				Field:   fmt.Sprintf("scoring.achievements[%d].id", i),
-				Message: fmt.Sprintf("duplicate achievement ID: %s", achievement.ID),
-			})
-		}
-		achievementIDs[achievement.ID] = true
-
-		if achievement.Name == "" {
-			errs = append(errs, ValidationError{
-				Field:   fmt.Sprintf("scoring.achievements[%d].name", i),
-				Message: "achievement name is required",
-			})
-		}
-
-		validConditionTypes := map[string]bool{
-			"commit_count":          true,
-			"pr_opened_count":       true,
-			"pr_merged_count":       true,
-			"review_count":          true,
-			"comment_count":         true,
-			"lines_added":           true,
-			"lines_deleted":         true,
-			"avg_review_time_hours": true,
-			"repo_count":            true,
-			"unique_reviewees":      true,
-			// PR quality metrics
-			"largest_pr_size": true,
-			"small_pr_count":  true,
-			"perfect_prs":     true,
-			// Activity pattern metrics
-			"active_days":      true,
-			"longest_streak":   true,
-			"early_bird_count": true,
-			"night_owl_count":  true,
-			"midnight_count":   true,
-			"weekend_warrior":  true,
-		}
-		if !validConditionTypes[achievement.Condition.Type] {
-			errs = append(errs, ValidationError{
-				Field:   fmt.Sprintf("scoring.achievements[%d].condition.type", i),
-				Message: fmt.Sprintf("invalid condition type: %s", achievement.Condition.Type),
-			})
-		}
-	}
+	// Note: Achievements are hardcoded and not user-configurable to prevent manipulation
 
 	// Validate output
 	if cfg.Output.Directory == "" {

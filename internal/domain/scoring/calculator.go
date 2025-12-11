@@ -164,9 +164,11 @@ func (c *Calculator) calculateScore(cm *models.ContributorMetrics) models.Score 
 	// PR points
 	breakdown.PRs = cm.PRsOpened*points.PROpened + cm.PRsMerged*points.PRMerged
 
-	// Review points (PR reviews and PR review comments)
-	breakdown.Reviews = cm.ReviewsGiven*points.PRReviewed +
-		cm.ReviewComments*points.ReviewComment
+	// Review points (PR reviews)
+	breakdown.Reviews = cm.ReviewsGiven * points.PRReviewed
+
+	// Comment points (PR review comments)
+	breakdown.Comments = cm.ReviewComments * points.ReviewComment
 
 	// Response time bonus
 	if cm.ReviewsGiven > 0 && cm.AvgReviewTime > 0 {
@@ -179,9 +181,12 @@ func (c *Calculator) calculateScore(cm *models.ContributorMetrics) models.Score 
 		}
 	}
 
+	// Out of hours bonus (commits outside 9am-5pm)
+	breakdown.OutOfHours = cm.OutOfHoursCount * points.OutOfHours
+
 	// Calculate total
 	total := breakdown.Commits + breakdown.LineChanges + breakdown.PRs +
-		breakdown.Reviews + breakdown.ResponseBonus + breakdown.Comments
+		breakdown.Reviews + breakdown.ResponseBonus + breakdown.Comments + breakdown.OutOfHours
 
 	return models.Score{
 		Total:     total,
@@ -193,7 +198,7 @@ func (c *Calculator) checkAchievements(cm *models.ContributorMetrics) []string {
 	// Collect ALL earned achievements (including all tiers)
 	var achievements []string
 
-	for _, ach := range c.config.Scoring.Achievements {
+	for _, ach := range c.config.Scoring.GetAchievements() {
 		earned := false
 
 		switch ach.Condition.Type {
@@ -240,6 +245,10 @@ func (c *Calculator) checkAchievements(cm *models.ContributorMetrics) []string {
 			earned = float64(cm.MidnightCount) >= ach.Condition.Threshold
 		case "weekend_warrior":
 			earned = float64(cm.WeekendWarrior) >= ach.Condition.Threshold
+		case "out_of_hours_count":
+			earned = float64(cm.OutOfHoursCount) >= ach.Condition.Threshold
+		case "work_week_streak":
+			earned = float64(cm.WorkWeekStreak) >= ach.Condition.Threshold
 		}
 
 		if earned {

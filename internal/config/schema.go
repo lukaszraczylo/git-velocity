@@ -63,9 +63,13 @@ type TeamConfig struct {
 
 // ScoringConfig holds gamification scoring configuration
 type ScoringConfig struct {
-	Enabled      bool                `yaml:"enabled"`
-	Points       PointsConfig        `yaml:"points"`
-	Achievements []AchievementConfig `yaml:"achievements,omitempty"`
+	Enabled bool         `yaml:"enabled"`
+	Points  PointsConfig `yaml:"points"`
+}
+
+// GetAchievements returns the hardcoded achievements (not configurable to prevent manipulation)
+func (s *ScoringConfig) GetAchievements() []AchievementConfig {
+	return defaultAchievements()
 }
 
 // PointsConfig defines point values for various activities
@@ -83,6 +87,7 @@ type PointsConfig struct {
 	FastReview1h    int     `yaml:"fast_review_1h"`
 	FastReview4h    int     `yaml:"fast_review_4h"`
 	FastReview24h   int     `yaml:"fast_review_24h"`
+	OutOfHours      int     `yaml:"out_of_hours"` // Bonus per commit outside 9am-5pm
 }
 
 // AchievementConfig defines an achievement badge
@@ -176,8 +181,8 @@ func DefaultConfig() *Config {
 				FastReview1h:    50,
 				FastReview4h:    25,
 				FastReview24h:   10,
+				OutOfHours:      2,
 			},
-			Achievements: defaultAchievements(),
 		},
 		Output: OutputConfig{
 			Directory: "./dist",
@@ -207,248 +212,133 @@ func DefaultConfig() *Config {
 	}
 }
 
-// defaultAchievements returns the default achievement badges
+// defaultAchievements returns the hardcoded achievement badges with proper tiers
+// Achievements are not user-configurable to prevent manipulation
 func defaultAchievements() []AchievementConfig {
 	return []AchievementConfig{
-		{
-			ID:          "first-commit",
-			Name:        "First Steps",
-			Description: "Made your first commit",
-			Icon:        "fa-baby",
-			Condition:   AchievementCondition{Type: "commit_count", Threshold: 1},
-		},
-		{
-			ID:          "commit-10",
-			Name:        "Getting Started",
-			Description: "Made 10 commits",
-			Icon:        "fa-seedling",
-			Condition:   AchievementCondition{Type: "commit_count", Threshold: 10},
-		},
-		{
-			ID:          "commit-100",
-			Name:        "Committed",
-			Description: "Made 100 commits",
-			Icon:        "fa-fire",
-			Condition:   AchievementCondition{Type: "commit_count", Threshold: 100},
-		},
-		{
-			ID:          "commit-500",
-			Name:        "Code Machine",
-			Description: "Made 500 commits",
-			Icon:        "fa-robot",
-			Condition:   AchievementCondition{Type: "commit_count", Threshold: 500},
-		},
-		{
-			ID:          "commit-1000",
-			Name:        "Code Warrior",
-			Description: "Made 1000 commits",
-			Icon:        "fa-crown",
-			Condition:   AchievementCondition{Type: "commit_count", Threshold: 1000},
-		},
-		{
-			ID:          "pr-opener",
-			Name:        "PR Pioneer",
-			Description: "Opened your first pull request",
-			Icon:        "fa-code-pull-request",
-			Condition:   AchievementCondition{Type: "pr_opened_count", Threshold: 1},
-		},
-		{
-			ID:          "pr-10",
-			Name:        "Pull Request Pro",
-			Description: "Opened 10 pull requests",
-			Icon:        "fa-code-branch",
-			Condition:   AchievementCondition{Type: "pr_opened_count", Threshold: 10},
-		},
-		{
-			ID:          "pr-50",
-			Name:        "Merge Master",
-			Description: "Opened 50 pull requests",
-			Icon:        "fa-code-merge",
-			Condition:   AchievementCondition{Type: "pr_opened_count", Threshold: 50},
-		},
-		{
-			ID:          "reviewer",
-			Name:        "Code Reviewer",
-			Description: "Reviewed your first pull request",
-			Icon:        "fa-magnifying-glass-chart",
-			Condition:   AchievementCondition{Type: "review_count", Threshold: 1},
-		},
-		{
-			ID:          "reviewer-25",
-			Name:        "Review Regular",
-			Description: "Reviewed 25 pull requests",
-			Icon:        "fa-eye",
-			Condition:   AchievementCondition{Type: "review_count", Threshold: 25},
-		},
-		{
-			ID:          "reviewer-100",
-			Name:        "Review Guru",
-			Description: "Reviewed 100 pull requests",
-			Icon:        "fa-user-graduate",
-			Condition:   AchievementCondition{Type: "review_count", Threshold: 100},
-		},
-		{
-			ID:          "speed-demon",
-			Name:        "Speed Demon",
-			Description: "Average review response under 1 hour",
-			Icon:        "fa-bolt",
-			Condition:   AchievementCondition{Type: "avg_review_time_hours", Threshold: 1},
-		},
-		{
-			ID:          "quick-responder",
-			Name:        "Quick Responder",
-			Description: "Average review response under 4 hours",
-			Icon:        "fa-clock",
-			Condition:   AchievementCondition{Type: "avg_review_time_hours", Threshold: 4},
-		},
-		{
-			ID:          "commentator",
-			Name:        "Commentator",
-			Description: "Left 50 PR review comments",
-			Icon:        "fa-comments",
-			Condition:   AchievementCondition{Type: "comment_count", Threshold: 50},
-		},
-		{
-			ID:          "lines-1000",
-			Name:        "Thousand Lines",
-			Description: "Added 1000 lines of code",
-			Icon:        "fa-layer-group",
-			Condition:   AchievementCondition{Type: "lines_added", Threshold: 1000},
-		},
-		{
-			ID:          "lines-10000",
-			Name:        "Ten Thousand",
-			Description: "Added 10000 lines of code",
-			Icon:        "fa-mountain",
-			Condition:   AchievementCondition{Type: "lines_added", Threshold: 10000},
-		},
-		{
-			ID:          "cleaner",
-			Name:        "Code Cleaner",
-			Description: "Deleted 1000 lines of code",
-			Icon:        "fa-broom",
-			Condition:   AchievementCondition{Type: "lines_deleted", Threshold: 1000},
-		},
-		{
-			ID:          "refactorer",
-			Name:        "Refactoring Champion",
-			Description: "Deleted 10000 lines of code",
-			Icon:        "fa-recycle",
-			Condition:   AchievementCondition{Type: "lines_deleted", Threshold: 10000},
-		},
-		{
-			ID:          "multi-repo",
-			Name:        "Multi-Repo Master",
-			Description: "Contributed to 5 repositories",
-			Icon:        "fa-folder-tree",
-			Condition:   AchievementCondition{Type: "repo_count", Threshold: 5},
-		},
-		{
-			ID:          "team-player",
-			Name:        "Team Player",
-			Description: "Reviewed PRs from 10 different contributors",
-			Icon:        "fa-people-group",
-			Condition:   AchievementCondition{Type: "unique_reviewees", Threshold: 10},
-		},
-		// PR Quality achievements
-		{
-			ID:          "big-pr",
-			Name:        "Heavy Lifter",
-			Description: "Merged a PR with 1000+ lines changed",
-			Icon:        "fa-weight-hanging",
-			Condition:   AchievementCondition{Type: "largest_pr_size", Threshold: 1000},
-		},
-		{
-			ID:          "mega-pr",
-			Name:        "Mega Merge",
-			Description: "Merged a PR with 5000+ lines changed",
-			Icon:        "fa-dumbbell",
-			Condition:   AchievementCondition{Type: "largest_pr_size", Threshold: 5000},
-		},
-		{
-			ID:          "small-pr-10",
-			Name:        "Small PR Advocate",
-			Description: "Merged 10 PRs under 100 lines",
-			Icon:        "fa-compress",
-			Condition:   AchievementCondition{Type: "small_pr_count", Threshold: 10},
-		},
-		{
-			ID:          "small-pr-50",
-			Name:        "Atomic Commits Hero",
-			Description: "Merged 50 PRs under 100 lines",
-			Icon:        "fa-atom",
-			Condition:   AchievementCondition{Type: "small_pr_count", Threshold: 50},
-		},
-		{
-			ID:          "perfect-pr-5",
-			Name:        "Clean Code",
-			Description: "5 PRs merged without changes requested",
-			Icon:        "fa-check-double",
-			Condition:   AchievementCondition{Type: "perfect_prs", Threshold: 5},
-		},
-		{
-			ID:          "perfect-pr-25",
-			Name:        "Flawless",
-			Description: "25 PRs merged without changes requested",
-			Icon:        "fa-gem",
-			Condition:   AchievementCondition{Type: "perfect_prs", Threshold: 25},
-		},
-		// Activity pattern achievements
-		{
-			ID:          "streak-7",
-			Name:        "Week Warrior",
-			Description: "7 day contribution streak",
-			Icon:        "fa-calendar-week",
-			Condition:   AchievementCondition{Type: "longest_streak", Threshold: 7},
-		},
-		{
-			ID:          "streak-30",
-			Name:        "Month Master",
-			Description: "30 day contribution streak",
-			Icon:        "fa-calendar-check",
-			Condition:   AchievementCondition{Type: "longest_streak", Threshold: 30},
-		},
-		{
-			ID:          "early-bird",
-			Name:        "Early Bird",
-			Description: "50 commits before 9am",
-			Icon:        "fa-sun",
-			Condition:   AchievementCondition{Type: "early_bird_count", Threshold: 50},
-		},
-		{
-			ID:          "night-owl",
-			Name:        "Night Owl",
-			Description: "50 commits after 9pm",
-			Icon:        "fa-moon",
-			Condition:   AchievementCondition{Type: "night_owl_count", Threshold: 50},
-		},
-		{
-			ID:          "nosferatu",
-			Name:        "Nosferatu",
-			Description: "25 commits between midnight and 4am",
-			Icon:        "fa-skull",
-			Condition:   AchievementCondition{Type: "midnight_count", Threshold: 25},
-		},
-		{
-			ID:          "weekend-warrior",
-			Name:        "Weekend Warrior",
-			Description: "25 weekend commits",
-			Icon:        "fa-couch",
-			Condition:   AchievementCondition{Type: "weekend_warrior", Threshold: 25},
-		},
-		{
-			ID:          "active-30",
-			Name:        "Consistent Contributor",
-			Description: "Active on 30 different days",
-			Icon:        "fa-chart-line",
-			Condition:   AchievementCondition{Type: "active_days", Threshold: 30},
-		},
-		{
-			ID:          "active-100",
-			Name:        "Dedicated Developer",
-			Description: "Active on 100 different days",
-			Icon:        "fa-fire-flame-curved",
-			Condition:   AchievementCondition{Type: "active_days", Threshold: 100},
-		},
+		// ===== COMMIT COUNT (Tiers: 1, 10, 50, 100, 500, 1000) =====
+		{ID: "commit-1", Name: "First Steps", Description: "Made your first commit", Icon: "fa-baby", Condition: AchievementCondition{Type: "commit_count", Threshold: 1}},
+		{ID: "commit-10", Name: "Getting Started", Description: "Made 10 commits", Icon: "fa-seedling", Condition: AchievementCondition{Type: "commit_count", Threshold: 10}},
+		{ID: "commit-50", Name: "Contributor", Description: "Made 50 commits", Icon: "fa-code", Condition: AchievementCondition{Type: "commit_count", Threshold: 50}},
+		{ID: "commit-100", Name: "Committed", Description: "Made 100 commits", Icon: "fa-fire", Condition: AchievementCondition{Type: "commit_count", Threshold: 100}},
+		{ID: "commit-500", Name: "Code Machine", Description: "Made 500 commits", Icon: "fa-robot", Condition: AchievementCondition{Type: "commit_count", Threshold: 500}},
+		{ID: "commit-1000", Name: "Code Warrior", Description: "Made 1000 commits", Icon: "fa-crown", Condition: AchievementCondition{Type: "commit_count", Threshold: 1000}},
+
+		// ===== PR OPENED (Tiers: 1, 10, 25, 50, 100, 250) =====
+		{ID: "pr-1", Name: "PR Pioneer", Description: "Opened your first pull request", Icon: "fa-code-pull-request", Condition: AchievementCondition{Type: "pr_opened_count", Threshold: 1}},
+		{ID: "pr-10", Name: "PR Regular", Description: "Opened 10 pull requests", Icon: "fa-code-branch", Condition: AchievementCondition{Type: "pr_opened_count", Threshold: 10}},
+		{ID: "pr-25", Name: "PR Pro", Description: "Opened 25 pull requests", Icon: "fa-code-compare", Condition: AchievementCondition{Type: "pr_opened_count", Threshold: 25}},
+		{ID: "pr-50", Name: "Merge Master", Description: "Opened 50 pull requests", Icon: "fa-code-merge", Condition: AchievementCondition{Type: "pr_opened_count", Threshold: 50}},
+		{ID: "pr-100", Name: "PR Champion", Description: "Opened 100 pull requests", Icon: "fa-trophy", Condition: AchievementCondition{Type: "pr_opened_count", Threshold: 100}},
+		{ID: "pr-250", Name: "PR Legend", Description: "Opened 250 pull requests", Icon: "fa-medal", Condition: AchievementCondition{Type: "pr_opened_count", Threshold: 250}},
+
+		// ===== REVIEWS (Tiers: 1, 10, 25, 50, 100, 250) =====
+		{ID: "review-1", Name: "First Review", Description: "Reviewed your first pull request", Icon: "fa-magnifying-glass", Condition: AchievementCondition{Type: "review_count", Threshold: 1}},
+		{ID: "review-10", Name: "Reviewer", Description: "Reviewed 10 pull requests", Icon: "fa-eye", Condition: AchievementCondition{Type: "review_count", Threshold: 10}},
+		{ID: "review-25", Name: "Review Regular", Description: "Reviewed 25 pull requests", Icon: "fa-glasses", Condition: AchievementCondition{Type: "review_count", Threshold: 25}},
+		{ID: "review-50", Name: "Review Expert", Description: "Reviewed 50 pull requests", Icon: "fa-user-check", Condition: AchievementCondition{Type: "review_count", Threshold: 50}},
+		{ID: "review-100", Name: "Review Guru", Description: "Reviewed 100 pull requests", Icon: "fa-user-graduate", Condition: AchievementCondition{Type: "review_count", Threshold: 100}},
+		{ID: "review-250", Name: "Review Master", Description: "Reviewed 250 pull requests", Icon: "fa-award", Condition: AchievementCondition{Type: "review_count", Threshold: 250}},
+
+		// ===== REVIEW COMMENTS (Tiers: 10, 50, 100, 250, 500) =====
+		{ID: "comment-10", Name: "Commentator", Description: "Left 10 PR review comments", Icon: "fa-comment", Condition: AchievementCondition{Type: "comment_count", Threshold: 10}},
+		{ID: "comment-50", Name: "Feedback Giver", Description: "Left 50 PR review comments", Icon: "fa-comments", Condition: AchievementCondition{Type: "comment_count", Threshold: 50}},
+		{ID: "comment-100", Name: "Code Critic", Description: "Left 100 PR review comments", Icon: "fa-comment-dots", Condition: AchievementCondition{Type: "comment_count", Threshold: 100}},
+		{ID: "comment-250", Name: "Feedback Expert", Description: "Left 250 PR review comments", Icon: "fa-message", Condition: AchievementCondition{Type: "comment_count", Threshold: 250}},
+		{ID: "comment-500", Name: "Comment Champion", Description: "Left 500 PR review comments", Icon: "fa-scroll", Condition: AchievementCondition{Type: "comment_count", Threshold: 500}},
+
+		// ===== LINES ADDED (Tiers: 100, 1000, 5000, 10000, 50000) =====
+		{ID: "lines-added-100", Name: "First Hundred", Description: "Added 100 lines of code", Icon: "fa-plus", Condition: AchievementCondition{Type: "lines_added", Threshold: 100}},
+		{ID: "lines-added-1000", Name: "Thousand Lines", Description: "Added 1000 lines of code", Icon: "fa-layer-group", Condition: AchievementCondition{Type: "lines_added", Threshold: 1000}},
+		{ID: "lines-added-5000", Name: "Five Thousand", Description: "Added 5000 lines of code", Icon: "fa-cubes", Condition: AchievementCondition{Type: "lines_added", Threshold: 5000}},
+		{ID: "lines-added-10000", Name: "Ten Thousand", Description: "Added 10000 lines of code", Icon: "fa-mountain", Condition: AchievementCondition{Type: "lines_added", Threshold: 10000}},
+		{ID: "lines-added-50000", Name: "Code Mountain", Description: "Added 50000 lines of code", Icon: "fa-mountain-sun", Condition: AchievementCondition{Type: "lines_added", Threshold: 50000}},
+
+		// ===== LINES DELETED (Tiers: 100, 500, 1000, 5000, 10000) =====
+		{ID: "lines-deleted-100", Name: "Tidying Up", Description: "Deleted 100 lines of code", Icon: "fa-eraser", Condition: AchievementCondition{Type: "lines_deleted", Threshold: 100}},
+		{ID: "lines-deleted-500", Name: "Spring Cleaning", Description: "Deleted 500 lines of code", Icon: "fa-broom", Condition: AchievementCondition{Type: "lines_deleted", Threshold: 500}},
+		{ID: "lines-deleted-1000", Name: "Code Cleaner", Description: "Deleted 1000 lines of code", Icon: "fa-trash-can", Condition: AchievementCondition{Type: "lines_deleted", Threshold: 1000}},
+		{ID: "lines-deleted-5000", Name: "Refactoring Hero", Description: "Deleted 5000 lines of code", Icon: "fa-recycle", Condition: AchievementCondition{Type: "lines_deleted", Threshold: 5000}},
+		{ID: "lines-deleted-10000", Name: "Deletion Master", Description: "Deleted 10000 lines of code", Icon: "fa-dumpster-fire", Condition: AchievementCondition{Type: "lines_deleted", Threshold: 10000}},
+
+		// ===== REVIEW RESPONSE TIME (Tiers: 24h, 4h, 1h - lower is better) =====
+		{ID: "review-time-24h", Name: "Same Day Reviewer", Description: "Average review response under 24 hours", Icon: "fa-clock", Condition: AchievementCondition{Type: "avg_review_time_hours", Threshold: 24}},
+		{ID: "review-time-4h", Name: "Quick Responder", Description: "Average review response under 4 hours", Icon: "fa-stopwatch", Condition: AchievementCondition{Type: "avg_review_time_hours", Threshold: 4}},
+		{ID: "review-time-1h", Name: "Speed Demon", Description: "Average review response under 1 hour", Icon: "fa-bolt", Condition: AchievementCondition{Type: "avg_review_time_hours", Threshold: 1}},
+
+		// ===== MULTI-REPO (Tiers: 2, 5, 10) =====
+		{ID: "repo-2", Name: "Multi-Repo", Description: "Contributed to 2 repositories", Icon: "fa-folder", Condition: AchievementCondition{Type: "repo_count", Threshold: 2}},
+		{ID: "repo-5", Name: "Repo Explorer", Description: "Contributed to 5 repositories", Icon: "fa-folder-tree", Condition: AchievementCondition{Type: "repo_count", Threshold: 5}},
+		{ID: "repo-10", Name: "Repo Master", Description: "Contributed to 10 repositories", Icon: "fa-network-wired", Condition: AchievementCondition{Type: "repo_count", Threshold: 10}},
+
+		// ===== UNIQUE REVIEWEES (Tiers: 3, 10, 25) =====
+		{ID: "reviewees-3", Name: "Helpful Colleague", Description: "Reviewed PRs from 3 different contributors", Icon: "fa-user-group", Condition: AchievementCondition{Type: "unique_reviewees", Threshold: 3}},
+		{ID: "reviewees-10", Name: "Team Player", Description: "Reviewed PRs from 10 different contributors", Icon: "fa-people-group", Condition: AchievementCondition{Type: "unique_reviewees", Threshold: 10}},
+		{ID: "reviewees-25", Name: "Community Pillar", Description: "Reviewed PRs from 25 different contributors", Icon: "fa-people-roof", Condition: AchievementCondition{Type: "unique_reviewees", Threshold: 25}},
+
+		// ===== PR SIZE - LARGE (Tiers: 500, 1000, 5000) =====
+		{ID: "large-pr-500", Name: "Big Change", Description: "Merged a PR with 500+ lines changed", Icon: "fa-expand", Condition: AchievementCondition{Type: "largest_pr_size", Threshold: 500}},
+		{ID: "large-pr-1000", Name: "Heavy Lifter", Description: "Merged a PR with 1000+ lines changed", Icon: "fa-weight-hanging", Condition: AchievementCondition{Type: "largest_pr_size", Threshold: 1000}},
+		{ID: "large-pr-5000", Name: "Mega Merge", Description: "Merged a PR with 5000+ lines changed", Icon: "fa-dumbbell", Condition: AchievementCondition{Type: "largest_pr_size", Threshold: 5000}},
+
+		// ===== SMALL PRs (Tiers: 5, 10, 25, 50) =====
+		{ID: "small-pr-5", Name: "Small Changes", Description: "Merged 5 PRs under 100 lines", Icon: "fa-compress", Condition: AchievementCondition{Type: "small_pr_count", Threshold: 5}},
+		{ID: "small-pr-10", Name: "Small PR Advocate", Description: "Merged 10 PRs under 100 lines", Icon: "fa-minimize", Condition: AchievementCondition{Type: "small_pr_count", Threshold: 10}},
+		{ID: "small-pr-25", Name: "Atomic Commits", Description: "Merged 25 PRs under 100 lines", Icon: "fa-atom", Condition: AchievementCondition{Type: "small_pr_count", Threshold: 25}},
+		{ID: "small-pr-50", Name: "Micro PR Master", Description: "Merged 50 PRs under 100 lines", Icon: "fa-microchip", Condition: AchievementCondition{Type: "small_pr_count", Threshold: 50}},
+
+		// ===== PERFECT PRs (Tiers: 1, 5, 10, 25) =====
+		{ID: "perfect-pr-1", Name: "First Try", Description: "1 PR merged without changes requested", Icon: "fa-check", Condition: AchievementCondition{Type: "perfect_prs", Threshold: 1}},
+		{ID: "perfect-pr-5", Name: "Clean Code", Description: "5 PRs merged without changes requested", Icon: "fa-check-double", Condition: AchievementCondition{Type: "perfect_prs", Threshold: 5}},
+		{ID: "perfect-pr-10", Name: "Quality Author", Description: "10 PRs merged without changes requested", Icon: "fa-circle-check", Condition: AchievementCondition{Type: "perfect_prs", Threshold: 10}},
+		{ID: "perfect-pr-25", Name: "Flawless", Description: "25 PRs merged without changes requested", Icon: "fa-gem", Condition: AchievementCondition{Type: "perfect_prs", Threshold: 25}},
+
+		// ===== ACTIVE DAYS (Tiers: 7, 30, 60, 100) =====
+		{ID: "active-7", Name: "Week Active", Description: "Active on 7 different days", Icon: "fa-calendar-day", Condition: AchievementCondition{Type: "active_days", Threshold: 7}},
+		{ID: "active-30", Name: "Month Active", Description: "Active on 30 different days", Icon: "fa-calendar-week", Condition: AchievementCondition{Type: "active_days", Threshold: 30}},
+		{ID: "active-60", Name: "Consistent Contributor", Description: "Active on 60 different days", Icon: "fa-chart-line", Condition: AchievementCondition{Type: "active_days", Threshold: 60}},
+		{ID: "active-100", Name: "Dedicated Developer", Description: "Active on 100 different days", Icon: "fa-fire-flame-curved", Condition: AchievementCondition{Type: "active_days", Threshold: 100}},
+
+		// ===== LONGEST STREAK (Tiers: 3, 7, 14, 30) =====
+		{ID: "streak-3", Name: "Getting Rolling", Description: "3 day contribution streak", Icon: "fa-forward", Condition: AchievementCondition{Type: "longest_streak", Threshold: 3}},
+		{ID: "streak-7", Name: "Week Warrior", Description: "7 day contribution streak", Icon: "fa-calendar-week", Condition: AchievementCondition{Type: "longest_streak", Threshold: 7}},
+		{ID: "streak-14", Name: "Two Week Streak", Description: "14 day contribution streak", Icon: "fa-fire", Condition: AchievementCondition{Type: "longest_streak", Threshold: 14}},
+		{ID: "streak-30", Name: "Month Master", Description: "30 day contribution streak", Icon: "fa-calendar-check", Condition: AchievementCondition{Type: "longest_streak", Threshold: 30}},
+
+		// ===== WORK WEEK STREAK (Tiers: 3, 5, 10, 20) =====
+		{ID: "workweek-3", Name: "Work Week Start", Description: "3 consecutive weekday streak", Icon: "fa-briefcase", Condition: AchievementCondition{Type: "work_week_streak", Threshold: 3}},
+		{ID: "workweek-5", Name: "Full Work Week", Description: "5 consecutive weekday streak", Icon: "fa-building", Condition: AchievementCondition{Type: "work_week_streak", Threshold: 5}},
+		{ID: "workweek-10", Name: "Two Week Grind", Description: "10 consecutive weekday streak", Icon: "fa-business-time", Condition: AchievementCondition{Type: "work_week_streak", Threshold: 10}},
+		{ID: "workweek-20", Name: "Month of Mondays", Description: "20 consecutive weekday streak", Icon: "fa-landmark", Condition: AchievementCondition{Type: "work_week_streak", Threshold: 20}},
+
+		// ===== EARLY BIRD (Tiers: 10, 25, 50, 100) =====
+		{ID: "earlybird-10", Name: "Early Riser", Description: "10 commits before 9am", Icon: "fa-mug-hot", Condition: AchievementCondition{Type: "early_bird_count", Threshold: 10}},
+		{ID: "earlybird-25", Name: "Morning Person", Description: "25 commits before 9am", Icon: "fa-cloud-sun", Condition: AchievementCondition{Type: "early_bird_count", Threshold: 25}},
+		{ID: "earlybird-50", Name: "Early Bird", Description: "50 commits before 9am", Icon: "fa-sun", Condition: AchievementCondition{Type: "early_bird_count", Threshold: 50}},
+		{ID: "earlybird-100", Name: "Dawn Warrior", Description: "100 commits before 9am", Icon: "fa-sunrise", Condition: AchievementCondition{Type: "early_bird_count", Threshold: 100}},
+
+		// ===== NIGHT OWL (Tiers: 10, 25, 50, 100) =====
+		{ID: "nightowl-10", Name: "Late Worker", Description: "10 commits after 9pm", Icon: "fa-cloud-moon", Condition: AchievementCondition{Type: "night_owl_count", Threshold: 10}},
+		{ID: "nightowl-25", Name: "Evening Coder", Description: "25 commits after 9pm", Icon: "fa-moon", Condition: AchievementCondition{Type: "night_owl_count", Threshold: 25}},
+		{ID: "nightowl-50", Name: "Night Owl", Description: "50 commits after 9pm", Icon: "fa-star", Condition: AchievementCondition{Type: "night_owl_count", Threshold: 50}},
+		{ID: "nightowl-100", Name: "Nocturnal", Description: "100 commits after 9pm", Icon: "fa-star-and-crescent", Condition: AchievementCondition{Type: "night_owl_count", Threshold: 100}},
+
+		// ===== MIDNIGHT CODER (Tiers: 5, 10, 25, 50) =====
+		{ID: "midnight-5", Name: "Night Shift", Description: "5 commits between midnight and 4am", Icon: "fa-ghost", Condition: AchievementCondition{Type: "midnight_count", Threshold: 5}},
+		{ID: "midnight-10", Name: "Insomniac", Description: "10 commits between midnight and 4am", Icon: "fa-bed", Condition: AchievementCondition{Type: "midnight_count", Threshold: 10}},
+		{ID: "midnight-25", Name: "Nosferatu", Description: "25 commits between midnight and 4am", Icon: "fa-skull", Condition: AchievementCondition{Type: "midnight_count", Threshold: 25}},
+		{ID: "midnight-50", Name: "Vampire Coder", Description: "50 commits between midnight and 4am", Icon: "fa-skull-crossbones", Condition: AchievementCondition{Type: "midnight_count", Threshold: 50}},
+
+		// ===== WEEKEND WARRIOR (Tiers: 5, 10, 25, 50) =====
+		{ID: "weekend-5", Name: "Weekend Work", Description: "5 weekend commits", Icon: "fa-couch", Condition: AchievementCondition{Type: "weekend_warrior", Threshold: 5}},
+		{ID: "weekend-10", Name: "Weekend Regular", Description: "10 weekend commits", Icon: "fa-house-laptop", Condition: AchievementCondition{Type: "weekend_warrior", Threshold: 10}},
+		{ID: "weekend-25", Name: "Weekend Warrior", Description: "25 weekend commits", Icon: "fa-gamepad", Condition: AchievementCondition{Type: "weekend_warrior", Threshold: 25}},
+		{ID: "weekend-50", Name: "No Days Off", Description: "50 weekend commits", Icon: "fa-person-running", Condition: AchievementCondition{Type: "weekend_warrior", Threshold: 50}},
+
+		// ===== OUT OF HOURS (Tiers: 10, 25, 50, 100) =====
+		{ID: "ooh-10", Name: "Extra Hours", Description: "10 commits outside 9am-5pm", Icon: "fa-clock-rotate-left", Condition: AchievementCondition{Type: "out_of_hours_count", Threshold: 10}},
+		{ID: "ooh-25", Name: "Flexible Schedule", Description: "25 commits outside 9am-5pm", Icon: "fa-user-clock", Condition: AchievementCondition{Type: "out_of_hours_count", Threshold: 25}},
+		{ID: "ooh-50", Name: "Off-Hours Hero", Description: "50 commits outside 9am-5pm", Icon: "fa-hourglass-half", Condition: AchievementCondition{Type: "out_of_hours_count", Threshold: 50}},
+		{ID: "ooh-100", Name: "Time Bender", Description: "100 commits outside 9am-5pm", Icon: "fa-infinity", Condition: AchievementCondition{Type: "out_of_hours_count", Threshold: 100}},
 	}
 }

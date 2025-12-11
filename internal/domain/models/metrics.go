@@ -46,13 +46,15 @@ type ContributorMetrics struct {
 	IssueComments int `json:"issue_comments"`
 
 	// Activity patterns
-	ActiveDays     int `json:"active_days"`      // Unique days with activity
-	CurrentStreak  int `json:"current_streak"`   // Current consecutive days
-	LongestStreak  int `json:"longest_streak"`   // Longest consecutive days
-	EarlyBirdCount int `json:"early_bird_count"` // Commits before 9am
-	NightOwlCount  int `json:"night_owl_count"`  // Commits after 9pm
-	MidnightCount  int `json:"midnight_count"`   // Commits between midnight and 4am
-	WeekendWarrior int `json:"weekend_warrior"`  // Weekend commits
+	ActiveDays      int `json:"active_days"`        // Unique days with activity
+	CurrentStreak   int `json:"current_streak"`     // Current consecutive days
+	LongestStreak   int `json:"longest_streak"`     // Longest consecutive days
+	WorkWeekStreak  int `json:"work_week_streak"`   // Longest consecutive weekdays (Mon-Fri, weekends don't break streak)
+	EarlyBirdCount  int `json:"early_bird_count"`   // Commits before 9am
+	NightOwlCount   int `json:"night_owl_count"`    // Commits after 9pm
+	MidnightCount   int `json:"midnight_count"`     // Commits between midnight and 4am
+	WeekendWarrior  int `json:"weekend_warrior"`    // Weekend commits
+	OutOfHoursCount int `json:"out_of_hours_count"` // Commits outside 9am-5pm
 
 	// Repository participation
 	RepositoriesContributed []string `json:"repositories_contributed,omitempty"`
@@ -79,6 +81,7 @@ type ScoreBreakdown struct {
 	Comments      int `json:"comments"` // PR review comments (not code comments)
 	ResponseBonus int `json:"response_bonus"`
 	LineChanges   int `json:"line_changes"`
+	OutOfHours    int `json:"out_of_hours"` // Bonus for out-of-hours commits
 }
 
 // RepositoryMetrics holds aggregated metrics for a single repository

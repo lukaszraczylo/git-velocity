@@ -170,6 +170,11 @@ func (a *Aggregator) Aggregate(data *models.RawData, dateRange *config.ParsedDat
 			cm.WeekendWarrior++
 			rcm.WeekendWarrior++
 		}
+		// Out of hours: commits outside 9am-5pm (before 9am OR after 5pm)
+		if hour < 9 || hour >= 17 {
+			cm.OutOfHoursCount++
+			rcm.OutOfHoursCount++
+		}
 
 		// Track activity days (global)
 		if activityDays[login] == nil {
@@ -205,6 +210,7 @@ func (a *Aggregator) Aggregate(data *models.RawData, dateRange *config.ParsedDat
 		if cm, ok := contributorMap[login]; ok {
 			cm.ActiveDays = len(days)
 			cm.LongestStreak, cm.CurrentStreak = calculateStreaks(days)
+			cm.WorkWeekStreak = calculateWorkWeekStreak(days)
 		}
 	}
 
@@ -440,6 +446,7 @@ func (a *Aggregator) Aggregate(data *models.RawData, dateRange *config.ParsedDat
 				if rcm, ok := repoContribs[login]; ok {
 					rcm.ActiveDays = len(days)
 					rcm.LongestStreak, rcm.CurrentStreak = calculateStreaks(days)
+					rcm.WorkWeekStreak = calculateWorkWeekStreak(days)
 				}
 			}
 		}
@@ -1154,6 +1161,73 @@ func buildVelocityTimeline(data *models.RawData, period models.Period, scoringCo
 			{Name: "Score", Color: "#f59e0b", Data: weekScore},
 		},
 	}
+}
+
+// calculateWorkWeekStreak calculates the longest streak of consecutive weekdays
+// Weekends (Sat/Sun) don't break the streak - they're simply skipped
+func calculateWorkWeekStreak(days map[string]bool) int {
+	if len(days) == 0 {
+		return 0
+	}
+
+	// Convert to sorted slice of dates
+	dates := make([]time.Time, 0, len(days))
+	for dateStr := range days {
+		t, err := time.Parse("2006-01-02", dateStr)
+		if err == nil {
+			dates = append(dates, t)
+		}
+	}
+
+	if len(dates) == 0 {
+		return 0
+	}
+
+	// Sort dates
+	sort.Slice(dates, func(i, j int) bool {
+		return dates[i].Before(dates[j])
+	})
+
+	// Filter to only weekdays (Mon-Fri)
+	weekdays := make([]time.Time, 0, len(dates))
+	for _, d := range dates {
+		if d.Weekday() != time.Saturday && d.Weekday() != time.Sunday {
+			weekdays = append(weekdays, d)
+		}
+	}
+
+	if len(weekdays) == 0 {
+		return 0
+	}
+
+	// Calculate longest consecutive weekday streak
+	// Two weekdays are consecutive if there's no weekday between them
+	longest := 1
+	streak := 1
+
+	for i := 1; i < len(weekdays); i++ {
+		prev := weekdays[i-1]
+		curr := weekdays[i]
+
+		// Calculate expected next weekday
+		expectedNext := prev.AddDate(0, 0, 1)
+		// Skip over weekend days
+		for expectedNext.Weekday() == time.Saturday || expectedNext.Weekday() == time.Sunday {
+			expectedNext = expectedNext.AddDate(0, 0, 1)
+		}
+
+		// Check if current date matches expected next weekday
+		if curr.Year() == expectedNext.Year() && curr.YearDay() == expectedNext.YearDay() {
+			streak++
+			if streak > longest {
+				longest = streak
+			}
+		} else {
+			streak = 1
+		}
+	}
+
+	return longest
 }
 
 // calculateStreaks calculates the longest and current streak of consecutive days
