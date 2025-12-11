@@ -176,6 +176,34 @@ const achievements = {
   'docs-del-500': { name: 'Dead Code Hunter', description: 'Removed 500 lines of outdated comments', icon: 'fa-skull-crossbones' },
   'docs-del-1000': { name: 'Comment Surgeon', description: 'Removed 1000 lines of outdated comments', icon: 'fa-user-doctor' },
   'docs-del-2500': { name: 'Noise Eliminator', description: 'Removed 2500 lines of outdated comments', icon: 'fa-volume-xmark' },
+
+  // ===== ISSUES OPENED (Tiers: 1, 5, 10, 25, 50) =====
+  'issue-1': { name: 'Bug Hunter', description: 'Opened your first issue', icon: 'fa-bug' },
+  'issue-5': { name: 'Issue Reporter', description: 'Opened 5 issues', icon: 'fa-flag' },
+  'issue-10': { name: 'Quality Advocate', description: 'Opened 10 issues', icon: 'fa-clipboard-list' },
+  'issue-25': { name: 'Issue Expert', description: 'Opened 25 issues', icon: 'fa-list-check' },
+  'issue-50': { name: 'Issue Champion', description: 'Opened 50 issues', icon: 'fa-bullhorn' },
+
+  // ===== ISSUES CLOSED (Tiers: 1, 5, 10, 25, 50) =====
+  'issue-close-1': { name: 'Problem Solver', description: 'Closed your first issue', icon: 'fa-circle-check' },
+  'issue-close-5': { name: 'Bug Squasher', description: 'Closed 5 issues', icon: 'fa-bug-slash' },
+  'issue-close-10': { name: 'Issue Resolver', description: 'Closed 10 issues', icon: 'fa-check-double' },
+  'issue-close-25': { name: 'Closure Expert', description: 'Closed 25 issues', icon: 'fa-square-check' },
+  'issue-close-50': { name: 'Issue Terminator', description: 'Closed 50 issues', icon: 'fa-crosshairs' },
+
+  // ===== ISSUE COMMENTS (Tiers: 5, 10, 25, 50, 100) =====
+  'issue-comment-5': { name: 'Issue Commenter', description: 'Left 5 issue comments', icon: 'fa-comment' },
+  'issue-comment-10': { name: 'Discussion Starter', description: 'Left 10 issue comments', icon: 'fa-comments' },
+  'issue-comment-25': { name: 'Issue Collaborator', description: 'Left 25 issue comments', icon: 'fa-people-arrows' },
+  'issue-comment-50': { name: 'Community Voice', description: 'Left 50 issue comments', icon: 'fa-bullhorn' },
+  'issue-comment-100': { name: 'Issue Guru', description: 'Left 100 issue comments', icon: 'fa-graduation-cap' },
+
+  // ===== ISSUE REFERENCES IN COMMITS (Tiers: 5, 10, 25, 50, 100) =====
+  'issue-ref-5': { name: 'Issue Linker', description: 'Referenced issues in 5 commits', icon: 'fa-link' },
+  'issue-ref-10': { name: 'Commit Connector', description: 'Referenced issues in 10 commits', icon: 'fa-diagram-project' },
+  'issue-ref-25': { name: 'Traceability Pro', description: 'Referenced issues in 25 commits', icon: 'fa-sitemap' },
+  'issue-ref-50': { name: 'Issue Tracker', description: 'Referenced issues in 50 commits', icon: 'fa-chart-gantt' },
+  'issue-ref-100': { name: 'Traceability Master', description: 'Referenced issues in 100 commits', icon: 'fa-network-wired' },
 }
 
 const getAchievement = (id) => {

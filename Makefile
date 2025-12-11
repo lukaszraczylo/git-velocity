@@ -1,4 +1,4 @@
-.PHONY: all build build-spa build-quick install clean test test-coverage lint dev dev-spa serve help
+.PHONY: all build build-spa build-quick install clean test test-coverage lint security dev dev-spa serve help
 
 # Build configuration
 BINARY_NAME := git-velocity
@@ -57,6 +57,11 @@ lint:
 	@echo "Running linter..."
 	@golangci-lint run ./...
 
+## Run security scanner (uses .golangci.yml config)
+security:
+	@echo "Running security scanner..."
+	@golangci-lint run --enable gosec ./...
+
 ## Run Vue dev server for frontend development
 dev-spa:
 	@mkdir -p ./dist/data  # Ensure data dir exists for symlink
@@ -95,6 +100,7 @@ help:
 	@echo "  test         Run tests with race detector"
 	@echo "  test-coverage Run tests with coverage report"
 	@echo "  lint         Run golangci-lint"
+	@echo "  security     Run gosec security scanner"
 	@echo "  dev-spa      Run Vue dev server"
 	@echo "  dev          Run analyzer with sample config"
 	@echo "  serve        Serve generated output locally"

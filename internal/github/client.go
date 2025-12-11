@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -609,6 +610,129 @@ func (c *Client) FetchIssues(ctx context.Context, owner, repo string, since, unt
 	c.cache.Set(cacheKey, allIssues)
 
 	return allIssues, nil
+}
+
+// FetchIssueComments fetches comments on issues from a repository
+// Uses early termination when sorted by date - stops when items are outside date range
+func (c *Client) FetchIssueComments(ctx context.Context, owner, repo string, since, until *time.Time) ([]models.IssueComment, error) {
+	cacheKey := fmt.Sprintf("issue_comments:%s/%s:%v:%v", owner, repo, since, until)
+
+	// Check cache
+	if cached, ok := c.cache.Get(cacheKey); ok {
+		if comments, ok := cached.([]models.IssueComment); ok {
+			c.progress("      Using cached issue comments data")
+			return comments, nil
+		}
+	}
+
+	var allComments []models.IssueComment
+
+	// Sort by created date descending - newest first
+	// This allows us to stop early when we hit items older than our date range
+	opts := &github.IssueListCommentsOptions{
+		Sort:      github.Ptr("created"),
+		Direction: github.Ptr("desc"),
+		ListOptions: github.ListOptions{
+			PerPage: 100,
+		},
+	}
+
+	// Set 'since' parameter if provided (GitHub filters by update time but we'll also filter manually)
+	if since != nil {
+		opts.Since = since
+	}
+
+	page := 1
+	reachedOldItems := false
+
+	for {
+		var comments []*github.IssueComment
+		var resp *github.Response
+
+		err := c.retryWithBackoff(ctx, "list issue comments", func() error {
+			var err error
+			// Passing empty issue number fetches all comments in the repo
+			comments, resp, err = c.gh.Issues.ListComments(ctx, owner, repo, 0, opts)
+			return err
+		})
+		if err != nil {
+			return nil, fmt.Errorf("failed to list issue comments: %w", err)
+		}
+
+		c.progress(fmt.Sprintf("      Fetching issue comments page %d (%d comments so far)...", page, len(allComments)))
+
+		oldItemsInPage := 0
+		totalItems := len(comments)
+
+		for _, comment := range comments {
+			createdAt := comment.GetCreatedAt().Time
+
+			// Skip items newer than our range (when until is specified)
+			if until != nil && createdAt.After(*until) {
+				continue
+			}
+
+			// If we've gone past our date range (older than since), count it
+			if since != nil && createdAt.Before(*since) {
+				oldItemsInPage++
+				continue
+			}
+
+			// Extract issue number from the issue URL
+			issueNumber := 0
+			if comment.IssueURL != nil {
+				// Issue URL format: https://api.github.com/repos/{owner}/{repo}/issues/{number}
+				parts := strings.Split(*comment.IssueURL, "/")
+				if len(parts) > 0 {
+					if num, err := strconv.Atoi(parts[len(parts)-1]); err == nil {
+						issueNumber = num
+					}
+				}
+			}
+
+			var author models.Author
+			if comment.User != nil {
+				author = models.Author{
+					Login:     comment.User.GetLogin(),
+					Name:      comment.User.GetName(),
+					AvatarURL: comment.User.GetAvatarURL(),
+				}
+			}
+
+			ic := models.IssueComment{
+				ID:         comment.GetID(),
+				Issue:      issueNumber,
+				Repository: fmt.Sprintf("%s/%s", owner, repo),
+				Author:     author,
+				Body:       comment.GetBody(),
+				CreatedAt:  createdAt,
+			}
+			allComments = append(allComments, ic)
+		}
+
+		// If all items in this page are older than our range, we can stop
+		// (since results are sorted by created date descending)
+		if oldItemsInPage == totalItems && totalItems > 0 {
+			c.progress(fmt.Sprintf("      Reached issue comments older than date range, stopping early (page %d)", page))
+			reachedOldItems = true
+			break
+		}
+
+		if resp.NextPage == 0 {
+			break
+		}
+		opts.Page = resp.NextPage
+		page++
+	}
+
+	if !reachedOldItems && page > 1 {
+		c.progress(fmt.Sprintf("      Fetched all %d pages of issue comments", page))
+	}
+
+	// Cache results
+	c.cache.Set(cacheKey, allComments)
+
+	return allComments, nil
 }
 
 // UserProfile contains GitHub user profile information useful for deduplication

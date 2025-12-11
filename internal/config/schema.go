@@ -84,6 +84,8 @@ type PointsConfig struct {
 	ReviewComment   int     `yaml:"review_comment"` // PR review comments (not code comments)
 	IssueOpened     int     `yaml:"issue_opened"`
 	IssueClosed     int     `yaml:"issue_closed"`
+	IssueComment    int     `yaml:"issue_comment"`          // Commenting on an issue
+	IssueReference  int     `yaml:"issue_reference_commit"` // Commit referencing an issue (fixes #123, etc.)
 	FastReview1h    int     `yaml:"fast_review_1h"`
 	FastReview4h    int     `yaml:"fast_review_4h"`
 	FastReview24h   int     `yaml:"fast_review_24h"`
@@ -197,8 +199,10 @@ func DefaultConfig() *Config {
 				PRMerged:           50,
 				PRReviewed:         30,
 				ReviewComment:      5,
-				IssueOpened:        15,
+				IssueOpened:        10,
 				IssueClosed:        20,
+				IssueComment:       5,
+				IssueReference:     5,
 				FastReview1h:       50,
 				FastReview4h:       25,
 				FastReview24h:      10,
@@ -371,5 +375,33 @@ func defaultAchievements() []AchievementConfig {
 		{ID: "docs-del-500", Name: "Dead Code Hunter", Description: "Removed 500 lines of outdated comments", Icon: "fa-skull-crossbones", Condition: AchievementCondition{Type: "comment_lines_deleted", Threshold: 500}},
 		{ID: "docs-del-1000", Name: "Comment Surgeon", Description: "Removed 1000 lines of outdated comments", Icon: "fa-scalpel", Condition: AchievementCondition{Type: "comment_lines_deleted", Threshold: 1000}},
 		{ID: "docs-del-2500", Name: "Noise Eliminator", Description: "Removed 2500 lines of outdated comments", Icon: "fa-volume-xmark", Condition: AchievementCondition{Type: "comment_lines_deleted", Threshold: 2500}},
+
+		// ===== ISSUES OPENED (Tiers: 1, 5, 10, 25, 50) =====
+		{ID: "issue-1", Name: "Bug Hunter", Description: "Opened your first issue", Icon: "fa-bug", Condition: AchievementCondition{Type: "issues_opened", Threshold: 1}},
+		{ID: "issue-5", Name: "Issue Reporter", Description: "Opened 5 issues", Icon: "fa-flag", Condition: AchievementCondition{Type: "issues_opened", Threshold: 5}},
+		{ID: "issue-10", Name: "Quality Advocate", Description: "Opened 10 issues", Icon: "fa-clipboard-list", Condition: AchievementCondition{Type: "issues_opened", Threshold: 10}},
+		{ID: "issue-25", Name: "Issue Expert", Description: "Opened 25 issues", Icon: "fa-list-check", Condition: AchievementCondition{Type: "issues_opened", Threshold: 25}},
+		{ID: "issue-50", Name: "Issue Champion", Description: "Opened 50 issues", Icon: "fa-bullhorn", Condition: AchievementCondition{Type: "issues_opened", Threshold: 50}},
+
+		// ===== ISSUES CLOSED (Tiers: 1, 5, 10, 25, 50) =====
+		{ID: "issue-close-1", Name: "Problem Solver", Description: "Closed your first issue", Icon: "fa-circle-check", Condition: AchievementCondition{Type: "issues_closed", Threshold: 1}},
+		{ID: "issue-close-5", Name: "Bug Squasher", Description: "Closed 5 issues", Icon: "fa-bug-slash", Condition: AchievementCondition{Type: "issues_closed", Threshold: 5}},
+		{ID: "issue-close-10", Name: "Issue Resolver", Description: "Closed 10 issues", Icon: "fa-check-double", Condition: AchievementCondition{Type: "issues_closed", Threshold: 10}},
+		{ID: "issue-close-25", Name: "Closure Expert", Description: "Closed 25 issues", Icon: "fa-square-check", Condition: AchievementCondition{Type: "issues_closed", Threshold: 25}},
+		{ID: "issue-close-50", Name: "Issue Terminator", Description: "Closed 50 issues", Icon: "fa-crosshairs", Condition: AchievementCondition{Type: "issues_closed", Threshold: 50}},
+
+		// ===== ISSUE COMMENTS (Tiers: 5, 10, 25, 50, 100) =====
+		{ID: "issue-comment-5", Name: "Issue Commenter", Description: "Left 5 issue comments", Icon: "fa-comment", Condition: AchievementCondition{Type: "issue_comments", Threshold: 5}},
+		{ID: "issue-comment-10", Name: "Discussion Starter", Description: "Left 10 issue comments", Icon: "fa-comments", Condition: AchievementCondition{Type: "issue_comments", Threshold: 10}},
+		{ID: "issue-comment-25", Name: "Issue Collaborator", Description: "Left 25 issue comments", Icon: "fa-people-arrows", Condition: AchievementCondition{Type: "issue_comments", Threshold: 25}},
+		{ID: "issue-comment-50", Name: "Community Voice", Description: "Left 50 issue comments", Icon: "fa-bullhorn", Condition: AchievementCondition{Type: "issue_comments", Threshold: 50}},
+		{ID: "issue-comment-100", Name: "Issue Guru", Description: "Left 100 issue comments", Icon: "fa-graduation-cap", Condition: AchievementCondition{Type: "issue_comments", Threshold: 100}},
+
+		// ===== ISSUE REFERENCES IN COMMITS (Tiers: 5, 10, 25, 50, 100) =====
+		{ID: "issue-ref-5", Name: "Issue Linker", Description: "Referenced issues in 5 commits", Icon: "fa-link", Condition: AchievementCondition{Type: "issue_references", Threshold: 5}},
+		{ID: "issue-ref-10", Name: "Commit Connector", Description: "Referenced issues in 10 commits", Icon: "fa-diagram-project", Condition: AchievementCondition{Type: "issue_references", Threshold: 10}},
+		{ID: "issue-ref-25", Name: "Traceability Pro", Description: "Referenced issues in 25 commits", Icon: "fa-sitemap", Condition: AchievementCondition{Type: "issue_references", Threshold: 25}},
+		{ID: "issue-ref-50", Name: "Issue Tracker", Description: "Referenced issues in 50 commits", Icon: "fa-chart-gantt", Condition: AchievementCondition{Type: "issue_references", Threshold: 50}},
+		{ID: "issue-ref-100", Name: "Traceability Master", Description: "Referenced issues in 100 commits", Icon: "fa-network-wired", Condition: AchievementCondition{Type: "issue_references", Threshold: 100}},
 	}
 }

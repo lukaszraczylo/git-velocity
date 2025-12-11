@@ -48,6 +48,11 @@ func (c *Calculator) Calculate(metrics *models.GlobalMetrics) *models.GlobalMetr
 				existing.PRsMerged += cm.PRsMerged
 				existing.ReviewsGiven += cm.ReviewsGiven
 				existing.ReviewComments += cm.ReviewComments
+				// Issue metrics
+				existing.IssuesOpened += cm.IssuesOpened
+				existing.IssuesClosed += cm.IssuesClosed
+				existing.IssueComments += cm.IssueComments
+				existing.IssueReferencesInCommits += cm.IssueReferencesInCommits
 				// Combine unique repositories
 				for _, r := range cm.RepositoriesContributed {
 					if !contains(existing.RepositoriesContributed, r) {
@@ -181,6 +186,12 @@ func (c *Calculator) calculateScore(cm *models.ContributorMetrics) models.Score 
 	// Comment points (PR review comments)
 	breakdown.Comments = cm.ReviewComments * points.ReviewComment
 
+	// Issue points
+	breakdown.Issues = cm.IssuesOpened*points.IssueOpened +
+		cm.IssuesClosed*points.IssueClosed +
+		cm.IssueComments*points.IssueComment +
+		cm.IssueReferencesInCommits*points.IssueReference
+
 	// Response time bonus
 	if cm.ReviewsGiven > 0 && cm.AvgReviewTime > 0 {
 		if cm.AvgReviewTime <= 1 {
@@ -197,7 +208,8 @@ func (c *Calculator) calculateScore(cm *models.ContributorMetrics) models.Score 
 
 	// Calculate total
 	total := breakdown.Commits + breakdown.LineChanges + breakdown.PRs +
-		breakdown.Reviews + breakdown.ResponseBonus + breakdown.Comments + breakdown.OutOfHours
+		breakdown.Reviews + breakdown.ResponseBonus + breakdown.Comments +
+		breakdown.Issues + breakdown.OutOfHours
 
 	return models.Score{
 		Total:     total,
@@ -265,6 +277,15 @@ func (c *Calculator) checkAchievements(cm *models.ContributorMetrics) []string {
 			earned = float64(cm.CommentLinesAdded) >= ach.Condition.Threshold
 		case "comment_lines_deleted":
 			earned = float64(cm.CommentLinesDeleted) >= ach.Condition.Threshold
+		// Issue metrics
+		case "issues_opened":
+			earned = float64(cm.IssuesOpened) >= ach.Condition.Threshold
+		case "issues_closed":
+			earned = float64(cm.IssuesClosed) >= ach.Condition.Threshold
+		case "issue_comments":
+			earned = float64(cm.IssueComments) >= ach.Condition.Threshold
+		case "issue_references":
+			earned = float64(cm.IssueReferencesInCommits) >= ach.Condition.Threshold
 		}
 
 		if earned {

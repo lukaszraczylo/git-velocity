@@ -39,7 +39,7 @@ func TestServer_CacheMiddleware(t *testing.T) {
 	// Create a test handler
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("OK"))
+		_, _ = w.Write([]byte("OK"))
 	})
 
 	// Wrap with cache middleware
@@ -87,7 +87,7 @@ func TestServer_ServesStaticFiles(t *testing.T) {
 
 	// Create a test file with a simple name
 	testFile := filepath.Join(tempDir, "hello.txt")
-	err := os.WriteFile(testFile, []byte("Hello, World!"), 0644)
+	err := os.WriteFile(testFile, []byte("Hello, World!"), 0600)
 	require.NoError(t, err)
 
 	s := New(tempDir, "0")
@@ -139,7 +139,7 @@ func TestServer_ServesNestedDirectories(t *testing.T) {
 
 	// Create a file in nested directory
 	testFile := filepath.Join(nestedDir, "metrics.json")
-	err = os.WriteFile(testFile, []byte(`{"count": 42}`), 0644)
+	err = os.WriteFile(testFile, []byte(`{"count": 42}`), 0600)
 	require.NoError(t, err)
 
 	absPath, _ := filepath.Abs(tempDir)
@@ -164,7 +164,7 @@ func TestServer_MiddlewareCombination(t *testing.T) {
 
 	innerHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("response"))
+		_, _ = w.Write([]byte("response"))
 	})
 
 	// Combine middlewares like in the actual server
@@ -189,7 +189,7 @@ func TestServer_ServesIndexHtml(t *testing.T) {
 
 	// Create an index.html
 	indexFile := filepath.Join(tempDir, "index.html")
-	err := os.WriteFile(indexFile, []byte("<html><body>Test Page</body></html>"), 0644)
+	err := os.WriteFile(indexFile, []byte("<html><body>Test Page</body></html>"), 0600)
 	require.NoError(t, err)
 
 	absPath, _ := filepath.Abs(tempDir)
@@ -213,7 +213,7 @@ func TestServer_CreateHandler(t *testing.T) {
 
 	// Create an index.html
 	indexFile := filepath.Join(tempDir, "index.html")
-	err := os.WriteFile(indexFile, []byte("<html><body>Handler Test</body></html>"), 0644)
+	err := os.WriteFile(indexFile, []byte("<html><body>Handler Test</body></html>"), 0600)
 	require.NoError(t, err)
 
 	s := New(tempDir, "8080")
@@ -281,7 +281,7 @@ func TestServer_ServesJSONWithCorrectContentType(t *testing.T) {
 
 	// Create a JSON file
 	jsonFile := filepath.Join(tempDir, "data.json")
-	err := os.WriteFile(jsonFile, []byte(`{"status": "ok"}`), 0644)
+	err := os.WriteFile(jsonFile, []byte(`{"status": "ok"}`), 0600)
 	require.NoError(t, err)
 
 	s := New(tempDir, "0")
@@ -306,7 +306,7 @@ func TestServer_ServesHTMLWithCorrectContentType(t *testing.T) {
 
 	// Create an HTML file
 	htmlFile := filepath.Join(tempDir, "page.html")
-	err := os.WriteFile(htmlFile, []byte("<html><body>HTML Page</body></html>"), 0644)
+	err := os.WriteFile(htmlFile, []byte("<html><body>HTML Page</body></html>"), 0600)
 	require.NoError(t, err)
 
 	s := New(tempDir, "0")
@@ -331,7 +331,7 @@ func TestServer_CORSHeaders(t *testing.T) {
 
 	// Create a test file
 	testFile := filepath.Join(tempDir, "test.txt")
-	err := os.WriteFile(testFile, []byte("test content"), 0644)
+	err := os.WriteFile(testFile, []byte("test content"), 0600)
 	require.NoError(t, err)
 
 	s := New(tempDir, "0")
@@ -354,7 +354,7 @@ func TestServer_CacheDisabledHeaders(t *testing.T) {
 
 	// Create a test file
 	testFile := filepath.Join(tempDir, "test.txt")
-	err := os.WriteFile(testFile, []byte("test content"), 0644)
+	err := os.WriteFile(testFile, []byte("test content"), 0600)
 	require.NoError(t, err)
 
 	s := New(tempDir, "0")
@@ -406,7 +406,7 @@ func TestServer_CacheMiddlewarePreservesResponseBody(t *testing.T) {
 	expectedBody := "This is the response body content"
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(expectedBody))
+		_, _ = w.Write([]byte(expectedBody))
 	})
 
 	wrapped := s.cacheMiddleware(handler)

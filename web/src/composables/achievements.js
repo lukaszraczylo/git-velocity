@@ -46,6 +46,14 @@ const achievementCategories = {
   'docs': ['docs-100', 'docs-500', 'docs-1000', 'docs-2500', 'docs-5000'],
   // Documentation deleted
   'docs-del': ['docs-del-50', 'docs-del-200', 'docs-del-500', 'docs-del-1000', 'docs-del-2500'],
+  // Issues opened
+  'issue': ['issue-1', 'issue-5', 'issue-10', 'issue-25', 'issue-50'],
+  // Issues closed
+  'issue-close': ['issue-close-1', 'issue-close-5', 'issue-close-10', 'issue-close-25', 'issue-close-50'],
+  // Issue comments
+  'issue-comment': ['issue-comment-5', 'issue-comment-10', 'issue-comment-25', 'issue-comment-50', 'issue-comment-100'],
+  // Issue references in commits
+  'issue-ref': ['issue-ref-5', 'issue-ref-10', 'issue-ref-25', 'issue-ref-50', 'issue-ref-100'],
 }
 
 // Get the category for an achievement ID
@@ -107,8 +115,12 @@ const categoryPriority = {
   'review': 8,
   'lines-added': 7,
   'perfect-pr': 6,
+  'issue': 5.5,
+  'issue-close': 5.4,
   'streak': 5,
   'active': 4,
+  'issue-ref': 3.5,
+  'issue-comment': 3.2,
   'review-time': 3,
   'docs': 2,
 }

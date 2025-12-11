@@ -1105,3 +1105,319 @@ func TestCalculator_CommentLinesAchievements(t *testing.T) {
 		assert.NotContains(t, entry.Achievements, "docs-del-200", "60 < 200")
 	})
 }
+
+func TestCalculator_IssueScoring(t *testing.T) {
+	t.Parallel()
+
+	t.Run("calculates issue points correctly", func(t *testing.T) {
+		t.Parallel()
+
+		cfg := config.DefaultConfig()
+		cfg.Scoring.Enabled = true
+		cfg.Scoring.Points = config.PointsConfig{
+			Commit:         10,
+			IssueOpened:    10, // 10 points per issue opened
+			IssueClosed:    20, // 20 points per issue closed
+			IssueComment:   5,  // 5 points per issue comment
+			IssueReference: 5,  // 5 points per issue reference in commit
+		}
+		calc := NewCalculator(cfg)
+
+		metrics := &models.GlobalMetrics{
+			Repositories: []models.RepositoryMetrics{
+				{
+					FullName: "owner/repo",
+					Contributors: []models.ContributorMetrics{
+						{
+							Login:                    "issue-worker",
+							CommitCount:              10,
+							IssuesOpened:             5,  // 5 * 10 = 50
+							IssuesClosed:             3,  // 3 * 20 = 60
+							IssueComments:            10, // 10 * 5 = 50
+							IssueReferencesInCommits: 8,  // 8 * 5 = 40
+							RepositoriesContributed:  []string{"owner/repo"},
+						},
+					},
+				},
+			},
+		}
+
+		result := calc.Calculate(metrics)
+
+		contributor := result.Repositories[0].Contributors[0]
+		// Issue points: 50 + 60 + 50 + 40 = 200
+		assert.Equal(t, 200, contributor.Score.Breakdown.Issues)
+		// Commits: 10 * 10 = 100
+		// Total: 100 + 200 = 300
+		assert.Equal(t, 300, contributor.Score.Total)
+	})
+
+	t.Run("aggregates issue metrics across repositories", func(t *testing.T) {
+		t.Parallel()
+
+		cfg := config.DefaultConfig()
+		cfg.Scoring.Enabled = true
+		cfg.Scoring.Points = config.PointsConfig{
+			IssueOpened:    10,
+			IssueClosed:    20,
+			IssueComment:   5,
+			IssueReference: 5,
+		}
+		calc := NewCalculator(cfg)
+
+		metrics := &models.GlobalMetrics{
+			Repositories: []models.RepositoryMetrics{
+				{
+					FullName: "owner/repo1",
+					Contributors: []models.ContributorMetrics{
+						{
+							Login:                    "issue-worker",
+							IssuesOpened:             3,
+							IssuesClosed:             2,
+							IssueComments:            5,
+							IssueReferencesInCommits: 4,
+							RepositoriesContributed:  []string{"owner/repo1"},
+						},
+					},
+				},
+				{
+					FullName: "owner/repo2",
+					Contributors: []models.ContributorMetrics{
+						{
+							Login:                    "issue-worker",
+							IssuesOpened:             2,
+							IssuesClosed:             1,
+							IssueComments:            3,
+							IssueReferencesInCommits: 2,
+							RepositoriesContributed:  []string{"owner/repo2"},
+						},
+					},
+				},
+			},
+		}
+
+		result := calc.Calculate(metrics)
+
+		require.Len(t, result.Leaderboard, 1)
+		// Aggregated: 5 opened, 3 closed, 8 comments, 6 references
+		// Points: 5*10 + 3*20 + 8*5 + 6*5 = 50 + 60 + 40 + 30 = 180
+		assert.Equal(t, 180, result.Leaderboard[0].Score)
+	})
+
+	t.Run("zero issue metrics results in zero issue points", func(t *testing.T) {
+		t.Parallel()
+
+		cfg := config.DefaultConfig()
+		cfg.Scoring.Enabled = true
+		cfg.Scoring.Points = config.PointsConfig{
+			Commit:         10,
+			IssueOpened:    10,
+			IssueClosed:    20,
+			IssueComment:   5,
+			IssueReference: 5,
+		}
+		calc := NewCalculator(cfg)
+
+		metrics := &models.GlobalMetrics{
+			Repositories: []models.RepositoryMetrics{
+				{
+					FullName: "owner/repo",
+					Contributors: []models.ContributorMetrics{
+						{
+							Login:                   "code-only",
+							CommitCount:             20,
+							RepositoriesContributed: []string{"owner/repo"},
+						},
+					},
+				},
+			},
+		}
+
+		result := calc.Calculate(metrics)
+
+		contributor := result.Repositories[0].Contributors[0]
+		assert.Equal(t, 0, contributor.Score.Breakdown.Issues)
+		// Only commits: 20 * 10 = 200
+		assert.Equal(t, 200, contributor.Score.Total)
+	})
+}
+
+func TestCalculator_IssueAchievements(t *testing.T) {
+	t.Parallel()
+
+	t.Run("earns issue opened achievements", func(t *testing.T) {
+		t.Parallel()
+
+		cfg := config.DefaultConfig()
+		cfg.Scoring.Enabled = true
+		calc := NewCalculator(cfg)
+
+		metrics := &models.GlobalMetrics{
+			Repositories: []models.RepositoryMetrics{
+				{
+					FullName: "owner/repo",
+					Contributors: []models.ContributorMetrics{
+						{
+							Login:                   "bug-hunter",
+							IssuesOpened:            12, // Should earn issue-1, issue-5, issue-10
+							RepositoriesContributed: []string{"owner/repo"},
+						},
+					},
+				},
+			},
+		}
+
+		result := calc.Calculate(metrics)
+
+		contributor := result.Repositories[0].Contributors[0]
+		assert.Contains(t, contributor.Achievements, "issue-1", "Should earn issue-1 for 1+ issues opened")
+		assert.Contains(t, contributor.Achievements, "issue-5", "Should earn issue-5 for 5+ issues opened")
+		assert.Contains(t, contributor.Achievements, "issue-10", "Should earn issue-10 for 10+ issues opened")
+		assert.NotContains(t, contributor.Achievements, "issue-25", "Should not earn issue-25 for <25 issues")
+	})
+
+	t.Run("earns issue closed achievements", func(t *testing.T) {
+		t.Parallel()
+
+		cfg := config.DefaultConfig()
+		cfg.Scoring.Enabled = true
+		calc := NewCalculator(cfg)
+
+		metrics := &models.GlobalMetrics{
+			Repositories: []models.RepositoryMetrics{
+				{
+					FullName: "owner/repo",
+					Contributors: []models.ContributorMetrics{
+						{
+							Login:                   "problem-solver",
+							IssuesClosed:            8, // Should earn issue-close-1, issue-close-5
+							RepositoriesContributed: []string{"owner/repo"},
+						},
+					},
+				},
+			},
+		}
+
+		result := calc.Calculate(metrics)
+
+		contributor := result.Repositories[0].Contributors[0]
+		assert.Contains(t, contributor.Achievements, "issue-close-1", "Should earn issue-close-1 for 1+ issues closed")
+		assert.Contains(t, contributor.Achievements, "issue-close-5", "Should earn issue-close-5 for 5+ issues closed")
+		assert.NotContains(t, contributor.Achievements, "issue-close-10", "Should not earn issue-close-10 for <10 issues")
+	})
+
+	t.Run("earns issue comment achievements", func(t *testing.T) {
+		t.Parallel()
+
+		cfg := config.DefaultConfig()
+		cfg.Scoring.Enabled = true
+		calc := NewCalculator(cfg)
+
+		metrics := &models.GlobalMetrics{
+			Repositories: []models.RepositoryMetrics{
+				{
+					FullName: "owner/repo",
+					Contributors: []models.ContributorMetrics{
+						{
+							Login:                   "discusser",
+							IssueComments:           30, // Should earn issue-comment-5, issue-comment-10, issue-comment-25
+							RepositoriesContributed: []string{"owner/repo"},
+						},
+					},
+				},
+			},
+		}
+
+		result := calc.Calculate(metrics)
+
+		contributor := result.Repositories[0].Contributors[0]
+		assert.Contains(t, contributor.Achievements, "issue-comment-5", "Should earn issue-comment-5 for 5+ comments")
+		assert.Contains(t, contributor.Achievements, "issue-comment-10", "Should earn issue-comment-10 for 10+ comments")
+		assert.Contains(t, contributor.Achievements, "issue-comment-25", "Should earn issue-comment-25 for 25+ comments")
+		assert.NotContains(t, contributor.Achievements, "issue-comment-50", "Should not earn issue-comment-50 for <50 comments")
+	})
+
+	t.Run("earns issue reference achievements", func(t *testing.T) {
+		t.Parallel()
+
+		cfg := config.DefaultConfig()
+		cfg.Scoring.Enabled = true
+		calc := NewCalculator(cfg)
+
+		metrics := &models.GlobalMetrics{
+			Repositories: []models.RepositoryMetrics{
+				{
+					FullName: "owner/repo",
+					Contributors: []models.ContributorMetrics{
+						{
+							Login:                    "linker",
+							IssueReferencesInCommits: 15, // Should earn issue-ref-5, issue-ref-10
+							RepositoriesContributed:  []string{"owner/repo"},
+						},
+					},
+				},
+			},
+		}
+
+		result := calc.Calculate(metrics)
+
+		contributor := result.Repositories[0].Contributors[0]
+		assert.Contains(t, contributor.Achievements, "issue-ref-5", "Should earn issue-ref-5 for 5+ references")
+		assert.Contains(t, contributor.Achievements, "issue-ref-10", "Should earn issue-ref-10 for 10+ references")
+		assert.NotContains(t, contributor.Achievements, "issue-ref-25", "Should not earn issue-ref-25 for <25 references")
+	})
+
+	t.Run("earns all issue achievement tiers", func(t *testing.T) {
+		t.Parallel()
+
+		cfg := config.DefaultConfig()
+		cfg.Scoring.Enabled = true
+		calc := NewCalculator(cfg)
+
+		metrics := &models.GlobalMetrics{
+			Repositories: []models.RepositoryMetrics{
+				{
+					FullName: "owner/repo",
+					Contributors: []models.ContributorMetrics{
+						{
+							Login:                    "super-issue-worker",
+							IssuesOpened:             100,
+							IssuesClosed:             100,
+							IssueComments:            150,
+							IssueReferencesInCommits: 150,
+							RepositoriesContributed:  []string{"owner/repo"},
+						},
+					},
+				},
+			},
+		}
+
+		result := calc.Calculate(metrics)
+
+		contributor := result.Repositories[0].Contributors[0]
+		// Should have all issue opened achievements
+		assert.Contains(t, contributor.Achievements, "issue-1")
+		assert.Contains(t, contributor.Achievements, "issue-5")
+		assert.Contains(t, contributor.Achievements, "issue-10")
+		assert.Contains(t, contributor.Achievements, "issue-25")
+		assert.Contains(t, contributor.Achievements, "issue-50")
+		// Should have all issue closed achievements
+		assert.Contains(t, contributor.Achievements, "issue-close-1")
+		assert.Contains(t, contributor.Achievements, "issue-close-5")
+		assert.Contains(t, contributor.Achievements, "issue-close-10")
+		assert.Contains(t, contributor.Achievements, "issue-close-25")
+		assert.Contains(t, contributor.Achievements, "issue-close-50")
+		// Should have all issue comment achievements
+		assert.Contains(t, contributor.Achievements, "issue-comment-5")
+		assert.Contains(t, contributor.Achievements, "issue-comment-10")
+		assert.Contains(t, contributor.Achievements, "issue-comment-25")
+		assert.Contains(t, contributor.Achievements, "issue-comment-50")
+		assert.Contains(t, contributor.Achievements, "issue-comment-100")
+		// Should have all issue reference achievements
+		assert.Contains(t, contributor.Achievements, "issue-ref-5")
+		assert.Contains(t, contributor.Achievements, "issue-ref-10")
+		assert.Contains(t, contributor.Achievements, "issue-ref-25")
+		assert.Contains(t, contributor.Achievements, "issue-ref-50")
+		assert.Contains(t, contributor.Achievements, "issue-ref-100")
+	})
+}

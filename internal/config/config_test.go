@@ -193,7 +193,7 @@ date_range:
 			// Create temp config file
 			tmpDir := t.TempDir()
 			configPath := filepath.Join(tmpDir, "config.yaml")
-			err := os.WriteFile(configPath, []byte(tt.configYAML), 0644)
+			err := os.WriteFile(configPath, []byte(tt.configYAML), 0600)
 			require.NoError(t, err)
 
 			// Load config
@@ -940,7 +940,7 @@ func TestLoad_FileNotFound(t *testing.T) {
 func TestLoad_InvalidYAML(t *testing.T) {
 	tmpDir := t.TempDir()
 	configPath := filepath.Join(tmpDir, "config.yaml")
-	err := os.WriteFile(configPath, []byte("invalid: yaml: content: ["), 0644)
+	err := os.WriteFile(configPath, []byte("invalid: yaml: content: ["), 0600)
 	require.NoError(t, err)
 
 	_, err = Load(configPath)

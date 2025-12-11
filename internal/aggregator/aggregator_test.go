@@ -876,3 +876,248 @@ func TestBuildEmailToLoginMapping_NoReplyEmailWithoutID(t *testing.T) {
 	// Should map via name matching since there's a PR author with the same name
 	assert.Equal(t, "johndoe", mapping["johndoe@users.noreply.github.com"])
 }
+
+func TestCountIssueReferences(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		message  string
+		expected int
+	}{
+		{
+			name:     "no references",
+			message:  "Just a regular commit message",
+			expected: 0,
+		},
+		{
+			name:     "fixes issue",
+			message:  "fixes #123",
+			expected: 1,
+		},
+		{
+			name:     "Fixes issue uppercase",
+			message:  "Fixes #456",
+			expected: 1,
+		},
+		{
+			name:     "closes issue",
+			message:  "closes #789",
+			expected: 1,
+		},
+		{
+			name:     "resolves issue",
+			message:  "resolves #101",
+			expected: 1,
+		},
+		{
+			name:     "refs issue",
+			message:  "refs #202",
+			expected: 1,
+		},
+		{
+			name:     "ref issue",
+			message:  "ref #303",
+			expected: 1,
+		},
+		{
+			name:     "multiple fixes",
+			message:  "fixes #1, fixes #2, fixes #3",
+			expected: 3,
+		},
+		{
+			name:     "mixed keywords",
+			message:  "fixes #1 and closes #2",
+			expected: 2,
+		},
+		{
+			name:     "standalone issue reference",
+			message:  "Related to #123",
+			expected: 1,
+		},
+		{
+			name:     "multiple standalone references",
+			message:  "See #1 and #2 for context",
+			expected: 2,
+		},
+		{
+			name:     "fix with extra whitespace",
+			message:  "fix  #123",
+			expected: 1,
+		},
+		{
+			name:     "closed past tense",
+			message:  "closed #123",
+			expected: 1,
+		},
+		{
+			name:     "fixed past tense",
+			message:  "fixed #456",
+			expected: 1,
+		},
+		{
+			name:     "resolved past tense",
+			message:  "resolved #789",
+			expected: 1,
+		},
+		{
+			name:     "close without s",
+			message:  "close #123",
+			expected: 1,
+		},
+		{
+			name:     "fix without es",
+			message:  "fix #456",
+			expected: 1,
+		},
+		{
+			name:     "resolve without s",
+			message:  "resolve #789",
+			expected: 1,
+		},
+		{
+			name:     "hash without number",
+			message:  "This is about # something",
+			expected: 0,
+		},
+		{
+			name:     "complex commit message",
+			message:  "feat: Add new feature\n\nThis implements the feature requested in #123.\nAlso fixes #456 and closes #789.",
+			expected: 3,
+		},
+		{
+			name:     "PR style reference",
+			message:  "Merge pull request #100 from feature-branch",
+			expected: 1,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := countIssueReferences(tt.message)
+			assert.Equal(t, tt.expected, result, "message: %s", tt.message)
+		})
+	}
+}
+
+func TestAggregator_IssueComments(t *testing.T) {
+	t.Parallel()
+
+	cfg := config.DefaultConfig()
+	agg := New(cfg)
+
+	data := &models.RawData{
+		// Need a commit to create the repository
+		Commits: []models.Commit{
+			{
+				SHA:        "abc123",
+				Author:     models.Author{Login: "user1"},
+				Repository: "owner/repo",
+			},
+		},
+		IssueComments: []models.IssueComment{
+			{
+				ID:         1,
+				Issue:      1,
+				Repository: "owner/repo",
+				Author:     models.Author{Login: "user1"},
+				CreatedAt:  time.Now(),
+			},
+			{
+				ID:         2,
+				Issue:      1,
+				Repository: "owner/repo",
+				Author:     models.Author{Login: "user1"},
+				CreatedAt:  time.Now(),
+			},
+			{
+				ID:         3,
+				Issue:      2,
+				Repository: "owner/repo",
+				Author:     models.Author{Login: "user2"},
+				CreatedAt:  time.Now(),
+			},
+		},
+	}
+
+	dateRange := &config.ParsedDateRange{}
+
+	metrics, err := agg.Aggregate(data, dateRange)
+	require.NoError(t, err)
+
+	// Check that issue comments are counted
+	require.Len(t, metrics.Repositories, 1)
+	repo := metrics.Repositories[0]
+
+	// Find user1 and user2
+	var user1, user2 *models.ContributorMetrics
+	for i := range repo.Contributors {
+		if repo.Contributors[i].Login == "user1" {
+			user1 = &repo.Contributors[i]
+		}
+		if repo.Contributors[i].Login == "user2" {
+			user2 = &repo.Contributors[i]
+		}
+	}
+
+	require.NotNil(t, user1)
+	assert.Equal(t, 2, user1.IssueComments) // user1 has 2 comments
+
+	require.NotNil(t, user2)
+	assert.Equal(t, 1, user2.IssueComments) // user2 has 1 comment
+}
+
+func TestAggregator_IssueReferencesInCommits(t *testing.T) {
+	t.Parallel()
+
+	cfg := config.DefaultConfig()
+	agg := New(cfg)
+
+	data := &models.RawData{
+		Commits: []models.Commit{
+			{
+				SHA:        "abc123",
+				Message:    "fixes #1 and closes #2",
+				Author:     models.Author{Login: "user1"},
+				Repository: "owner/repo",
+			},
+			{
+				SHA:        "def456",
+				Message:    "Regular commit without issue refs",
+				Author:     models.Author{Login: "user1"},
+				Repository: "owner/repo",
+			},
+			{
+				SHA:        "ghi789",
+				Message:    "resolves #3",
+				Author:     models.Author{Login: "user2"},
+				Repository: "owner/repo",
+			},
+		},
+	}
+
+	dateRange := &config.ParsedDateRange{}
+
+	metrics, err := agg.Aggregate(data, dateRange)
+	require.NoError(t, err)
+
+	require.Len(t, metrics.Repositories, 1)
+	repo := metrics.Repositories[0]
+
+	// Find user1 and user2
+	var user1, user2 *models.ContributorMetrics
+	for i := range repo.Contributors {
+		if repo.Contributors[i].Login == "user1" {
+			user1 = &repo.Contributors[i]
+		}
+		if repo.Contributors[i].Login == "user2" {
+			user2 = &repo.Contributors[i]
+		}
+	}
+
+	require.NotNil(t, user1)
+	assert.Equal(t, 2, user1.IssueReferencesInCommits) // user1 has 2 issue references (fixes #1, closes #2)
+
+	require.NotNil(t, user2)
+	assert.Equal(t, 1, user2.IssueReferencesInCommits) // user2 has 1 issue reference (resolves #3)
+}

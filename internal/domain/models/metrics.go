@@ -49,9 +49,10 @@ type ContributorMetrics struct {
 	AvgReviewTime    float64 `json:"avg_review_time_hours"`
 
 	// Issue metrics
-	IssuesOpened  int `json:"issues_opened"`
-	IssuesClosed  int `json:"issues_closed"`
-	IssueComments int `json:"issue_comments"`
+	IssuesOpened             int `json:"issues_opened"`
+	IssuesClosed             int `json:"issues_closed"`
+	IssueComments            int `json:"issue_comments"`
+	IssueReferencesInCommits int `json:"issue_references_in_commits"` // Commits referencing issues (fixes #123, etc.)
 
 	// Activity patterns
 	ActiveDays      int `json:"active_days"`        // Unique days with activity
@@ -87,6 +88,7 @@ type ScoreBreakdown struct {
 	PRs           int `json:"prs"`
 	Reviews       int `json:"reviews"`
 	Comments      int `json:"comments"` // PR review comments (not code comments)
+	Issues        int `json:"issues"`   // Issue-related points (opened, closed, comments, references)
 	ResponseBonus int `json:"response_bonus"`
 	LineChanges   int `json:"line_changes"`
 	OutOfHours    int `json:"out_of_hours"` // Bonus for out-of-hours commits

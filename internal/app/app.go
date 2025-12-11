@@ -267,6 +267,19 @@ func (a *App) collectRepoData(ctx context.Context, owner, name string, dateRange
 		}
 	}
 
+	// Fetch issue comments
+	issueComments, err := a.client.FetchIssueComments(ctx, owner, name, dateRange.Start, dateRange.End)
+	if err != nil {
+		return fmt.Errorf("failed to fetch issue comments: %w", err)
+	}
+	a.log("    Found %d issue comments", len(issueComments))
+
+	for _, comment := range issueComments {
+		if !a.config.IsBot(comment.Author.Login) {
+			data.IssueComments = append(data.IssueComments, comment)
+		}
+	}
+
 	return nil
 }
 

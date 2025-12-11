@@ -273,6 +273,40 @@ watch(globalData, loadContributor)
                 </div>
               </div>
             </div>
+
+            <!-- Issue Stats -->
+            <div v-if="contributor.issues_opened || contributor.issues_closed || contributor.issue_comments || contributor.issue_references_in_commits" class="card">
+              <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">
+                <i class="fas fa-bug text-red-500 mr-2"></i>Issue Activity
+              </h3>
+
+              <div class="space-y-4">
+                <div class="flex items-center justify-between">
+                  <span class="text-gray-600 dark:text-gray-300">Issues Opened</span>
+                  <span class="text-red-500 font-semibold">
+                    {{ formatNumber(contributor.issues_opened || 0) }}
+                  </span>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="text-gray-600 dark:text-gray-300">Issues Closed</span>
+                  <span class="text-green-500 font-semibold">
+                    {{ formatNumber(contributor.issues_closed || 0) }}
+                  </span>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="text-gray-600 dark:text-gray-300">Issue Comments</span>
+                  <span class="text-blue-500 font-semibold">
+                    {{ formatNumber(contributor.issue_comments || 0) }}
+                  </span>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="text-gray-600 dark:text-gray-300">Issue References in Commits</span>
+                  <span class="text-purple-500 font-semibold">
+                    {{ formatNumber(contributor.issue_references_in_commits || 0) }}
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -285,7 +319,7 @@ watch(globalData, loadContributor)
               <i class="fas fa-chart-pie gradient-text mr-2"></i>Score Breakdown
             </h3>
 
-            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
               <div class="text-center p-4 rounded-lg bg-gray-50 dark:bg-gray-800/50">
                 <div class="text-2xl font-bold text-green-500">
                   {{ formatNumber(contributor.score.breakdown.commits || 0) }}
@@ -313,6 +347,13 @@ watch(globalData, loadContributor)
                 </div>
                 <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">Comments</div>
                 <div class="text-xs text-gray-400 dark:text-gray-500">{{ contributor.review_comments || 0 }} × 5 pts</div>
+              </div>
+              <div class="text-center p-4 rounded-lg bg-gray-50 dark:bg-gray-800/50">
+                <div class="text-2xl font-bold text-red-500">
+                  {{ formatNumber(contributor.score.breakdown.issues || 0) }}
+                </div>
+                <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">Issues</div>
+                <div class="text-xs text-gray-400 dark:text-gray-500">opened, closed, comments, refs</div>
               </div>
               <div class="text-center p-4 rounded-lg bg-gray-50 dark:bg-gray-800/50">
                 <div class="text-2xl font-bold text-orange-500">

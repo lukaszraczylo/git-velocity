@@ -408,6 +408,63 @@ func (a *Aggregator) Aggregate(data *models.RawData, dateRange *config.ParsedDat
 		}
 	}
 
+	// Process issue comments
+	for _, comment := range data.IssueComments {
+		login := comment.Author.Login
+		if login == "" {
+			continue
+		}
+
+		// Initialize contributor if needed
+		if _, ok := contributorMap[login]; !ok {
+			contributorMap[login] = &models.ContributorMetrics{
+				Login:  login,
+				Period: period,
+			}
+		}
+
+		cm := contributorMap[login]
+		cm.IssueComments++
+
+		// Track repository participation
+		if !contains(cm.RepositoriesContributed, comment.Repository) {
+			cm.RepositoriesContributed = append(cm.RepositoriesContributed, comment.Repository)
+		}
+
+		// Update per-repo contributor metrics
+		rcm := getRepoContributor(comment.Repository, login, cm.Name, cm.AvatarURL)
+		rcm.IssueComments++
+	}
+
+	// Count issue references in commits (e.g., "fixes #123", "closes #456", "refs #789")
+	for _, commit := range data.Commits {
+		login := commit.Author.Login
+		if login == "" {
+			continue
+		}
+
+		// Normalize login
+		if mappedLogin, ok := emailToLogin[commit.Author.Email]; ok {
+			login = mappedLogin
+		}
+		if mappedLogin, ok := loginToLogin[login]; ok {
+			login = mappedLogin
+		}
+
+		// Count issue references in commit message
+		issueRefCount := countIssueReferences(commit.Message)
+		if issueRefCount > 0 {
+			if cm, ok := contributorMap[login]; ok {
+				cm.IssueReferencesInCommits += issueRefCount
+			}
+
+			// Update per-repo contributor metrics
+			if rcm, ok := repoContributorMap[commit.Repository][login]; ok {
+				rcm.IssueReferencesInCommits += issueRefCount
+			}
+		}
+	}
+
 	// Calculate averages and finalize contributor metrics
 	for login, cm := range contributorMap {
 		// Calculate average time to merge
@@ -1272,7 +1329,6 @@ func calculateStreaks(days map[string]bool) (longest, current int) {
 
 	// Calculate streaks
 	longest = 1
-	current = 1
 	streak := 1
 
 	for i := 1; i < len(dates); i++ {
@@ -1299,4 +1355,33 @@ func calculateStreaks(days map[string]bool) (longest, current int) {
 	}
 
 	return longest, current
+}
+
+// countIssueReferences counts the number of issue references in a commit message
+// Detects patterns like: fixes #123, closes #456, resolves #789, refs #12, etc.
+func countIssueReferences(message string) int {
+	count := 0
+
+	// Count all #<number> patterns in the message
+	// This covers both keyword-prefixed references (fixes #123, closes #456)
+	// and standalone mentions (see #123, just #123)
+	// We only count each unique position once
+	for i := 0; i < len(message); i++ {
+		if message[i] == '#' && i+1 < len(message) {
+			// Check for digits after #
+			hasDigits := false
+			for j := i + 1; j < len(message); j++ {
+				if message[j] >= '0' && message[j] <= '9' {
+					hasDigits = true
+				} else {
+					break
+				}
+			}
+			if hasDigits {
+				count++
+			}
+		}
+	}
+
+	return count
 }

@@ -181,7 +181,7 @@
                             Score Formula
                         </h3>
                         <div class="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto mb-4">
-                            <pre class="text-sm"><code>Total Score = Commits + Line Changes + PRs + Reviews + Comments + Response Bonus + Out of Hours
+                            <pre class="text-sm"><code>Total Score = Commits + Line Changes + PRs + Reviews + Comments + Issues + Response Bonus + Out of Hours
 
 Where:
   Commits      = commit_count × 10 points
@@ -189,6 +189,7 @@ Where:
   PRs          = (PRs_opened × 25) + (PRs_merged × 50) points
   Reviews      = reviews_given × 30 points
   Comments     = review_comments × 5 points
+  Issues       = (issues_opened × 10) + (issues_closed × 20) + (issue_comments × 5) + (issue_refs × 5) points
   Response     = bonus for fast review response (0-50 points)
   Out of Hours = commits outside 9am-5pm × 2 points</code></pre>
                         </div>
@@ -269,10 +270,30 @@ Where:
                                         <td class="py-3 font-mono text-pink-600 dark:text-pink-400">10</td>
                                         <td class="py-3">Bonus for average response under 24 hours</td>
                                     </tr>
-                                    <tr>
+                                    <tr class="border-b border-gray-100 dark:border-gray-800">
                                         <td class="py-3"><i class="fas fa-moon text-gray-500 mr-2"></i>Out of Hours</td>
                                         <td class="py-3 font-mono text-pink-600 dark:text-pink-400">2</td>
                                         <td class="py-3">Per commit outside 9am-5pm</td>
+                                    </tr>
+                                    <tr class="border-b border-gray-100 dark:border-gray-800">
+                                        <td class="py-3"><i class="fas fa-circle-exclamation text-teal-500 mr-2"></i>Issue Opened</td>
+                                        <td class="py-3 font-mono text-pink-600 dark:text-pink-400">10</td>
+                                        <td class="py-3">Per issue created</td>
+                                    </tr>
+                                    <tr class="border-b border-gray-100 dark:border-gray-800">
+                                        <td class="py-3"><i class="fas fa-circle-check text-green-500 mr-2"></i>Issue Closed</td>
+                                        <td class="py-3 font-mono text-pink-600 dark:text-pink-400">20</td>
+                                        <td class="py-3">Per issue resolved/closed</td>
+                                    </tr>
+                                    <tr class="border-b border-gray-100 dark:border-gray-800">
+                                        <td class="py-3"><i class="fas fa-comment-dots text-blue-500 mr-2"></i>Issue Comment</td>
+                                        <td class="py-3 font-mono text-pink-600 dark:text-pink-400">5</td>
+                                        <td class="py-3">Per comment on issues</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="py-3"><i class="fas fa-link text-purple-500 mr-2"></i>Issue Reference</td>
+                                        <td class="py-3 font-mono text-pink-600 dark:text-pink-400">5</td>
+                                        <td class="py-3">Per commit referencing an issue (#123)</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -433,7 +454,7 @@ Where:
             <div class="max-w-6xl mx-auto px-4 sm:px-6">
                 <div class="text-center mb-8 sm:mb-12">
                     <h2 class="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-gray-100 mb-3 sm:mb-4">Achievement System</h2>
-                    <p class="text-base sm:text-lg text-gray-600 dark:text-gray-300 px-4">95 achievements across 22 categories with tiered progression</p>
+                    <p class="text-base sm:text-lg text-gray-600 dark:text-gray-300 px-4">115 achievements across 26 categories with tiered progression</p>
                 </div>
                 <div class="max-w-4xl mx-auto space-y-6">
                     <!-- Achievement Categories -->
@@ -533,6 +554,46 @@ Where:
                                     Commits at different times of day unlock special badges
                                 </div>
                             </div>
+                            <!-- Issues Opened -->
+                            <div class="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+                                <h4 class="font-medium text-gray-900 dark:text-gray-100 mb-2">
+                                    <i class="fas fa-circle-exclamation text-teal-500 mr-2"></i>Issues Opened
+                                </h4>
+                                <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">Tiers: 1, 5, 10, 25, 50</p>
+                                <div class="text-xs text-gray-600 dark:text-gray-400">
+                                    Issue Opener → Reporter → Bug Hunter → Issue Tracker → Issue Master
+                                </div>
+                            </div>
+                            <!-- Issues Closed -->
+                            <div class="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+                                <h4 class="font-medium text-gray-900 dark:text-gray-100 mb-2">
+                                    <i class="fas fa-circle-check text-green-500 mr-2"></i>Issues Closed
+                                </h4>
+                                <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">Tiers: 1, 5, 10, 25, 50</p>
+                                <div class="text-xs text-gray-600 dark:text-gray-400">
+                                    Issue Closer → Problem Solver → Resolver → Issue Crusher → Closure King
+                                </div>
+                            </div>
+                            <!-- Issue Comments -->
+                            <div class="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+                                <h4 class="font-medium text-gray-900 dark:text-gray-100 mb-2">
+                                    <i class="fas fa-comment-dots text-blue-500 mr-2"></i>Issue Comments
+                                </h4>
+                                <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">Tiers: 5, 10, 25, 50, 100</p>
+                                <div class="text-xs text-gray-600 dark:text-gray-400">
+                                    Issue Commenter → Discussion Starter → Feedback Provider → Issue Conversationalist → Discussion Champion
+                                </div>
+                            </div>
+                            <!-- Issue References -->
+                            <div class="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+                                <h4 class="font-medium text-gray-900 dark:text-gray-100 mb-2">
+                                    <i class="fas fa-link text-purple-500 mr-2"></i>Issue References
+                                </h4>
+                                <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">Tiers: 5, 10, 25, 50, 100</p>
+                                <div class="text-xs text-gray-600 dark:text-gray-400">
+                                    Issue Linker → Reference Maker → Connector → Link Master → Reference Champion
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -586,9 +647,29 @@ Where:
                                         <td class="py-2">PRs with no changes requested</td>
                                         <td class="py-2">≥ threshold</td>
                                     </tr>
-                                    <tr>
+                                    <tr class="border-b border-gray-100 dark:border-gray-800">
                                         <td class="py-2 font-mono text-xs">repo_count</td>
                                         <td class="py-2">Repositories contributed to</td>
+                                        <td class="py-2">≥ threshold</td>
+                                    </tr>
+                                    <tr class="border-b border-gray-100 dark:border-gray-800">
+                                        <td class="py-2 font-mono text-xs">issues_opened</td>
+                                        <td class="py-2">Issues created</td>
+                                        <td class="py-2">≥ threshold</td>
+                                    </tr>
+                                    <tr class="border-b border-gray-100 dark:border-gray-800">
+                                        <td class="py-2 font-mono text-xs">issues_closed</td>
+                                        <td class="py-2">Issues resolved/closed</td>
+                                        <td class="py-2">≥ threshold</td>
+                                    </tr>
+                                    <tr class="border-b border-gray-100 dark:border-gray-800">
+                                        <td class="py-2 font-mono text-xs">issue_comments</td>
+                                        <td class="py-2">Comments on issues</td>
+                                        <td class="py-2">≥ threshold</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="py-2 font-mono text-xs">issue_references</td>
+                                        <td class="py-2">Commits referencing issues</td>
                                         <td class="py-2">≥ threshold</td>
                                     </tr>
                                 </tbody>
@@ -713,6 +794,10 @@ Where:
                             <div class="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                                 <strong class="text-gray-900 dark:text-gray-100">Unique Reviewees</strong>
                                 <p class="text-gray-500 dark:text-gray-400">Count of distinct PR authors reviewed</p>
+                            </div>
+                            <div class="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                                <strong class="text-gray-900 dark:text-gray-100">Issue References</strong>
+                                <p class="text-gray-500 dark:text-gray-400">Commits containing #123 patterns (fixes, closes, resolves, refs)</p>
                             </div>
                         </div>
                     </div>
