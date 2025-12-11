@@ -667,6 +667,76 @@ func TestCalculator_NoReviewsNoBonus(t *testing.T) {
 	assert.Equal(t, 0, contributor.Score.Breakdown.ResponseBonus)
 }
 
+func TestCalculator_OutOfHoursScoring(t *testing.T) {
+	t.Parallel()
+
+	cfg := config.DefaultConfig()
+	cfg.Scoring.Enabled = true
+	cfg.Scoring.Points = config.PointsConfig{
+		Commit:     10,
+		OutOfHours: 5, // 5 points per out-of-hours commit
+	}
+	calc := NewCalculator(cfg)
+
+	metrics := &models.GlobalMetrics{
+		Repositories: []models.RepositoryMetrics{
+			{
+				FullName: "owner/repo",
+				Contributors: []models.ContributorMetrics{
+					{
+						Login:                   "night-owl",
+						CommitCount:             10,
+						OutOfHoursCount:         8, // 8 commits outside 9am-5pm
+						RepositoriesContributed: []string{"owner/repo"},
+					},
+				},
+			},
+		},
+	}
+
+	result := calc.Calculate(metrics)
+
+	contributor := result.Repositories[0].Contributors[0]
+	// Commits: 10 * 10 = 100
+	// OutOfHours: 8 * 5 = 40
+	// Total: 140
+	assert.Equal(t, 100, contributor.Score.Breakdown.Commits)
+	assert.Equal(t, 40, contributor.Score.Breakdown.OutOfHours)
+	assert.Equal(t, 140, contributor.Score.Total)
+}
+
+func TestCalculator_WorkWeekStreakAchievement(t *testing.T) {
+	t.Parallel()
+
+	cfg := config.DefaultConfig()
+	cfg.Scoring.Enabled = true
+	// Achievements are now hardcoded
+	calc := NewCalculator(cfg)
+
+	metrics := &models.GlobalMetrics{
+		Repositories: []models.RepositoryMetrics{
+			{
+				FullName: "owner/repo",
+				Contributors: []models.ContributorMetrics{
+					{
+						Login:                   "consistent-worker",
+						CommitCount:             20,
+						WorkWeekStreak:          5, // 5-day work week streak
+						RepositoriesContributed: []string{"owner/repo"},
+					},
+				},
+			},
+		},
+	}
+
+	result := calc.Calculate(metrics)
+
+	contributor := result.Repositories[0].Contributors[0]
+	// Should have earned work week streak achievements for 3 and 5 days
+	assert.Contains(t, contributor.Achievements, "workweek-3")
+	assert.Contains(t, contributor.Achievements, "workweek-5")
+}
+
 func TestContains(t *testing.T) {
 	t.Parallel()
 

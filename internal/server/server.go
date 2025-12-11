@@ -24,26 +24,13 @@ func New(directory, port string) *Server {
 
 // Start starts the HTTP server
 func (s *Server) Start() error {
-	// Check if directory exists
-	if _, err := os.Stat(s.directory); os.IsNotExist(err) {
-		return fmt.Errorf("directory does not exist: %s", s.directory)
-	}
-
-	// Get absolute path
-	absPath, err := filepath.Abs(s.directory)
+	handler, err := s.CreateHandler()
 	if err != nil {
-		return fmt.Errorf("failed to get absolute path: %w", err)
+		return err
 	}
 
-	// Create file server with directory listing disabled for security
-	fs := http.FileServer(http.Dir(absPath))
-
-	// Wrap with middleware
-	handler := s.loggingMiddleware(s.cacheMiddleware(fs))
-
-	addr := fmt.Sprintf(":%s", s.port)
 	srv := &http.Server{
-		Addr:              addr,
+		Addr:              s.GetAddress(),
 		Handler:           handler,
 		ReadTimeout:       15 * time.Second,
 		ReadHeaderTimeout: 15 * time.Second,
@@ -74,4 +61,35 @@ func (s *Server) cacheMiddleware(next http.Handler) http.Handler {
 
 		next.ServeHTTP(w, r)
 	})
+}
+
+// CreateHandler creates and returns the HTTP handler without starting the server.
+// This is useful for testing and for embedding the server in other applications.
+func (s *Server) CreateHandler() (http.Handler, error) {
+	// Check if directory exists
+	if _, err := os.Stat(s.directory); os.IsNotExist(err) {
+		return nil, fmt.Errorf("directory does not exist: %s", s.directory)
+	}
+
+	// Get absolute path
+	absPath, err := filepath.Abs(s.directory)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get absolute path: %w", err)
+	}
+
+	// Create file server with directory listing disabled for security
+	fs := http.FileServer(http.Dir(absPath))
+
+	// Wrap with middleware
+	return s.loggingMiddleware(s.cacheMiddleware(fs)), nil
+}
+
+// GetAddress returns the server address in the format :port
+func (s *Server) GetAddress() string {
+	return fmt.Sprintf(":%s", s.port)
+}
+
+// GetDirectory returns the directory being served
+func (s *Server) GetDirectory() string {
+	return s.directory
 }

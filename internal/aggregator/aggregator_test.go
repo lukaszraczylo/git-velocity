@@ -381,3 +381,498 @@ func TestParseRepoName(t *testing.T) {
 		assert.Equal(t, tt.expectedName, name, "name mismatch for %s", tt.fullName)
 	}
 }
+
+func TestSetUserProfiles(t *testing.T) {
+	t.Parallel()
+
+	cfg := config.DefaultConfig()
+	agg := New(cfg)
+
+	profiles := map[string]UserProfile{
+		"user1": {Login: "user1", Email: "user1@example.com", Name: "User One", ID: 12345},
+		"user2": {Login: "user2", Email: "user2@example.com", Name: "User Two", ID: 67890},
+	}
+
+	agg.SetUserProfiles(profiles)
+	assert.Equal(t, profiles, agg.userProfiles)
+}
+
+func TestNormalizeForComparison(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		{"John Doe", "johndoe"},
+		{"john-doe", "johndoe"},
+		{"john_doe", "johndoe"},
+		{"john.doe", "johndoe"},
+		{"JOHN DOE", "johndoe"},
+		{"John123Doe", "johndoe"},
+		{"123", ""},
+		{"", ""},
+		{"ABC xyz 123", "abcxyz"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			result := normalizeForComparison(tt.input)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestBuildEmailToLoginMapping_NoReplyEmails(t *testing.T) {
+	t.Parallel()
+
+	data := &models.RawData{
+		Commits: []models.Commit{
+			{
+				SHA:        "abc123",
+				Author:     models.Author{Login: "", Email: "12345+johndoe@users.noreply.github.com", Name: "John Doe"},
+				Repository: "owner/repo",
+			},
+		},
+		PullRequests: []models.PullRequest{
+			{
+				Number: 1,
+				Author: models.Author{Login: "johndoe", ID: 12345},
+			},
+		},
+	}
+
+	mapping := buildEmailToLoginMapping(data, nil)
+
+	// Should map via the ID
+	assert.Equal(t, "johndoe", mapping["12345+johndoe@users.noreply.github.com"])
+}
+
+func TestBuildEmailToLoginMapping_ProfileEmails(t *testing.T) {
+	t.Parallel()
+
+	data := &models.RawData{
+		Commits: []models.Commit{
+			{
+				SHA:        "abc123",
+				Author:     models.Author{Login: "", Email: "john@company.com", Name: "John Doe"},
+				Repository: "owner/repo",
+			},
+		},
+	}
+
+	profiles := map[string]UserProfile{
+		"johndoe": {Login: "johndoe", Email: "john@company.com", Name: "John Doe", ID: 12345},
+	}
+
+	mapping := buildEmailToLoginMapping(data, profiles)
+
+	// Should map via profile email
+	assert.Equal(t, "johndoe", mapping["john@company.com"])
+}
+
+func TestBuildEmailToLoginMapping_NameMatching(t *testing.T) {
+	t.Parallel()
+
+	data := &models.RawData{
+		Commits: []models.Commit{
+			{
+				SHA:        "abc123",
+				Author:     models.Author{Login: "", Email: "john@somewhere.com", Name: "John Doe"},
+				Repository: "owner/repo",
+			},
+		},
+		PullRequests: []models.PullRequest{
+			{
+				Number: 1,
+				Author: models.Author{Login: "johndoe", Name: "John Doe"},
+			},
+		},
+	}
+
+	mapping := buildEmailToLoginMapping(data, nil)
+
+	// Should map via name matching
+	assert.Equal(t, "johndoe", mapping["john@somewhere.com"])
+}
+
+func TestCalculateWorkWeekStreak(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name           string
+		dates          map[string]bool
+		expectedStreak int
+	}{
+		{
+			name:           "empty dates",
+			dates:          map[string]bool{},
+			expectedStreak: 0,
+		},
+		{
+			name: "single weekday",
+			dates: map[string]bool{
+				"2024-01-08": true, // Monday
+			},
+			expectedStreak: 1,
+		},
+		{
+			name: "consecutive weekdays",
+			dates: map[string]bool{
+				"2024-01-08": true, // Monday
+				"2024-01-09": true, // Tuesday
+				"2024-01-10": true, // Wednesday
+			},
+			expectedStreak: 3,
+		},
+		{
+			name: "weekdays with weekend gap",
+			dates: map[string]bool{
+				"2024-01-12": true, // Friday
+				"2024-01-15": true, // Monday
+				"2024-01-16": true, // Tuesday
+			},
+			expectedStreak: 3, // Weekend doesn't break streak
+		},
+		{
+			name: "broken streak on weekday",
+			dates: map[string]bool{
+				"2024-01-08": true, // Monday
+				"2024-01-10": true, // Wednesday (skipped Tuesday)
+			},
+			expectedStreak: 1,
+		},
+		{
+			name: "weekend only",
+			dates: map[string]bool{
+				"2024-01-13": true, // Saturday
+				"2024-01-14": true, // Sunday
+			},
+			expectedStreak: 0, // Weekends don't count
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := calculateWorkWeekStreak(tt.dates)
+			assert.Equal(t, tt.expectedStreak, result)
+		})
+	}
+}
+
+func TestCalculateWorkWeekStreak_LongestStreak(t *testing.T) {
+	t.Parallel()
+
+	// Multiple streaks - should return longest
+	dates := map[string]bool{
+		"2024-01-08": true, // Monday
+		"2024-01-09": true, // Tuesday
+		"2024-01-15": true, // Monday (gap - breaks streak)
+		"2024-01-16": true, // Tuesday
+		"2024-01-17": true, // Wednesday
+		"2024-01-18": true, // Thursday
+		"2024-01-19": true, // Friday
+		"2024-01-22": true, // Monday (weekend doesn't break)
+	}
+
+	result := calculateWorkWeekStreak(dates)
+	assert.Equal(t, 6, result) // Mon-Fri + Mon = 6 weekdays in a row
+}
+
+func TestAggregator_OutOfHoursTracking(t *testing.T) {
+	t.Parallel()
+
+	cfg := config.DefaultConfig()
+	agg := New(cfg)
+
+	data := &models.RawData{
+		Commits: []models.Commit{
+			{
+				SHA:        "abc123",
+				Author:     models.Author{Login: "user1"},
+				Date:       time.Date(2024, 1, 15, 7, 0, 0, 0, time.UTC), // 7am - before 9am
+				Repository: "owner/repo",
+			},
+			{
+				SHA:        "def456",
+				Author:     models.Author{Login: "user1"},
+				Date:       time.Date(2024, 1, 15, 10, 0, 0, 0, time.UTC), // 10am - work hours
+				Repository: "owner/repo",
+			},
+			{
+				SHA:        "ghi789",
+				Author:     models.Author{Login: "user1"},
+				Date:       time.Date(2024, 1, 15, 18, 0, 0, 0, time.UTC), // 6pm - after 5pm
+				Repository: "owner/repo",
+			},
+		},
+	}
+
+	dateRange := &config.ParsedDateRange{}
+
+	metrics, err := agg.Aggregate(data, dateRange)
+	require.NoError(t, err)
+
+	require.Len(t, metrics.Repositories, 1)
+	require.Len(t, metrics.Repositories[0].Contributors, 1)
+	contrib := metrics.Repositories[0].Contributors[0]
+	assert.Equal(t, 2, contrib.OutOfHoursCount) // 7am and 6pm are out of hours
+}
+
+func TestAggregator_WorkWeekStreakTracking(t *testing.T) {
+	t.Parallel()
+
+	cfg := config.DefaultConfig()
+	agg := New(cfg)
+
+	data := &models.RawData{
+		Commits: []models.Commit{
+			{
+				SHA:        "abc123",
+				Author:     models.Author{Login: "user1"},
+				Date:       time.Date(2024, 1, 8, 10, 0, 0, 0, time.UTC), // Monday
+				Repository: "owner/repo",
+			},
+			{
+				SHA:        "def456",
+				Author:     models.Author{Login: "user1"},
+				Date:       time.Date(2024, 1, 9, 10, 0, 0, 0, time.UTC), // Tuesday
+				Repository: "owner/repo",
+			},
+			{
+				SHA:        "ghi789",
+				Author:     models.Author{Login: "user1"},
+				Date:       time.Date(2024, 1, 10, 10, 0, 0, 0, time.UTC), // Wednesday
+				Repository: "owner/repo",
+			},
+		},
+	}
+
+	dateRange := &config.ParsedDateRange{}
+
+	metrics, err := agg.Aggregate(data, dateRange)
+	require.NoError(t, err)
+
+	require.Len(t, metrics.Repositories, 1)
+	require.Len(t, metrics.Repositories[0].Contributors, 1)
+	contrib := metrics.Repositories[0].Contributors[0]
+	assert.Equal(t, 3, contrib.WorkWeekStreak)
+}
+
+// Note: Bot filtering tests removed - bot filtering happens in app.go before data reaches aggregator
+// The aggregator receives already filtered data
+
+func TestAggregator_EarlyBirdTracking(t *testing.T) {
+	t.Parallel()
+
+	cfg := config.DefaultConfig()
+	agg := New(cfg)
+
+	data := &models.RawData{
+		Commits: []models.Commit{
+			{
+				SHA:        "abc123",
+				Author:     models.Author{Login: "user1"},
+				Date:       time.Date(2024, 1, 15, 6, 0, 0, 0, time.UTC), // 6am
+				Repository: "owner/repo",
+			},
+			{
+				SHA:        "def456",
+				Author:     models.Author{Login: "user1"},
+				Date:       time.Date(2024, 1, 16, 8, 30, 0, 0, time.UTC), // 8:30am
+				Repository: "owner/repo",
+			},
+		},
+	}
+
+	dateRange := &config.ParsedDateRange{}
+
+	metrics, err := agg.Aggregate(data, dateRange)
+	require.NoError(t, err)
+
+	require.Len(t, metrics.Repositories, 1)
+	require.Len(t, metrics.Repositories[0].Contributors, 1)
+	contrib := metrics.Repositories[0].Contributors[0]
+	assert.Equal(t, 2, contrib.EarlyBirdCount) // Both before 9am
+}
+
+func TestAggregator_NightOwlTracking(t *testing.T) {
+	t.Parallel()
+
+	cfg := config.DefaultConfig()
+	agg := New(cfg)
+
+	data := &models.RawData{
+		Commits: []models.Commit{
+			{
+				SHA:        "abc123",
+				Author:     models.Author{Login: "user1"},
+				Date:       time.Date(2024, 1, 15, 21, 0, 0, 0, time.UTC), // 9pm
+				Repository: "owner/repo",
+			},
+			{
+				SHA:        "def456",
+				Author:     models.Author{Login: "user1"},
+				Date:       time.Date(2024, 1, 16, 23, 30, 0, 0, time.UTC), // 11:30pm
+				Repository: "owner/repo",
+			},
+		},
+	}
+
+	dateRange := &config.ParsedDateRange{}
+
+	metrics, err := agg.Aggregate(data, dateRange)
+	require.NoError(t, err)
+
+	require.Len(t, metrics.Repositories, 1)
+	require.Len(t, metrics.Repositories[0].Contributors, 1)
+	contrib := metrics.Repositories[0].Contributors[0]
+	assert.Equal(t, 2, contrib.NightOwlCount) // Both after 9pm
+}
+
+func TestAggregator_MidnightTracking(t *testing.T) {
+	t.Parallel()
+
+	cfg := config.DefaultConfig()
+	agg := New(cfg)
+
+	data := &models.RawData{
+		Commits: []models.Commit{
+			{
+				SHA:        "abc123",
+				Author:     models.Author{Login: "user1"},
+				Date:       time.Date(2024, 1, 15, 0, 30, 0, 0, time.UTC), // 12:30am
+				Repository: "owner/repo",
+			},
+			{
+				SHA:        "def456",
+				Author:     models.Author{Login: "user1"},
+				Date:       time.Date(2024, 1, 16, 3, 0, 0, 0, time.UTC), // 3am
+				Repository: "owner/repo",
+			},
+		},
+	}
+
+	dateRange := &config.ParsedDateRange{}
+
+	metrics, err := agg.Aggregate(data, dateRange)
+	require.NoError(t, err)
+
+	require.Len(t, metrics.Repositories, 1)
+	require.Len(t, metrics.Repositories[0].Contributors, 1)
+	contrib := metrics.Repositories[0].Contributors[0]
+	assert.Equal(t, 2, contrib.MidnightCount) // Both between 0-4am
+}
+
+func TestAggregator_WeekendWarriorTracking(t *testing.T) {
+	t.Parallel()
+
+	cfg := config.DefaultConfig()
+	agg := New(cfg)
+
+	data := &models.RawData{
+		Commits: []models.Commit{
+			{
+				SHA:        "abc123",
+				Author:     models.Author{Login: "user1"},
+				Date:       time.Date(2024, 1, 13, 10, 0, 0, 0, time.UTC), // Saturday
+				Repository: "owner/repo",
+			},
+			{
+				SHA:        "def456",
+				Author:     models.Author{Login: "user1"},
+				Date:       time.Date(2024, 1, 14, 15, 0, 0, 0, time.UTC), // Sunday
+				Repository: "owner/repo",
+			},
+			{
+				SHA:        "ghi789",
+				Author:     models.Author{Login: "user1"},
+				Date:       time.Date(2024, 1, 15, 10, 0, 0, 0, time.UTC), // Monday (not weekend)
+				Repository: "owner/repo",
+			},
+		},
+	}
+
+	dateRange := &config.ParsedDateRange{}
+
+	metrics, err := agg.Aggregate(data, dateRange)
+	require.NoError(t, err)
+
+	require.Len(t, metrics.Repositories, 1)
+	require.Len(t, metrics.Repositories[0].Contributors, 1)
+	contrib := metrics.Repositories[0].Contributors[0]
+	assert.Equal(t, 2, contrib.WeekendWarrior) // Saturday and Sunday only
+}
+
+func TestAggregator_MultiRepoContributions(t *testing.T) {
+	t.Parallel()
+
+	cfg := config.DefaultConfig()
+	agg := New(cfg)
+
+	data := &models.RawData{
+		Commits: []models.Commit{
+			{
+				SHA:        "abc123",
+				Author:     models.Author{Login: "user1"},
+				Repository: "owner/repo1",
+			},
+			{
+				SHA:        "def456",
+				Author:     models.Author{Login: "user1"},
+				Repository: "owner/repo2",
+			},
+			{
+				SHA:        "ghi789",
+				Author:     models.Author{Login: "user1"},
+				Repository: "owner/repo3",
+			},
+		},
+	}
+
+	dateRange := &config.ParsedDateRange{}
+
+	metrics, err := agg.Aggregate(data, dateRange)
+	require.NoError(t, err)
+
+	// MultiRepoCount is tracked in the global leaderboard entries, not repo contributors
+	// The leaderboard entry should show 3 repos for user1
+	require.Len(t, metrics.Repositories, 3)
+	assert.Equal(t, 1, metrics.TotalContributors)
+}
+
+func TestBuildEmailToLoginMapping_EmptyData(t *testing.T) {
+	t.Parallel()
+
+	data := &models.RawData{}
+	mapping := buildEmailToLoginMapping(data, nil)
+	assert.Empty(t, mapping)
+}
+
+func TestBuildEmailToLoginMapping_NoReplyEmailWithoutID(t *testing.T) {
+	t.Parallel()
+
+	// When the email is just "username@users.noreply.github.com" (without ID+),
+	// the mapping only happens if there's a matching PR author (via name matching later)
+	// The direct extraction only works for "ID+username@" format
+	data := &models.RawData{
+		Commits: []models.Commit{
+			{
+				SHA:        "abc123",
+				Author:     models.Author{Login: "", Email: "johndoe@users.noreply.github.com", Name: "John Doe"},
+				Repository: "owner/repo",
+			},
+		},
+		// Add a PR to enable name matching
+		PullRequests: []models.PullRequest{
+			{
+				Number: 1,
+				Author: models.Author{Login: "johndoe", Name: "John Doe"},
+			},
+		},
+	}
+
+	mapping := buildEmailToLoginMapping(data, nil)
+	// Should map via name matching since there's a PR author with the same name
+	assert.Equal(t, "johndoe", mapping["johndoe@users.noreply.github.com"])
+}
