@@ -1,0 +1,819 @@
+<!doctype html>
+<html lang="en" class="scroll-smooth">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>How Scoring Works - Git Velocity</title>
+        <meta
+            name="description"
+            content="Learn how Git Velocity calculates scores, generates leaderboards, and awards achievements based on your GitHub activity."
+        />
+        <meta name="keywords" content="git velocity, scoring, calculations, leaderboard, achievements, github metrics" />
+        <meta name="author" content="Lukasz Raczylo" />
+        <meta property="og:title" content="How Scoring Works - Git Velocity" />
+        <meta property="og:description" content="Understand the scoring system, point calculations, and achievement criteria in Git Velocity." />
+        <meta property="og:type" content="website" />
+        <script src="https://cdn.tailwindcss.com"></script>
+        <script>
+            tailwind.config = {
+                darkMode: 'class'
+            }
+        </script>
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+        />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+            rel="stylesheet"
+        />
+        <style>
+            body { font-family: "Inter", sans-serif; }
+            code, pre { font-family: "JetBrains Mono", monospace; }
+            .theme-transition {
+                transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+            }
+            @keyframes fadeInUp {
+                from { opacity: 0; transform: translateY(20px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+            .animate-fade-in-up { animation: fadeInUp 0.6s ease-out; }
+            .glass {
+                background: rgba(255, 255, 255, 0.7);
+                backdrop-filter: blur(10px);
+                -webkit-backdrop-filter: blur(10px);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+            }
+            .dark .glass {
+                background: rgba(17, 24, 39, 0.7);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+            }
+            .gradient-text {
+                background: linear-gradient(135deg, #f472b6 0%, #c084fc 100%);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                background-clip: text;
+            }
+            .dark .gradient-text {
+                background: linear-gradient(135deg, #f9a8d4 0%, #d8b4fe 100%);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                background-clip: text;
+            }
+            .shadow-modern { box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.1); }
+            .dark .shadow-modern { box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.4); }
+            html { scroll-behavior: smooth; }
+        </style>
+        <script>
+            if (localStorage.theme === "dark" || (!("theme" in localStorage) && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
+                document.documentElement.classList.add("dark");
+            } else {
+                document.documentElement.classList.remove("dark");
+            }
+        </script>
+    </head>
+    <body class="bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 theme-transition">
+        <!-- Navigation -->
+        <nav class="fixed w-full glass shadow-modern z-50 theme-transition">
+            <div class="max-w-6xl mx-auto px-4 sm:px-6">
+                <div class="flex justify-between h-16 items-center">
+                    <a href="index.html" class="flex items-center hover:opacity-80 transition-opacity duration-300">
+                        <img src="git-velocity-logo.png" alt="Git Velocity" class="h-8 w-auto" />
+                    </a>
+                    <div class="hidden md:flex items-center space-x-1">
+                        <a href="index.html" class="px-3 py-2 text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg font-medium transition-colors">Home</a>
+                        <a href="#scoring" class="px-3 py-2 text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg font-medium transition-colors">Scoring</a>
+                        <a href="#leaderboard" class="px-3 py-2 text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg font-medium transition-colors">Leaderboard</a>
+                        <a href="#achievements" class="px-3 py-2 text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg font-medium transition-colors">Achievements</a>
+                        <a href="#data-sources" class="px-3 py-2 text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg font-medium transition-colors">Data Sources</a>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button id="theme-toggle" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800 p-2 rounded-lg transition-colors" aria-label="Toggle theme">
+                            <i class="fas fa-moon dark:hidden text-lg"></i>
+                            <i class="fas fa-sun hidden dark:inline text-lg"></i>
+                        </button>
+                        <a href="https://github.com/lukaszraczylo/git-velocity" target="_blank" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800 p-2 rounded-lg transition-colors" aria-label="View on GitHub">
+                            <i class="fab fa-github text-lg"></i>
+                        </a>
+                        <button id="mobile-menu-toggle" class="md:hidden text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800 p-2 rounded-lg transition-colors" aria-label="Toggle menu">
+                            <i class="fas fa-bars text-lg" id="menu-open-icon"></i>
+                            <i class="fas fa-times text-lg hidden" id="menu-close-icon"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div id="mobile-menu" class="hidden md:hidden border-t border-gray-200 dark:border-gray-700">
+                <div class="px-4 py-3 space-y-1 bg-white dark:bg-gray-800">
+                    <a href="index.html" class="block px-3 py-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg font-medium">Home</a>
+                    <a href="#scoring" class="block px-3 py-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg font-medium">Scoring</a>
+                    <a href="#leaderboard" class="block px-3 py-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg font-medium">Leaderboard</a>
+                    <a href="#achievements" class="block px-3 py-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg font-medium">Achievements</a>
+                    <a href="#data-sources" class="block px-3 py-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg font-medium">Data Sources</a>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Hero Section -->
+        <section class="relative pt-24 sm:pt-32 pb-12 sm:pb-16 overflow-hidden">
+            <div class="absolute inset-0 bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50 dark:from-gray-900 dark:via-pink-900/20 dark:to-purple-900/20 theme-transition"></div>
+            <div class="relative max-w-6xl mx-auto px-4 sm:px-6">
+                <div class="text-center">
+                    <h1 class="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 dark:text-gray-100 mb-4 sm:mb-6 leading-tight animate-fade-in-up">
+                        How <span class="gradient-text">Scoring</span> Works
+                    </h1>
+                    <p class="text-base sm:text-lg md:text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-2xl mx-auto leading-relaxed px-4 animate-fade-in-up" style="animation-delay: 0.1s;">
+                        Understanding the point system, leaderboard rankings, and achievement criteria that power Git Velocity.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Overview Section -->
+        <section class="py-12 bg-white dark:bg-gray-900 theme-transition">
+            <div class="max-w-6xl mx-auto px-4 sm:px-6">
+                <div class="max-w-4xl mx-auto">
+                    <div class="glass p-6 rounded-xl mb-8">
+                        <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
+                            <i class="fas fa-info-circle mr-3 text-blue-500"></i>
+                            Overview
+                        </h2>
+                        <p class="text-gray-600 dark:text-gray-400 mb-4">
+                            Git Velocity calculates developer contributions by analyzing GitHub activity across configured repositories.
+                            The scoring system is designed to encourage well-rounded contributions including code commits, pull requests,
+                            code reviews, and collaboration.
+                        </p>
+                        <div class="grid sm:grid-cols-3 gap-4 mt-6">
+                            <div class="text-center p-4 bg-pink-50 dark:bg-pink-900/20 rounded-lg">
+                                <i class="fas fa-calculator text-pink-500 text-2xl mb-2"></i>
+                                <h3 class="font-medium text-gray-900 dark:text-gray-100">Point-Based</h3>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">Activities earn configurable points</p>
+                            </div>
+                            <div class="text-center p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                                <i class="fas fa-layer-group text-purple-500 text-2xl mb-2"></i>
+                                <h3 class="font-medium text-gray-900 dark:text-gray-100">Aggregated</h3>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">Combined across all repositories</p>
+                            </div>
+                            <div class="text-center p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg">
+                                <i class="fas fa-trophy text-indigo-500 text-2xl mb-2"></i>
+                                <h3 class="font-medium text-gray-900 dark:text-gray-100">Achievement-Driven</h3>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">Unlock badges for milestones</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Scoring Section -->
+        <section id="scoring" class="py-12 sm:py-16 bg-gray-50 dark:bg-gray-800 theme-transition">
+            <div class="max-w-6xl mx-auto px-4 sm:px-6">
+                <div class="text-center mb-8 sm:mb-12">
+                    <h2 class="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-gray-100 mb-3 sm:mb-4">Point Calculations</h2>
+                    <p class="text-base sm:text-lg text-gray-600 dark:text-gray-300 px-4">How each activity contributes to your score</p>
+                </div>
+                <div class="max-w-4xl mx-auto space-y-6">
+                    <!-- Score Formula -->
+                    <div class="glass p-6 rounded-xl">
+                        <h3 class="font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center text-xl">
+                            <i class="fas fa-function mr-2 text-pink-500"></i>
+                            Score Formula
+                        </h3>
+                        <div class="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto mb-4">
+                            <pre class="text-sm"><code>Total Score = Commits + Line Changes + PRs + Reviews + Comments + Response Bonus + Out of Hours
+
+Where:
+  Commits      = commit_count × 10 points
+  Line Changes = (lines_added × 0.1) + (lines_deleted × 0.05) points
+  PRs          = (PRs_opened × 25) + (PRs_merged × 50) points
+  Reviews      = reviews_given × 30 points
+  Comments     = review_comments × 5 points
+  Response     = bonus for fast review response (0-50 points)
+  Out of Hours = commits outside 9am-5pm × 2 points</code></pre>
+                        </div>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            All point values are configurable in your <code class="text-pink-600 dark:text-pink-400">.git-velocity.yaml</code> file.
+                        </p>
+                    </div>
+
+                    <!-- Default Point Values -->
+                    <div class="glass p-6 rounded-xl">
+                        <h3 class="font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center text-xl">
+                            <i class="fas fa-coins mr-2 text-yellow-500"></i>
+                            Default Point Values
+                        </h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm">
+                                <thead>
+                                    <tr class="border-b border-gray-200 dark:border-gray-700">
+                                        <th class="text-left py-3 text-gray-600 dark:text-gray-400">Activity</th>
+                                        <th class="text-left py-3 text-gray-600 dark:text-gray-400">Points</th>
+                                        <th class="text-left py-3 text-gray-600 dark:text-gray-400">Description</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="text-gray-700 dark:text-gray-300">
+                                    <tr class="border-b border-gray-100 dark:border-gray-800">
+                                        <td class="py-3"><i class="fas fa-code-commit text-pink-500 mr-2"></i>Commit</td>
+                                        <td class="py-3 font-mono text-pink-600 dark:text-pink-400">10</td>
+                                        <td class="py-3">Per commit pushed</td>
+                                    </tr>
+                                    <tr class="border-b border-gray-100 dark:border-gray-800">
+                                        <td class="py-3"><i class="fas fa-flask text-green-500 mr-2"></i>Commit with Tests</td>
+                                        <td class="py-3 font-mono text-pink-600 dark:text-pink-400">15</td>
+                                        <td class="py-3">Commit that includes test files</td>
+                                    </tr>
+                                    <tr class="border-b border-gray-100 dark:border-gray-800">
+                                        <td class="py-3"><i class="fas fa-plus text-blue-500 mr-2"></i>Lines Added</td>
+                                        <td class="py-3 font-mono text-pink-600 dark:text-pink-400">0.1</td>
+                                        <td class="py-3">Per meaningful line added</td>
+                                    </tr>
+                                    <tr class="border-b border-gray-100 dark:border-gray-800">
+                                        <td class="py-3"><i class="fas fa-minus text-red-500 mr-2"></i>Lines Deleted</td>
+                                        <td class="py-3 font-mono text-pink-600 dark:text-pink-400">0.05</td>
+                                        <td class="py-3">Per meaningful line removed</td>
+                                    </tr>
+                                    <tr class="border-b border-gray-100 dark:border-gray-800">
+                                        <td class="py-3"><i class="fas fa-code-pull-request text-purple-500 mr-2"></i>PR Opened</td>
+                                        <td class="py-3 font-mono text-pink-600 dark:text-pink-400">25</td>
+                                        <td class="py-3">Per pull request created</td>
+                                    </tr>
+                                    <tr class="border-b border-gray-100 dark:border-gray-800">
+                                        <td class="py-3"><i class="fas fa-code-merge text-indigo-500 mr-2"></i>PR Merged</td>
+                                        <td class="py-3 font-mono text-pink-600 dark:text-pink-400">50</td>
+                                        <td class="py-3">Per pull request merged</td>
+                                    </tr>
+                                    <tr class="border-b border-gray-100 dark:border-gray-800">
+                                        <td class="py-3"><i class="fas fa-eye text-cyan-500 mr-2"></i>PR Reviewed</td>
+                                        <td class="py-3 font-mono text-pink-600 dark:text-pink-400">30</td>
+                                        <td class="py-3">Per PR review submitted</td>
+                                    </tr>
+                                    <tr class="border-b border-gray-100 dark:border-gray-800">
+                                        <td class="py-3"><i class="fas fa-comment text-orange-500 mr-2"></i>Review Comment</td>
+                                        <td class="py-3 font-mono text-pink-600 dark:text-pink-400">5</td>
+                                        <td class="py-3">Per comment on PR reviews</td>
+                                    </tr>
+                                    <tr class="border-b border-gray-100 dark:border-gray-800">
+                                        <td class="py-3"><i class="fas fa-bolt text-yellow-500 mr-2"></i>Fast Review (&lt;1h)</td>
+                                        <td class="py-3 font-mono text-pink-600 dark:text-pink-400">50</td>
+                                        <td class="py-3">Bonus for average response under 1 hour</td>
+                                    </tr>
+                                    <tr class="border-b border-gray-100 dark:border-gray-800">
+                                        <td class="py-3"><i class="fas fa-stopwatch text-yellow-500 mr-2"></i>Fast Review (&lt;4h)</td>
+                                        <td class="py-3 font-mono text-pink-600 dark:text-pink-400">25</td>
+                                        <td class="py-3">Bonus for average response under 4 hours</td>
+                                    </tr>
+                                    <tr class="border-b border-gray-100 dark:border-gray-800">
+                                        <td class="py-3"><i class="fas fa-clock text-yellow-500 mr-2"></i>Fast Review (&lt;24h)</td>
+                                        <td class="py-3 font-mono text-pink-600 dark:text-pink-400">10</td>
+                                        <td class="py-3">Bonus for average response under 24 hours</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="py-3"><i class="fas fa-moon text-gray-500 mr-2"></i>Out of Hours</td>
+                                        <td class="py-3 font-mono text-pink-600 dark:text-pink-400">2</td>
+                                        <td class="py-3">Per commit outside 9am-5pm</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Meaningful Lines -->
+                    <div class="glass p-6 rounded-xl">
+                        <h3 class="font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center text-xl">
+                            <i class="fas fa-filter mr-2 text-green-500"></i>
+                            Meaningful Lines
+                        </h3>
+                        <p class="text-gray-600 dark:text-gray-400 mb-4">
+                            By default, Git Velocity uses <strong>meaningful lines</strong> instead of raw line counts.
+                            This filters out noise and rewards actual code contributions:
+                        </p>
+                        <div class="grid sm:grid-cols-2 gap-4">
+                            <div class="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                                <h4 class="font-medium text-green-700 dark:text-green-400 mb-2">
+                                    <i class="fas fa-check mr-2"></i>Counted as Meaningful
+                                </h4>
+                                <ul class="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                                    <li>Actual code logic</li>
+                                    <li>Function definitions</li>
+                                    <li>Variable declarations</li>
+                                    <li>Import statements</li>
+                                </ul>
+                            </div>
+                            <div class="p-4 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                                <h4 class="font-medium text-red-700 dark:text-red-400 mb-2">
+                                    <i class="fas fa-times mr-2"></i>Filtered Out
+                                </h4>
+                                <ul class="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                                    <li>Empty lines / whitespace</li>
+                                    <li>Single-line comments</li>
+                                    <li>Multi-line comment blocks</li>
+                                    <li>Documentation strings</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-4">
+                            <i class="fas fa-cog mr-1"></i>
+                            Disable with <code class="text-pink-600 dark:text-pink-400">use_meaningful_lines: false</code> in config to use raw line counts.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Leaderboard Section -->
+        <section id="leaderboard" class="py-12 sm:py-16 bg-white dark:bg-gray-900 theme-transition">
+            <div class="max-w-6xl mx-auto px-4 sm:px-6">
+                <div class="text-center mb-8 sm:mb-12">
+                    <h2 class="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-gray-100 mb-3 sm:mb-4">Leaderboard Rankings</h2>
+                    <p class="text-base sm:text-lg text-gray-600 dark:text-gray-300 px-4">How positions are determined</p>
+                </div>
+                <div class="max-w-4xl mx-auto space-y-6">
+                    <!-- Ranking Process -->
+                    <div class="glass p-6 rounded-xl">
+                        <h3 class="font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center text-xl">
+                            <i class="fas fa-list-ol mr-2 text-purple-500"></i>
+                            Ranking Process
+                        </h3>
+                        <ol class="space-y-4">
+                            <li class="flex items-start gap-3">
+                                <span class="flex-shrink-0 w-8 h-8 rounded-full bg-pink-100 dark:bg-pink-900/30 flex items-center justify-center text-pink-600 dark:text-pink-400 font-bold">1</span>
+                                <div>
+                                    <h4 class="font-medium text-gray-900 dark:text-gray-100">Aggregate Across Repos</h4>
+                                    <p class="text-sm text-gray-600 dark:text-gray-400">Metrics from all configured repositories are combined per contributor</p>
+                                </div>
+                            </li>
+                            <li class="flex items-start gap-3">
+                                <span class="flex-shrink-0 w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-purple-600 dark:text-purple-400 font-bold">2</span>
+                                <div>
+                                    <h4 class="font-medium text-gray-900 dark:text-gray-100">Calculate Total Score</h4>
+                                    <p class="text-sm text-gray-600 dark:text-gray-400">Apply point values to each activity type and sum the breakdown</p>
+                                </div>
+                            </li>
+                            <li class="flex items-start gap-3">
+                                <span class="flex-shrink-0 w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold">3</span>
+                                <div>
+                                    <h4 class="font-medium text-gray-900 dark:text-gray-100">Sort by Score</h4>
+                                    <p class="text-sm text-gray-600 dark:text-gray-400">Contributors are sorted in descending order by total score</p>
+                                </div>
+                            </li>
+                            <li class="flex items-start gap-3">
+                                <span class="flex-shrink-0 w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold">4</span>
+                                <div>
+                                    <h4 class="font-medium text-gray-900 dark:text-gray-100">Assign Ranks & Percentiles</h4>
+                                    <p class="text-sm text-gray-600 dark:text-gray-400">Each contributor receives a rank (1st, 2nd...) and percentile position</p>
+                                </div>
+                            </li>
+                        </ol>
+                    </div>
+
+                    <!-- Top Categories -->
+                    <div class="glass p-6 rounded-xl">
+                        <h3 class="font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center text-xl">
+                            <i class="fas fa-medal mr-2 text-yellow-500"></i>
+                            Top Achievers
+                        </h3>
+                        <p class="text-gray-600 dark:text-gray-400 mb-4">
+                            Git Velocity tracks top performers in each category:
+                        </p>
+                        <div class="grid sm:grid-cols-2 gap-4">
+                            <div class="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <i class="fas fa-trophy text-yellow-500"></i>
+                                    <span class="font-medium text-gray-900 dark:text-gray-100">Overall Leader</span>
+                                </div>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">Highest total score</p>
+                            </div>
+                            <div class="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <i class="fas fa-code-commit text-pink-500"></i>
+                                    <span class="font-medium text-gray-900 dark:text-gray-100">Top Committer</span>
+                                </div>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">Most commits</p>
+                            </div>
+                            <div class="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <i class="fas fa-eye text-purple-500"></i>
+                                    <span class="font-medium text-gray-900 dark:text-gray-100">Top Reviewer</span>
+                                </div>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">Most reviews given</p>
+                            </div>
+                            <div class="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <i class="fas fa-code-pull-request text-indigo-500"></i>
+                                    <span class="font-medium text-gray-900 dark:text-gray-100">Top PR Author</span>
+                                </div>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">Most PRs opened</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Team Scoring -->
+                    <div class="glass p-6 rounded-xl">
+                        <h3 class="font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center text-xl">
+                            <i class="fas fa-users mr-2 text-blue-500"></i>
+                            Team Scoring
+                        </h3>
+                        <p class="text-gray-600 dark:text-gray-400 mb-4">
+                            When teams are configured, Git Velocity calculates team metrics:
+                        </p>
+                        <ul class="space-y-2 text-gray-600 dark:text-gray-400">
+                            <li><i class="fas fa-check text-green-500 mr-2"></i><strong>Total Team Score:</strong> Sum of all member scores</li>
+                            <li><i class="fas fa-check text-green-500 mr-2"></i><strong>Average Score:</strong> Total score / number of members</li>
+                            <li><i class="fas fa-check text-green-500 mr-2"></i><strong>Member Breakdown:</strong> Individual scores and achievements per team member</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Achievements Section -->
+        <section id="achievements" class="py-12 sm:py-16 bg-gray-50 dark:bg-gray-800 theme-transition">
+            <div class="max-w-6xl mx-auto px-4 sm:px-6">
+                <div class="text-center mb-8 sm:mb-12">
+                    <h2 class="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-gray-100 mb-3 sm:mb-4">Achievement System</h2>
+                    <p class="text-base sm:text-lg text-gray-600 dark:text-gray-300 px-4">95 achievements across 22 categories with tiered progression</p>
+                </div>
+                <div class="max-w-4xl mx-auto space-y-6">
+                    <!-- Achievement Categories -->
+                    <div class="glass p-6 rounded-xl">
+                        <h3 class="font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center text-xl">
+                            <i class="fas fa-trophy mr-2 text-yellow-500"></i>
+                            Achievement Categories
+                        </h3>
+                        <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <!-- Commits -->
+                            <div class="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+                                <h4 class="font-medium text-gray-900 dark:text-gray-100 mb-2">
+                                    <i class="fas fa-code-commit text-pink-500 mr-2"></i>Commits
+                                </h4>
+                                <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">Tiers: 1, 10, 50, 100, 500, 1000</p>
+                                <div class="text-xs text-gray-600 dark:text-gray-400">
+                                    First Steps → Getting Started → Contributor → Committed → Code Machine → Code Warrior
+                                </div>
+                            </div>
+                            <!-- PRs Opened -->
+                            <div class="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+                                <h4 class="font-medium text-gray-900 dark:text-gray-100 mb-2">
+                                    <i class="fas fa-code-pull-request text-purple-500 mr-2"></i>PRs Opened
+                                </h4>
+                                <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">Tiers: 1, 10, 25, 50, 100, 250</p>
+                                <div class="text-xs text-gray-600 dark:text-gray-400">
+                                    PR Pioneer → PR Regular → PR Pro → Merge Master → PR Champion → PR Legend
+                                </div>
+                            </div>
+                            <!-- Reviews -->
+                            <div class="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+                                <h4 class="font-medium text-gray-900 dark:text-gray-100 mb-2">
+                                    <i class="fas fa-eye text-indigo-500 mr-2"></i>Reviews Given
+                                </h4>
+                                <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">Tiers: 1, 10, 25, 50, 100, 250</p>
+                                <div class="text-xs text-gray-600 dark:text-gray-400">
+                                    First Review → Reviewer → Review Regular → Review Expert → Review Guru → Review Master
+                                </div>
+                            </div>
+                            <!-- Review Comments -->
+                            <div class="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+                                <h4 class="font-medium text-gray-900 dark:text-gray-100 mb-2">
+                                    <i class="fas fa-comment text-blue-500 mr-2"></i>Review Comments
+                                </h4>
+                                <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">Tiers: 10, 50, 100, 250, 500</p>
+                                <div class="text-xs text-gray-600 dark:text-gray-400">
+                                    Commentator → Feedback Giver → Code Critic → Feedback Expert → Comment Champion
+                                </div>
+                            </div>
+                            <!-- Lines Added -->
+                            <div class="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+                                <h4 class="font-medium text-gray-900 dark:text-gray-100 mb-2">
+                                    <i class="fas fa-plus text-green-500 mr-2"></i>Lines Added
+                                </h4>
+                                <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">Tiers: 100, 1K, 5K, 10K, 50K</p>
+                                <div class="text-xs text-gray-600 dark:text-gray-400">
+                                    First Hundred → Thousand Lines → Five Thousand → Ten Thousand → Code Mountain
+                                </div>
+                            </div>
+                            <!-- Lines Deleted -->
+                            <div class="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+                                <h4 class="font-medium text-gray-900 dark:text-gray-100 mb-2">
+                                    <i class="fas fa-minus text-red-500 mr-2"></i>Lines Deleted
+                                </h4>
+                                <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">Tiers: 100, 500, 1K, 5K, 10K</p>
+                                <div class="text-xs text-gray-600 dark:text-gray-400">
+                                    Tidying Up → Spring Cleaning → Code Cleaner → Refactoring Hero → Deletion Master
+                                </div>
+                            </div>
+                            <!-- Response Time -->
+                            <div class="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+                                <h4 class="font-medium text-gray-900 dark:text-gray-100 mb-2">
+                                    <i class="fas fa-bolt text-yellow-500 mr-2"></i>Response Time
+                                </h4>
+                                <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">Tiers: &lt;24h, &lt;4h, &lt;1h</p>
+                                <div class="text-xs text-gray-600 dark:text-gray-400">
+                                    Same Day Reviewer → Quick Responder → Speed Demon
+                                </div>
+                            </div>
+                            <!-- Streaks -->
+                            <div class="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+                                <h4 class="font-medium text-gray-900 dark:text-gray-100 mb-2">
+                                    <i class="fas fa-fire text-orange-500 mr-2"></i>Contribution Streaks
+                                </h4>
+                                <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">Tiers: 3, 7, 14, 30 days</p>
+                                <div class="text-xs text-gray-600 dark:text-gray-400">
+                                    Getting Rolling → Week Warrior → Two Week Streak → Month Master
+                                </div>
+                            </div>
+                            <!-- Activity Patterns -->
+                            <div class="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+                                <h4 class="font-medium text-gray-900 dark:text-gray-100 mb-2">
+                                    <i class="fas fa-clock text-cyan-500 mr-2"></i>Activity Patterns
+                                </h4>
+                                <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">Early Bird, Night Owl, Weekend Warrior</p>
+                                <div class="text-xs text-gray-600 dark:text-gray-400">
+                                    Commits at different times of day unlock special badges
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Achievement Conditions -->
+                    <div class="glass p-6 rounded-xl">
+                        <h3 class="font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center text-xl">
+                            <i class="fas fa-unlock mr-2 text-green-500"></i>
+                            How Achievements Are Earned
+                        </h3>
+                        <p class="text-gray-600 dark:text-gray-400 mb-4">
+                            Each achievement has a <strong>condition type</strong> and <strong>threshold</strong>.
+                            When your metrics meet or exceed the threshold, the achievement is unlocked.
+                        </p>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm">
+                                <thead>
+                                    <tr class="border-b border-gray-200 dark:border-gray-700">
+                                        <th class="text-left py-2 text-gray-600 dark:text-gray-400">Condition Type</th>
+                                        <th class="text-left py-2 text-gray-600 dark:text-gray-400">Metric Checked</th>
+                                        <th class="text-left py-2 text-gray-600 dark:text-gray-400">Comparison</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="text-gray-700 dark:text-gray-300">
+                                    <tr class="border-b border-gray-100 dark:border-gray-800">
+                                        <td class="py-2 font-mono text-xs">commit_count</td>
+                                        <td class="py-2">Total commits</td>
+                                        <td class="py-2">≥ threshold</td>
+                                    </tr>
+                                    <tr class="border-b border-gray-100 dark:border-gray-800">
+                                        <td class="py-2 font-mono text-xs">pr_opened_count</td>
+                                        <td class="py-2">PRs opened</td>
+                                        <td class="py-2">≥ threshold</td>
+                                    </tr>
+                                    <tr class="border-b border-gray-100 dark:border-gray-800">
+                                        <td class="py-2 font-mono text-xs">review_count</td>
+                                        <td class="py-2">Reviews given</td>
+                                        <td class="py-2">≥ threshold</td>
+                                    </tr>
+                                    <tr class="border-b border-gray-100 dark:border-gray-800">
+                                        <td class="py-2 font-mono text-xs">avg_review_time_hours</td>
+                                        <td class="py-2">Average review response</td>
+                                        <td class="py-2">≤ threshold (lower is better)</td>
+                                    </tr>
+                                    <tr class="border-b border-gray-100 dark:border-gray-800">
+                                        <td class="py-2 font-mono text-xs">longest_streak</td>
+                                        <td class="py-2">Consecutive active days</td>
+                                        <td class="py-2">≥ threshold</td>
+                                    </tr>
+                                    <tr class="border-b border-gray-100 dark:border-gray-800">
+                                        <td class="py-2 font-mono text-xs">perfect_prs</td>
+                                        <td class="py-2">PRs with no changes requested</td>
+                                        <td class="py-2">≥ threshold</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="py-2 font-mono text-xs">repo_count</td>
+                                        <td class="py-2">Repositories contributed to</td>
+                                        <td class="py-2">≥ threshold</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-4">
+                            <i class="fas fa-shield-halved mr-1"></i>
+                            Achievement definitions are hardcoded and cannot be customized to prevent manipulation.
+                        </p>
+                    </div>
+
+                    <!-- Tiered Progression -->
+                    <div class="glass p-6 rounded-xl">
+                        <h3 class="font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center text-xl">
+                            <i class="fas fa-layer-group mr-2 text-purple-500"></i>
+                            Tiered Progression
+                        </h3>
+                        <p class="text-gray-600 dark:text-gray-400 mb-4">
+                            Most achievements have multiple tiers. As you progress, you unlock higher tiers:
+                        </p>
+                        <div class="flex flex-wrap gap-2 mb-4">
+                            <span class="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded-full text-sm">Tier 1: 1</span>
+                            <span class="px-3 py-1 bg-gray-300 dark:bg-gray-600 rounded-full text-sm">Tier 2: 10</span>
+                            <span class="px-3 py-1 bg-green-200 dark:bg-green-900/50 rounded-full text-sm">Tier 3: 25</span>
+                            <span class="px-3 py-1 bg-blue-200 dark:bg-blue-900/50 rounded-full text-sm">Tier 4: 50</span>
+                            <span class="px-3 py-1 bg-purple-200 dark:bg-purple-900/50 rounded-full text-sm">Tier 5: 100</span>
+                            <span class="px-3 py-1 bg-pink-200 dark:bg-pink-900/50 rounded-full text-sm">Tier 6: 250</span>
+                            <span class="px-3 py-1 bg-orange-200 dark:bg-orange-900/50 rounded-full text-sm">Tier 7: 500</span>
+                            <span class="px-3 py-1 bg-yellow-200 dark:bg-yellow-900/50 rounded-full text-sm font-medium">Tier 8+: 1000+</span>
+                        </div>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">
+                            The leaderboard shows only the highest tier achieved per category for each contributor.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Data Sources Section -->
+        <section id="data-sources" class="py-12 sm:py-16 bg-white dark:bg-gray-900 theme-transition">
+            <div class="max-w-6xl mx-auto px-4 sm:px-6">
+                <div class="text-center mb-8 sm:mb-12">
+                    <h2 class="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-gray-100 mb-3 sm:mb-4">Data Sources</h2>
+                    <p class="text-base sm:text-lg text-gray-600 dark:text-gray-300 px-4">Where the metrics come from</p>
+                </div>
+                <div class="max-w-4xl mx-auto space-y-6">
+                    <div class="glass p-6 rounded-xl">
+                        <h3 class="font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center text-xl">
+                            <i class="fab fa-github mr-2 text-gray-700 dark:text-gray-300"></i>
+                            GitHub API Data
+                        </h3>
+                        <div class="grid sm:grid-cols-2 gap-6">
+                            <div>
+                                <h4 class="font-medium text-gray-800 dark:text-gray-200 mb-3">Commits</h4>
+                                <ul class="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                                    <li><i class="fas fa-check text-green-500 mr-2"></i>SHA, message, timestamp</li>
+                                    <li><i class="fas fa-check text-green-500 mr-2"></i>Author (login, name, email)</li>
+                                    <li><i class="fas fa-check text-green-500 mr-2"></i>Additions, deletions, files changed</li>
+                                    <li><i class="fas fa-check text-green-500 mr-2"></i>Patch/diff for line analysis</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <h4 class="font-medium text-gray-800 dark:text-gray-200 mb-3">Pull Requests</h4>
+                                <ul class="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                                    <li><i class="fas fa-check text-green-500 mr-2"></i>State (open, merged, closed)</li>
+                                    <li><i class="fas fa-check text-green-500 mr-2"></i>Author and timestamps</li>
+                                    <li><i class="fas fa-check text-green-500 mr-2"></i>Size (additions, deletions)</li>
+                                    <li><i class="fas fa-check text-green-500 mr-2"></i>Comments count</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <h4 class="font-medium text-gray-800 dark:text-gray-200 mb-3">Reviews</h4>
+                                <ul class="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                                    <li><i class="fas fa-check text-green-500 mr-2"></i>Review state (approved, changes requested)</li>
+                                    <li><i class="fas fa-check text-green-500 mr-2"></i>Reviewer login</li>
+                                    <li><i class="fas fa-check text-green-500 mr-2"></i>Submission timestamp</li>
+                                    <li><i class="fas fa-check text-green-500 mr-2"></i>Comment count</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <h4 class="font-medium text-gray-800 dark:text-gray-200 mb-3">User Profiles</h4>
+                                <ul class="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                                    <li><i class="fas fa-check text-green-500 mr-2"></i>GitHub login (username)</li>
+                                    <li><i class="fas fa-check text-green-500 mr-2"></i>Display name</li>
+                                    <li><i class="fas fa-check text-green-500 mr-2"></i>Avatar URL</li>
+                                    <li><i class="fas fa-check text-green-500 mr-2"></i>Public email (for deduplication)</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Calculated Metrics -->
+                    <div class="glass p-6 rounded-xl">
+                        <h3 class="font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center text-xl">
+                            <i class="fas fa-calculator mr-2 text-blue-500"></i>
+                            Derived Metrics
+                        </h3>
+                        <p class="text-gray-600 dark:text-gray-400 mb-4">
+                            These metrics are calculated from raw data:
+                        </p>
+                        <div class="grid sm:grid-cols-2 gap-4 text-sm">
+                            <div class="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                                <strong class="text-gray-900 dark:text-gray-100">Meaningful Lines</strong>
+                                <p class="text-gray-500 dark:text-gray-400">Parsed from commit diffs, filtering comments/whitespace</p>
+                            </div>
+                            <div class="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                                <strong class="text-gray-900 dark:text-gray-100">Average Review Time</strong>
+                                <p class="text-gray-500 dark:text-gray-400">Time between PR creation and first review</p>
+                            </div>
+                            <div class="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                                <strong class="text-gray-900 dark:text-gray-100">Contribution Streaks</strong>
+                                <p class="text-gray-500 dark:text-gray-400">Consecutive days with activity</p>
+                            </div>
+                            <div class="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                                <strong class="text-gray-900 dark:text-gray-100">Perfect PRs</strong>
+                                <p class="text-gray-500 dark:text-gray-400">PRs merged without "changes requested" reviews</p>
+                            </div>
+                            <div class="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                                <strong class="text-gray-900 dark:text-gray-100">Out of Hours</strong>
+                                <p class="text-gray-500 dark:text-gray-400">Commits outside 9am-5pm based on commit timestamp</p>
+                            </div>
+                            <div class="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                                <strong class="text-gray-900 dark:text-gray-100">Unique Reviewees</strong>
+                                <p class="text-gray-500 dark:text-gray-400">Count of distinct PR authors reviewed</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bot Filtering -->
+                    <div class="glass p-6 rounded-xl">
+                        <h3 class="font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center text-xl">
+                            <i class="fas fa-robot mr-2 text-red-500"></i>
+                            Bot Filtering
+                        </h3>
+                        <p class="text-gray-600 dark:text-gray-400 mb-4">
+                            By default, bot activity is excluded from metrics. The following patterns are automatically filtered:
+                        </p>
+                        <div class="flex flex-wrap gap-2">
+                            <code class="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-sm">*[bot]</code>
+                            <code class="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-sm">dependabot*</code>
+                            <code class="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-sm">renovate*</code>
+                            <code class="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-sm">github-actions*</code>
+                            <code class="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-sm">codecov*</code>
+                            <code class="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-sm">snyk*</code>
+                            <code class="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-sm">greenkeeper*</code>
+                        </div>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-4">
+                            <i class="fas fa-cog mr-1"></i>
+                            Enable with <code class="text-pink-600 dark:text-pink-400">include_bots: true</code> or add custom patterns with <code class="text-pink-600 dark:text-pink-400">additional_bot_patterns</code>.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CTA Section -->
+        <section class="py-16 sm:py-20 bg-gradient-to-br from-pink-500 via-purple-500 to-indigo-500 text-white">
+            <div class="max-w-4xl mx-auto px-4 sm:px-6 text-center">
+                <h2 class="text-2xl sm:text-3xl md:text-4xl font-bold mb-4">Ready to Track Your Velocity?</h2>
+                <p class="text-lg sm:text-xl opacity-90 mb-8 max-w-2xl mx-auto">Now that you understand how scoring works, start analyzing your repositories.</p>
+                <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                    <a href="index.html#installation" class="bg-white text-purple-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105">
+                        <i class="fas fa-download mr-2"></i>Get Started
+                    </a>
+                    <a href="index.html#configuration" class="bg-transparent border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white/10 transition-all duration-300">
+                        <i class="fas fa-cog mr-2"></i>Configure Points
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="py-8 bg-gray-100 dark:bg-gray-800 theme-transition">
+            <div class="max-w-6xl mx-auto px-4 sm:px-6">
+                <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
+                    <div class="flex items-center">
+                        <a href="index.html"><img src="git-velocity-logo.png" alt="Git Velocity" class="h-6 w-auto" /></a>
+                    </div>
+                    <div class="flex items-center gap-6">
+                        <a href="https://github.com/lukaszraczylo/git-velocity" class="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100">
+                            <i class="fab fa-github text-xl"></i>
+                        </a>
+                        <a href="index.html" class="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 text-sm">
+                            Home
+                        </a>
+                        <a href="index.html#configuration" class="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 text-sm">
+                            Configuration
+                        </a>
+                    </div>
+                    <p class="text-gray-500 dark:text-gray-400 text-sm">MIT License</p>
+                </div>
+            </div>
+        </footer>
+
+        <script>
+            // Theme toggle
+            document.getElementById('theme-toggle').addEventListener('click', function() {
+                if (document.documentElement.classList.contains('dark')) {
+                    document.documentElement.classList.remove('dark');
+                    localStorage.theme = 'light';
+                } else {
+                    document.documentElement.classList.add('dark');
+                    localStorage.theme = 'dark';
+                }
+            });
+
+            // Mobile menu toggle
+            document.getElementById('mobile-menu-toggle').addEventListener('click', function() {
+                const menu = document.getElementById('mobile-menu');
+                const openIcon = document.getElementById('menu-open-icon');
+                const closeIcon = document.getElementById('menu-close-icon');
+
+                menu.classList.toggle('hidden');
+                openIcon.classList.toggle('hidden');
+                closeIcon.classList.toggle('hidden');
+            });
+
+            // Close mobile menu when clicking a link
+            document.querySelectorAll('#mobile-menu a').forEach(link => {
+                link.addEventListener('click', () => {
+                    document.getElementById('mobile-menu').classList.add('hidden');
+                    document.getElementById('menu-open-icon').classList.remove('hidden');
+                    document.getElementById('menu-close-icon').classList.add('hidden');
+                });
+            });
+        </script>
+    </body>
+</html>
