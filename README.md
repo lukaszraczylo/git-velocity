@@ -80,6 +80,9 @@ $ git-velocity serve --port 8080
 - GitHub App authentication
 - Environment variable support
 
+### 🔑 Required GitHub Token Permissions
+See [Token Permissions](#-github-token-permissions) for detailed requirements.
+
 ## 🚀 Quick Start
 
 ### Installation
@@ -267,6 +270,78 @@ Git Velocity includes **95 hardcoded achievements** across 20 categories with mu
 | 🏛️ Code Historian | Added 5000 lines of comments/docs |
 | ✂️ Comment Trimmer | Removed 50 outdated comment lines |
 | 💀 Dead Code Hunter | Removed 500 outdated comment lines |
+
+## 🔑 GitHub Token Permissions
+
+Git Velocity requires specific GitHub API permissions to fetch repository data. Below are the required permissions for each authentication method.
+
+### Personal Access Token (Classic)
+
+When creating a classic Personal Access Token, select the following scopes:
+
+| Scope | Required | Description |
+|-------|----------|-------------|
+| `repo` | ✅ Yes | Full access to private repositories (includes commits, PRs, issues) |
+| `read:org` | ⚠️ If using org patterns | Required when using `pattern: "*"` to list organization repositories |
+
+> **Note**: For public repositories only, the `public_repo` scope is sufficient instead of full `repo` access.
+
+### Fine-Grained Personal Access Token (Recommended)
+
+Fine-grained tokens provide more granular control. Configure the following permissions:
+
+**Repository Permissions:**
+| Permission | Access Level | Description |
+|------------|--------------|-------------|
+| Contents | Read | Access commit data and file contents |
+| Pull requests | Read | Access PR data, reviews, and comments |
+| Issues | Read | Access issue data and comments |
+| Metadata | Read | Basic repository information (automatically included) |
+
+**Account Permissions:**
+| Permission | Access Level | Description |
+|------------|--------------|-------------|
+| Email addresses | Read | Access public email for user deduplication |
+
+### GitHub App Authentication
+
+When using GitHub App authentication, configure the following permissions:
+
+**Repository Permissions:**
+| Permission | Access Level | Description |
+|------------|--------------|-------------|
+| Contents | Read | Fetch commits and diffs |
+| Pull requests | Read | Fetch PRs, reviews, and review comments |
+| Issues | Read | Fetch issues and issue comments |
+| Metadata | Read | Repository metadata (required) |
+
+**Organization Permissions (if using org patterns):**
+| Permission | Access Level | Description |
+|------------|--------------|-------------|
+| Members | Read | List organization repositories |
+
+**Account Permissions:**
+| Permission | Access Level | Description |
+|------------|--------------|-------------|
+| Email addresses | Read | User profile deduplication |
+
+### GitHub Actions (GITHUB_TOKEN)
+
+When running in GitHub Actions, the default `GITHUB_TOKEN` has sufficient permissions for repositories in the same organization/account. For cross-organization access, use a PAT or GitHub App.
+
+### API Endpoints Used
+
+Git Velocity uses the following GitHub REST API endpoints:
+
+| Endpoint | Purpose |
+|----------|---------|
+| `GET /orgs/{org}/repos` | List repositories by organization |
+| `GET /repos/{owner}/{repo}/commits` | Fetch commit history |
+| `GET /repos/{owner}/{repo}/commits/{sha}` | Fetch commit details with diff |
+| `GET /repos/{owner}/{repo}/pulls` | List pull requests |
+| `GET /repos/{owner}/{repo}/pulls/{number}/reviews` | Fetch PR reviews |
+| `GET /repos/{owner}/{repo}/issues` | List issues |
+| `GET /users/{username}` | Fetch user profile information |
 
 ## ⚙️ Configuration
 

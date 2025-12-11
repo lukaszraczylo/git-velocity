@@ -117,6 +117,7 @@
                         <a href="#achievements" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 font-medium">Achievements</a>
                         <a href="#installation" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 font-medium">Installation</a>
                         <a href="#github-action" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 font-medium">GitHub Action</a>
+                        <a href="#permissions" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 font-medium">Permissions</a>
                         <a href="#configuration" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 font-medium">Configuration</a>
                     </div>
                     <div class="flex items-center space-x-4">
@@ -140,6 +141,7 @@
                     <a href="#achievements" class="block px-3 py-3 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700 rounded font-medium">Achievements</a>
                     <a href="#installation" class="block px-3 py-3 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700 rounded font-medium">Installation</a>
                     <a href="#github-action" class="block px-3 py-3 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700 rounded font-medium">GitHub Action</a>
+                    <a href="#permissions" class="block px-3 py-3 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700 rounded font-medium">Permissions</a>
                     <a href="#configuration" class="block px-3 py-3 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700 rounded font-medium">Configuration</a>
                 </div>
             </div>
@@ -613,8 +615,157 @@
             </div>
         </section>
 
+        <!-- Token Permissions Section -->
+        <section id="permissions" class="py-12 sm:py-16 md:py-20 bg-white dark:bg-gray-900 theme-transition">
+            <div class="max-w-6xl mx-auto px-4 sm:px-6">
+                <div class="text-center mb-8 sm:mb-12">
+                    <h2 class="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-gray-100 mb-3 sm:mb-4">GitHub Token Permissions</h2>
+                    <p class="text-base sm:text-lg text-gray-600 dark:text-gray-300 px-4">Required permissions for each authentication method</p>
+                </div>
+                <div class="max-w-4xl mx-auto space-y-6">
+                    <!-- Classic PAT -->
+                    <div class="glass p-6 rounded-xl">
+                        <h3 class="font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center text-xl">
+                            <i class="fas fa-key mr-2 text-pink-500"></i>
+                            Personal Access Token (Classic)
+                        </h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm">
+                                <thead>
+                                    <tr class="border-b border-gray-200 dark:border-gray-700">
+                                        <th class="text-left py-2 text-gray-600 dark:text-gray-400">Scope</th>
+                                        <th class="text-left py-2 text-gray-600 dark:text-gray-400">Required</th>
+                                        <th class="text-left py-2 text-gray-600 dark:text-gray-400">Description</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="text-gray-700 dark:text-gray-300">
+                                    <tr class="border-b border-gray-100 dark:border-gray-800">
+                                        <td class="py-2"><code class="text-pink-600 dark:text-pink-400">repo</code></td>
+                                        <td class="py-2"><i class="fas fa-check text-green-500"></i> Yes</td>
+                                        <td class="py-2">Full access to private repositories</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="py-2"><code class="text-pink-600 dark:text-pink-400">read:org</code></td>
+                                        <td class="py-2"><i class="fas fa-exclamation-triangle text-yellow-500"></i> If using patterns</td>
+                                        <td class="py-2">Required for <code>pattern: "*"</code> org listing</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-3">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            For public repos only, <code class="text-pink-600 dark:text-pink-400">public_repo</code> scope is sufficient.
+                        </p>
+                    </div>
+
+                    <!-- Fine-Grained PAT -->
+                    <div class="glass p-6 rounded-xl">
+                        <h3 class="font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center text-xl">
+                            <i class="fas fa-sliders mr-2 text-purple-500"></i>
+                            Fine-Grained Token (Recommended)
+                        </h3>
+                        <p class="text-gray-600 dark:text-gray-400 mb-4">More secure with granular control over permissions.</p>
+                        <div class="grid sm:grid-cols-2 gap-4">
+                            <div>
+                                <h4 class="font-medium text-gray-800 dark:text-gray-200 mb-2">Repository Permissions</h4>
+                                <ul class="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                                    <li><i class="fas fa-check text-green-500 mr-2"></i><strong>Contents:</strong> Read</li>
+                                    <li><i class="fas fa-check text-green-500 mr-2"></i><strong>Pull requests:</strong> Read</li>
+                                    <li><i class="fas fa-check text-green-500 mr-2"></i><strong>Issues:</strong> Read</li>
+                                    <li><i class="fas fa-check text-green-500 mr-2"></i><strong>Metadata:</strong> Read (auto)</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <h4 class="font-medium text-gray-800 dark:text-gray-200 mb-2">Account Permissions</h4>
+                                <ul class="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                                    <li><i class="fas fa-check text-green-500 mr-2"></i><strong>Email addresses:</strong> Read</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- GitHub App -->
+                    <div class="glass p-6 rounded-xl">
+                        <h3 class="font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center text-xl">
+                            <i class="fab fa-github mr-2 text-indigo-500"></i>
+                            GitHub App Authentication
+                        </h3>
+                        <div class="grid sm:grid-cols-2 gap-4">
+                            <div>
+                                <h4 class="font-medium text-gray-800 dark:text-gray-200 mb-2">Repository Permissions</h4>
+                                <ul class="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                                    <li><i class="fas fa-check text-green-500 mr-2"></i><strong>Contents:</strong> Read</li>
+                                    <li><i class="fas fa-check text-green-500 mr-2"></i><strong>Pull requests:</strong> Read</li>
+                                    <li><i class="fas fa-check text-green-500 mr-2"></i><strong>Issues:</strong> Read</li>
+                                    <li><i class="fas fa-check text-green-500 mr-2"></i><strong>Metadata:</strong> Read</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <h4 class="font-medium text-gray-800 dark:text-gray-200 mb-2">Organization Permissions</h4>
+                                <ul class="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                                    <li><i class="fas fa-exclamation-triangle text-yellow-500 mr-2"></i><strong>Members:</strong> Read (if using patterns)</li>
+                                </ul>
+                                <h4 class="font-medium text-gray-800 dark:text-gray-200 mb-2 mt-3">Account Permissions</h4>
+                                <ul class="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                                    <li><i class="fas fa-check text-green-500 mr-2"></i><strong>Email addresses:</strong> Read</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- API Endpoints -->
+                    <div class="glass p-6 rounded-xl">
+                        <h3 class="font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center text-xl">
+                            <i class="fas fa-plug mr-2 text-green-500"></i>
+                            API Endpoints Used
+                        </h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm">
+                                <thead>
+                                    <tr class="border-b border-gray-200 dark:border-gray-700">
+                                        <th class="text-left py-2 text-gray-600 dark:text-gray-400">Endpoint</th>
+                                        <th class="text-left py-2 text-gray-600 dark:text-gray-400">Purpose</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="text-gray-700 dark:text-gray-300">
+                                    <tr class="border-b border-gray-100 dark:border-gray-800">
+                                        <td class="py-2"><code class="text-xs">GET /orgs/{org}/repos</code></td>
+                                        <td class="py-2">List organization repositories</td>
+                                    </tr>
+                                    <tr class="border-b border-gray-100 dark:border-gray-800">
+                                        <td class="py-2"><code class="text-xs">GET /repos/{owner}/{repo}/commits</code></td>
+                                        <td class="py-2">Fetch commit history</td>
+                                    </tr>
+                                    <tr class="border-b border-gray-100 dark:border-gray-800">
+                                        <td class="py-2"><code class="text-xs">GET /repos/{owner}/{repo}/commits/{sha}</code></td>
+                                        <td class="py-2">Fetch commit details with diff</td>
+                                    </tr>
+                                    <tr class="border-b border-gray-100 dark:border-gray-800">
+                                        <td class="py-2"><code class="text-xs">GET /repos/{owner}/{repo}/pulls</code></td>
+                                        <td class="py-2">List pull requests</td>
+                                    </tr>
+                                    <tr class="border-b border-gray-100 dark:border-gray-800">
+                                        <td class="py-2"><code class="text-xs">GET /repos/{owner}/{repo}/pulls/{n}/reviews</code></td>
+                                        <td class="py-2">Fetch PR reviews</td>
+                                    </tr>
+                                    <tr class="border-b border-gray-100 dark:border-gray-800">
+                                        <td class="py-2"><code class="text-xs">GET /repos/{owner}/{repo}/issues</code></td>
+                                        <td class="py-2">List issues</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="py-2"><code class="text-xs">GET /users/{username}</code></td>
+                                        <td class="py-2">Fetch user profile</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- Configuration Section -->
-        <section id="configuration" class="py-12 sm:py-16 md:py-20 bg-white dark:bg-gray-900 theme-transition">
+        <section id="configuration" class="py-12 sm:py-16 md:py-20 bg-gray-50 dark:bg-gray-800 theme-transition">
             <div class="max-w-6xl mx-auto px-4 sm:px-6">
                 <div class="text-center mb-8 sm:mb-12">
                     <h2 class="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-gray-100 mb-3 sm:mb-4">Configuration</h2>
