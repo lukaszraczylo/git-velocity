@@ -323,16 +323,6 @@ func (c *Client) GetCommitCountSince(ctx context.Context, owner, repo string, si
 func (c *Client) FetchCommits(ctx context.Context, owner, repo string, since, until *time.Time) ([]models.Commit, error) {
 	cacheKey := fmt.Sprintf("commits:%s/%s:%v:%v", owner, repo, since, until)
 
-	// Check cache
-	if cached, ok := c.cache.Get(cacheKey); ok {
-		if commits, ok := cached.([]models.Commit); ok {
-			c.progress("      Using cached commits data")
-			return commits, nil
-		}
-	}
-
-	var allCommits []models.Commit
-
 	opts := &github.CommitsListOptions{
 		ListOptions: github.ListOptions{PerPage: 100},
 	}
@@ -344,23 +334,19 @@ func (c *Client) FetchCommits(ctx context.Context, owner, repo string, since, un
 		opts.Until = *until
 	}
 
-	page := 1
-	for {
-		var commits []*github.RepositoryCommit
-		var resp *github.Response
-
-		err := c.retryWithBackoff(ctx, "list commits", func() error {
-			var err error
-			commits, resp, err = c.gh.Repositories.ListCommits(ctx, owner, repo, opts)
-			return err
-		})
-		if err != nil {
-			return nil, fmt.Errorf("failed to list commits: %w", err)
-		}
-
-		c.progress(fmt.Sprintf("      Fetching commits page %d (%d commits so far)...", page, len(allCommits)))
-
-		for i, commit := range commits {
+	fetcher := &EnrichingFetcher[*github.RepositoryCommit, models.Commit]{
+		FetchFn: func(ctx context.Context, page int) ([]*github.RepositoryCommit, *github.Response, error) {
+			opts.Page = page
+			var commits []*github.RepositoryCommit
+			var resp *github.Response
+			err := c.retryWithBackoff(ctx, "list commits", func() error {
+				var err error
+				commits, resp, err = c.gh.Repositories.ListCommits(ctx, owner, repo, opts)
+				return err
+			})
+			return commits, resp, err
+		},
+		EnrichFn: func(ctx context.Context, commit *github.RepositoryCommit) (models.Commit, error) {
 			// Fetch detailed commit info for stats
 			var detailed *github.RepositoryCommit
 			err := c.retryWithBackoff(ctx, fmt.Sprintf("get commit %s", commit.GetSHA()[:7]), func() error {
@@ -369,31 +355,24 @@ func (c *Client) FetchCommits(ctx context.Context, owner, repo string, since, un
 				return err
 			})
 			if err != nil {
-				// Log and continue - we can still use basic info
-				c.progress(fmt.Sprintf("      Warning: failed to get commit details for %s: %v", commit.GetSHA()[:7], err))
-				continue
+				return models.Commit{}, err
 			}
-
-			mc := convertCommit(detailed, owner, repo)
-			allCommits = append(allCommits, mc)
-
-			// Progress every 10 commits
-			if (i+1)%10 == 0 {
-				c.progress(fmt.Sprintf("      Processing commit %d/%d on page %d...", i+1, len(commits), page))
+			return convertCommit(detailed, owner, repo), nil
+		},
+		GetDateFn: func(commit *github.RepositoryCommit) time.Time {
+			if commit.Commit != nil && commit.Commit.Author != nil {
+				return commit.Commit.Author.GetDate().Time
 			}
-		}
-
-		if resp.NextPage == 0 {
-			break
-		}
-		opts.Page = resp.NextPage
-		page++
+			return time.Time{}
+		},
+		Since: since,
+		Until: until,
 	}
 
-	// Cache results
-	c.cache.Set(cacheKey, allCommits)
+	config := DefaultFetchConfig("commits")
+	config.EarlyTermination = false // GitHub API already filters by since/until
 
-	return allCommits, nil
+	return FetchAllPagesWithEnrichment(ctx, c, cacheKey, config, fetcher, 10)
 }
 
 // mainBranches are the branches we consider as "main" branches
@@ -434,11 +413,9 @@ func (c *Client) FetchPullRequests(ctx context.Context, owner, repo string, sinc
 
 // fetchPRsForBranch fetches merged PRs for a specific base branch
 func (c *Client) fetchPRsForBranch(ctx context.Context, owner, repo, baseBranch string, since, until *time.Time) ([]models.PullRequest, error) {
-	var branchPRs []models.PullRequest
-
 	opts := &github.PullRequestListOptions{
 		State:     "closed",
-		Base:      baseBranch, // Filter by base branch at API level
+		Base:      baseBranch,
 		Sort:      "updated",
 		Direction: "desc",
 		ListOptions: github.ListOptions{
@@ -446,118 +423,74 @@ func (c *Client) fetchPRsForBranch(ctx context.Context, owner, repo, baseBranch 
 		},
 	}
 
-	page := 1
-	consecutiveOldPages := 0
-
-	for {
-		var prs []*github.PullRequest
-		var resp *github.Response
-
-		err := c.retryWithBackoff(ctx, "list pull requests", func() error {
-			var err error
-			prs, resp, err = c.gh.PullRequests.List(ctx, owner, repo, opts)
-			return err
-		})
-		if err != nil {
-			return branchPRs, err
-		}
-
-		if page == 1 && len(prs) > 0 {
-			c.progress(fmt.Sprintf("      Fetching PRs for branch '%s'...", baseBranch))
-		}
-
-		matchedInPage := 0
-		oldInPage := 0
-
-		for _, pr := range prs {
-			// Only consider merged PRs (check MergedAt since Merged field isn't in list response)
-			if pr.MergedAt == nil {
-				continue
+	fetcher := &DateFilteredFetcher[*github.PullRequest, models.PullRequest]{
+		FetchFn: func(ctx context.Context, page int) ([]*github.PullRequest, *github.Response, error) {
+			opts.Page = page
+			var prs []*github.PullRequest
+			var resp *github.Response
+			err := c.retryWithBackoff(ctx, "list pull requests", func() error {
+				var err error
+				prs, resp, err = c.gh.PullRequests.List(ctx, owner, repo, opts)
+				return err
+			})
+			if page == 1 && len(prs) > 0 {
+				c.progress(fmt.Sprintf("      Fetching PRs for branch '%s'...", baseBranch))
 			}
-
-			// Use merge date for filtering
-			mergedAt := pr.MergedAt.Time
-
-			// Skip items newer than our range
-			if until != nil && mergedAt.After(*until) {
-				continue
+			return prs, resp, err
+		},
+		ConvertFn: func(pr *github.PullRequest) models.PullRequest {
+			return convertPullRequest(pr, owner, repo)
+		},
+		GetDateFn: func(pr *github.PullRequest) time.Time {
+			if pr.MergedAt != nil {
+				return pr.MergedAt.Time
 			}
-
-			// If older than our range, track it
-			if since != nil && mergedAt.Before(*since) {
-				oldInPage++
-				continue
-			}
-
-			mpr := convertPullRequest(pr, owner, repo)
-			branchPRs = append(branchPRs, mpr)
-			matchedInPage++
-		}
-
-		// Early termination: if we got a page with only old PRs (or empty), increment counter
-		if matchedInPage == 0 && oldInPage > 0 {
-			consecutiveOldPages++
-			// Stop after 2 consecutive pages of only old PRs
-			if consecutiveOldPages >= 2 {
-				break
-			}
-		} else {
-			consecutiveOldPages = 0
-		}
-
-		if resp.NextPage == 0 {
-			break
-		}
-		opts.Page = resp.NextPage
-		page++
+			return time.Time{} // Will be filtered out by SkipFn
+		},
+		SkipFn: func(pr *github.PullRequest) bool {
+			// Only consider merged PRs
+			return pr.MergedAt == nil
+		},
+		Since: since,
+		Until: until,
 	}
 
-	return branchPRs, nil
+	config := FetchConfig{
+		ResourceName:              "pull requests",
+		EarlyTermination:          true,
+		EarlyTerminationThreshold: 2,
+	}
+
+	return FetchAllPages(ctx, c, "", config, fetcher) // Empty cache key - parent handles caching
 }
 
 // FetchReviews fetches reviews for a specific pull request
 func (c *Client) FetchReviews(ctx context.Context, owner, repo string, prNumber int) ([]models.Review, error) {
 	cacheKey := fmt.Sprintf("reviews:%s/%s:%d", owner, repo, prNumber)
 
-	// Check cache
-	if cached, ok := c.cache.Get(cacheKey); ok {
-		if reviews, ok := cached.([]models.Review); ok {
-			return reviews, nil
-		}
-	}
-
-	var allReviews []models.Review
-
 	opts := &github.ListOptions{PerPage: 100}
 
-	for {
-		var reviews []*github.PullRequestReview
-		var resp *github.Response
-
-		err := c.retryWithBackoff(ctx, fmt.Sprintf("list reviews for PR #%d", prNumber), func() error {
-			var err error
-			reviews, resp, err = c.gh.PullRequests.ListReviews(ctx, owner, repo, prNumber, opts)
-			return err
-		})
-		if err != nil {
-			return nil, fmt.Errorf("failed to list reviews: %w", err)
-		}
-
-		for _, review := range reviews {
-			mr := convertReview(review, owner, repo, prNumber)
-			allReviews = append(allReviews, mr)
-		}
-
-		if resp.NextPage == 0 {
-			break
-		}
-		opts.Page = resp.NextPage
+	fetcher := &SimpleFetcher[*github.PullRequestReview, models.Review]{
+		FetchFn: func(ctx context.Context, page int) ([]*github.PullRequestReview, *github.Response, error) {
+			opts.Page = page
+			var reviews []*github.PullRequestReview
+			var resp *github.Response
+			err := c.retryWithBackoff(ctx, fmt.Sprintf("list reviews for PR #%d", prNumber), func() error {
+				var err error
+				reviews, resp, err = c.gh.PullRequests.ListReviews(ctx, owner, repo, prNumber, opts)
+				return err
+			})
+			return reviews, resp, err
+		},
+		ConvertFn: func(review *github.PullRequestReview) models.Review {
+			return convertReview(review, owner, repo, prNumber)
+		},
 	}
 
-	// Cache results
-	c.cache.Set(cacheKey, allReviews)
+	config := DefaultFetchConfig("reviews")
+	config.EarlyTermination = false // Reviews don't need date-based early termination
 
-	return allReviews, nil
+	return FetchAllPages(ctx, c, cacheKey, config, fetcher)
 }
 
 // FetchIssues fetches issues from a repository
@@ -565,18 +498,6 @@ func (c *Client) FetchReviews(ctx context.Context, owner, repo string, prNumber 
 func (c *Client) FetchIssues(ctx context.Context, owner, repo string, since, until *time.Time) ([]models.Issue, error) {
 	cacheKey := fmt.Sprintf("issues:%s/%s:%v:%v", owner, repo, since, until)
 
-	// Check cache
-	if cached, ok := c.cache.Get(cacheKey); ok {
-		if issues, ok := cached.([]models.Issue); ok {
-			c.progress("      Using cached issues data")
-			return issues, nil
-		}
-	}
-
-	var allIssues []models.Issue
-
-	// Sort by created date descending - newest first
-	// This allows us to stop early when we hit items older than our date range
 	opts := &github.IssueListByRepoOptions{
 		State:     "all",
 		Sort:      "created",
@@ -586,77 +507,33 @@ func (c *Client) FetchIssues(ctx context.Context, owner, repo string, since, unt
 		},
 	}
 
-	// Note: GitHub Issues API has a 'since' parameter but it filters by update time, not created time
-	// So we use our own filtering with early termination for better control
-
-	page := 1
-	reachedOldItems := false
-
-	for {
-		var issues []*github.Issue
-		var resp *github.Response
-
-		err := c.retryWithBackoff(ctx, "list issues", func() error {
-			var err error
-			issues, resp, err = c.gh.Issues.ListByRepo(ctx, owner, repo, opts)
-			return err
-		})
-		if err != nil {
-			return nil, fmt.Errorf("failed to list issues: %w", err)
-		}
-
-		c.progress(fmt.Sprintf("      Fetching issues page %d (%d issues so far)...", page, len(allIssues)))
-
-		oldItemsInPage := 0
-		totalNonPRItems := 0
-
-		for _, issue := range issues {
+	fetcher := &DateFilteredFetcher[*github.Issue, models.Issue]{
+		FetchFn: func(ctx context.Context, page int) ([]*github.Issue, *github.Response, error) {
+			opts.Page = page
+			var issues []*github.Issue
+			var resp *github.Response
+			err := c.retryWithBackoff(ctx, "list issues", func() error {
+				var err error
+				issues, resp, err = c.gh.Issues.ListByRepo(ctx, owner, repo, opts)
+				return err
+			})
+			return issues, resp, err
+		},
+		ConvertFn: func(issue *github.Issue) models.Issue {
+			return convertIssue(issue, owner, repo)
+		},
+		GetDateFn: func(issue *github.Issue) time.Time {
+			return issue.GetCreatedAt().Time
+		},
+		SkipFn: func(issue *github.Issue) bool {
 			// Skip pull requests (they appear in issues API)
-			if issue.PullRequestLinks != nil {
-				continue
-			}
-
-			totalNonPRItems++
-			createdAt := issue.GetCreatedAt().Time
-
-			// Skip items newer than our range (when until is specified)
-			if until != nil && createdAt.After(*until) {
-				continue
-			}
-
-			// If we've gone past our date range (older than since), count it
-			if since != nil && createdAt.Before(*since) {
-				oldItemsInPage++
-				continue
-			}
-
-			mi := convertIssue(issue, owner, repo)
-			allIssues = append(allIssues, mi)
-		}
-
-		// If all non-PR items in this page are older than our range, we can stop
-		// (since results are sorted by created date descending)
-		if oldItemsInPage == totalNonPRItems && totalNonPRItems > 0 {
-			c.progress(fmt.Sprintf("      Reached issues older than date range, stopping early (page %d)", page))
-			reachedOldItems = true
-			break
-		}
-
-		if resp.NextPage == 0 {
-			break
-		}
-		opts.Page = resp.NextPage
-		page++
+			return issue.PullRequestLinks != nil
+		},
+		Since: since,
+		Until: until,
 	}
 
-	if !reachedOldItems && page > 1 {
-		c.progress(fmt.Sprintf("      Fetched all %d pages of issues", page))
-	}
-
-	// Cache results
-	c.cache.Set(cacheKey, allIssues)
-
-	return allIssues, nil
+	return FetchAllPages(ctx, c, cacheKey, DefaultFetchConfig("issues"), fetcher)
 }
 
 // FetchIssueComments fetches comments on issues from a repository
@@ -664,18 +541,6 @@ func (c *Client) FetchIssues(ctx context.Context, owner, repo string, since, unt
 func (c *Client) FetchIssueComments(ctx context.Context, owner, repo string, since, until *time.Time) ([]models.IssueComment, error) {
 	cacheKey := fmt.Sprintf("issue_comments:%s/%s:%v:%v", owner, repo, since, until)
 
-	// Check cache
-	if cached, ok := c.cache.Get(cacheKey); ok {
-		if comments, ok := cached.([]models.IssueComment); ok {
-			c.progress("      Using cached issue comments data")
-			return comments, nil
-		}
-	}
-
-	var allComments []models.IssueComment
-
-	// Sort by created date descending - newest first
-	// This allows us to stop early when we hit items older than our date range
 	opts := &github.IssueListCommentsOptions{
 		Sort:      github.Ptr("created"),
 		Direction: github.Ptr("desc"),
@@ -689,97 +554,29 @@ func (c *Client) FetchIssueComments(ctx context.Context, owner, repo string, sin
 		opts.Since = since
 	}
 
-	page := 1
-	reachedOldItems := false
-
-	for {
-		var comments []*github.IssueComment
-		var resp *github.Response
-
-		err := c.retryWithBackoff(ctx, "list issue comments", func() error {
-			var err error
-			// Passing empty issue number fetches all comments in the repo
-			comments, resp, err = c.gh.Issues.ListComments(ctx, owner, repo, 0, opts)
-			return err
-		})
-		if err != nil {
-			return nil, fmt.Errorf("failed to list issue comments: %w", err)
-		}
-
-		c.progress(fmt.Sprintf("      Fetching issue comments page %d (%d comments so far)...", page, len(allComments)))
-
-		oldItemsInPage := 0
-		totalItems := len(comments)
-
-		for _, comment := range comments {
-			createdAt := comment.GetCreatedAt().Time
-
-			// Skip items newer than our range (when until is specified)
-			if until != nil && createdAt.After(*until) {
-				continue
-			}
-
-			// If we've gone past our date range (older than since), count it
-			if since != nil && createdAt.Before(*since) {
-				oldItemsInPage++
-				continue
-			}
-
-			// Extract issue number from the issue URL
-			issueNumber := 0
-			if comment.IssueURL != nil {
-				// Issue URL format: https://api.github.com/repos/{owner}/{repo}/issues/{number}
-				parts := strings.Split(*comment.IssueURL, "/")
-				if len(parts) > 0 {
-					if num, err := strconv.Atoi(parts[len(parts)-1]); err == nil {
-						issueNumber = num
-					}
-				}
-			}
-
-			var author models.Author
-			if comment.User != nil {
-				author = models.Author{
-					Login:     comment.User.GetLogin(),
-					Name:      comment.User.GetName(),
-					AvatarURL: comment.User.GetAvatarURL(),
-				}
-			}
-
-			ic := models.IssueComment{
-				ID:         comment.GetID(),
-				Issue:      issueNumber,
-				Repository: fmt.Sprintf("%s/%s", owner, repo),
-				Author:     author,
-				Body:       comment.GetBody(),
-				CreatedAt:  createdAt,
-			}
-			allComments = append(allComments, ic)
-		}
-
-		// If all items in this page are older than our range, we can stop
-		// (since results are sorted by created date descending)
-		if oldItemsInPage == totalItems && totalItems > 0 {
-			c.progress(fmt.Sprintf("      Reached issue comments older than date range, stopping early (page %d)", page))
-			reachedOldItems = true
-			break
-		}
-
-		if resp.NextPage == 0 {
-			break
-		}
-		opts.Page = resp.NextPage
-		page++
+	fetcher := &DateFilteredFetcher[*github.IssueComment, models.IssueComment]{
+		FetchFn: func(ctx context.Context, page int) ([]*github.IssueComment, *github.Response, error) {
+			opts.Page = page
+			var comments []*github.IssueComment
+			var resp *github.Response
+			err := c.retryWithBackoff(ctx, "list issue comments", func() error {
+				var err error
+				comments, resp, err = c.gh.Issues.ListComments(ctx, owner, repo, 0, opts)
+				return err
+			})
+			return comments, resp, err
+		},
+		ConvertFn: func(comment *github.IssueComment) models.IssueComment {
+			return convertIssueComment(comment, owner, repo)
+		},
+		GetDateFn: func(comment *github.IssueComment) time.Time {
+			return comment.GetCreatedAt().Time
+		},
+		Since: since,
+		Until: until,
 	}
 
-	if !reachedOldItems && page > 1 {
-		c.progress(fmt.Sprintf("      Fetched all %d pages of issue comments", page))
-	}
-
-	// Cache results
-	c.cache.Set(cacheKey, allComments)
-
-	return allComments, nil
+	return FetchAllPages(ctx, c, cacheKey, DefaultFetchConfig("issue comments"), fetcher)
 }
 
 // UserProfile contains GitHub user profile information useful for deduplication
@@ -1039,6 +836,38 @@ func convertReview(r *github.PullRequestReview, owner, repo string, prNumber int
 		State:       state,
 		SubmittedAt: submittedAt,
 		Body:        r.GetBody(),
+	}
+}
+
+func convertIssueComment(comment *github.IssueComment, owner, repo string) models.IssueComment {
+	// Extract issue number from the issue URL
+	issueNumber := 0
+	if comment.IssueURL != nil {
+		// Issue URL format: https://api.github.com/repos/{owner}/{repo}/issues/{number}
+		parts := strings.Split(*comment.IssueURL, "/")
+		if len(parts) > 0 {
+			if num, err := strconv.Atoi(parts[len(parts)-1]); err == nil {
+				issueNumber = num
+			}
+		}
+	}
+
+	var author models.Author
+	if comment.User != nil {
+		author = models.Author{
+			Login:     comment.User.GetLogin(),
+			Name:      comment.User.GetName(),
+			AvatarURL: comment.User.GetAvatarURL(),
+		}
+	}
+
+	return models.IssueComment{
+		ID:         comment.GetID(),
+		Issue:      issueNumber,
+		Repository: fmt.Sprintf("%s/%s", owner, repo),
+		Author:     author,
+		Body:       comment.GetBody(),
+		CreatedAt:  comment.GetCreatedAt().Time,
 	}
 }
 
