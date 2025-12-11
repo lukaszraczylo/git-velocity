@@ -41,6 +41,7 @@ func DefaultRetryConfig() RetryConfig {
 // Client wraps the GitHub API client with rate limiting and caching
 type Client struct {
 	gh       *github.Client
+	gql      *GraphQLClient // GraphQL client for batched queries
 	config   *config.Config
 	cache    cache.Cache
 	retry    RetryConfig
@@ -91,8 +92,15 @@ func NewClient(ctx context.Context, cfg *config.Config) (*Client, error) {
 		c = cache.NewNoopCache()
 	}
 
+	// Initialize GraphQL client if using token auth (GraphQL doesn't support GitHub App auth easily)
+	var gql *GraphQLClient
+	if cfg.HasGithubToken() && cfg.Options.UseGraphQL {
+		gql = NewGraphQLClient(cfg.Auth.GithubToken)
+	}
+
 	return &Client{
 		gh:       gh,
+		gql:      gql,
 		config:   cfg,
 		cache:    c,
 		retry:    DefaultRetryConfig(),
@@ -105,6 +113,73 @@ func (c *Client) SetProgressCallback(cb ProgressCallback) {
 	if cb != nil {
 		c.progress = cb
 	}
+}
+
+// HasGraphQL returns true if the GraphQL client is available
+func (c *Client) HasGraphQL() bool {
+	return c.gql != nil
+}
+
+// FetchPRsWithReviewsGraphQL fetches PRs and reviews using GraphQL (much fewer API calls)
+func (c *Client) FetchPRsWithReviewsGraphQL(ctx context.Context, owner, repo string, since, until *time.Time) ([]models.PullRequest, []models.Review, error) {
+	if c.gql == nil {
+		return nil, nil, fmt.Errorf("GraphQL client not initialized")
+	}
+
+	cacheKey := fmt.Sprintf("gql_prs_reviews:%s/%s:%v:%v", owner, repo, since, until)
+
+	// Check cache
+	type cachedData struct {
+		PRs     []models.PullRequest
+		Reviews []models.Review
+	}
+	if cached, ok := c.cache.Get(cacheKey); ok {
+		if data, ok := cached.(cachedData); ok {
+			c.progress("      Using cached PRs and reviews data (GraphQL)")
+			return data.PRs, data.Reviews, nil
+		}
+	}
+
+	prs, reviews, err := c.gql.FetchPRsWithReviews(ctx, owner, repo, since, until)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// Cache results
+	c.cache.Set(cacheKey, cachedData{PRs: prs, Reviews: reviews})
+
+	return prs, reviews, nil
+}
+
+// FetchIssuesWithCommentsGraphQL fetches issues and comments using GraphQL (much fewer API calls)
+func (c *Client) FetchIssuesWithCommentsGraphQL(ctx context.Context, owner, repo string, since, until *time.Time) ([]models.Issue, []models.IssueComment, error) {
+	if c.gql == nil {
+		return nil, nil, fmt.Errorf("GraphQL client not initialized")
+	}
+
+	cacheKey := fmt.Sprintf("gql_issues_comments:%s/%s:%v:%v", owner, repo, since, until)
+
+	// Check cache
+	type cachedData struct {
+		Issues   []models.Issue
+		Comments []models.IssueComment
+	}
+	if cached, ok := c.cache.Get(cacheKey); ok {
+		if data, ok := cached.(cachedData); ok {
+			c.progress("      Using cached issues and comments data (GraphQL)")
+			return data.Issues, data.Comments, nil
+		}
+	}
+
+	issues, comments, err := c.gql.FetchIssuesWithComments(ctx, owner, repo, since, until)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// Cache results
+	c.cache.Set(cacheKey, cachedData{Issues: issues, Comments: comments})
+
+	return issues, comments, nil
 }
 
 // SetRetryConfig sets the retry configuration
@@ -459,6 +534,7 @@ func (c *Client) fetchPRsForBranch(ctx context.Context, owner, repo, baseBranch 
 		ResourceName:              "pull requests",
 		EarlyTermination:          true,
 		EarlyTerminationThreshold: 2,
+		Quiet:                     true, // Parent function handles progress
 	}
 
 	return FetchAllPages(ctx, c, "", config, fetcher) // Empty cache key - parent handles caching
@@ -489,6 +565,7 @@ func (c *Client) FetchReviews(ctx context.Context, owner, repo string, prNumber 
 
 	config := DefaultFetchConfig("reviews")
 	config.EarlyTermination = false // Reviews don't need date-based early termination
+	config.Quiet = true             // Suppress per-page progress (called many times in parallel)
 
 	return FetchAllPages(ctx, c, cacheKey, config, fetcher)
 }

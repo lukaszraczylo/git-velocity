@@ -152,6 +152,7 @@ type OptionsConfig struct {
 	UseLocalGit           bool        `yaml:"use_local_git"`           // Use local git for commits (faster)
 	ShallowClone          bool        `yaml:"shallow_clone"`           // Use shallow clone based on date range (faster cloning)
 	ShallowCloneBuffer    int         `yaml:"shallow_clone_buffer"`    // Extra commits to fetch beyond date range (default: 100)
+	UseGraphQL            bool        `yaml:"use_graphql"`             // Use GraphQL API for batched queries (fewer API calls)
 	UserAliases           []UserAlias `yaml:"user_aliases,omitempty"`  // Manual email/name to login mappings
 }
 
@@ -159,16 +160,18 @@ type OptionsConfig struct {
 // These cannot be overridden by users to ensure consistent bot filtering
 func DefaultBotPatterns() []string {
 	return []string{
-		"*[bot]",            // GitHub App bots: dependabot[bot], renovate[bot], etc.
-		"dependabot*",       // Dependabot variants
-		"renovate*",         // Renovate bot variants
-		"github-actions*",   // GitHub Actions
-		"codecov*",          // Codecov bot
-		"snyk*",             // Snyk security bot
-		"greenkeeper*",      // Greenkeeper (legacy)
-		"imgbot*",           // Image optimization bot
-		"allcontributors*",  // All Contributors bot
-		"semantic-release*", // Semantic release bot
+		"*[bot]",                   // GitHub App bots: dependabot[bot], renovate[bot], etc.
+		"dependabot*",              // Dependabot variants
+		"renovate*",                // Renovate bot variants
+		"github-actions*",          // GitHub Actions
+		"github-advanced-security", // GitHub Advanced Security
+		"*-actions-runner",         // Self-hosted GitHub Actions runners
+		"codecov*",                 // Codecov bot
+		"snyk*",                    // Snyk security bot
+		"greenkeeper*",             // Greenkeeper (legacy)
+		"imgbot*",                  // Image optimization bot
+		"allcontributors*",         // All Contributors bot
+		"semantic-release*",        // Semantic release bot
 	}
 }
 
@@ -233,6 +236,7 @@ func DefaultConfig() *Config {
 			UseLocalGit:           true, // Default to faster local git analysis
 			ShallowClone:          true, // Default to shallow clone for faster cloning
 			ShallowCloneBuffer:    25,   // Extra commits beyond date range for safety margin
+			UseGraphQL:            true, // Default to GraphQL for fewer API calls
 		},
 	}
 }

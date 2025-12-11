@@ -204,7 +204,6 @@ func (a *App) collectRepoData(ctx context.Context, owner, name string, dateRange
 	if err != nil {
 		return fmt.Errorf("failed to fetch commits: %w", err)
 	}
-	a.log("    Found %d commits", len(commits))
 
 	// Filter out bots
 	for _, c := range commits {
@@ -213,87 +212,65 @@ func (a *App) collectRepoData(ctx context.Context, owner, name string, dateRange
 		}
 	}
 
-	// Fetch pull requests
-	prs, err := a.client.FetchPullRequests(ctx, owner, name, dateRange.Start, dateRange.End)
-	if err != nil {
-		return fmt.Errorf("failed to fetch pull requests: %w", err)
-	}
-	a.log("    Found %d pull requests", len(prs))
-
-	for _, pr := range prs {
-		if !a.config.IsBot(pr.Author.Login) {
-			data.PullRequests = append(data.PullRequests, pr)
-		}
-	}
-
-	// Fetch reviews in parallel for all PRs (already filtered by FetchPullRequests)
-	if len(prs) > 0 {
-		a.log("    Fetching reviews for %d PRs in parallel...", len(prs))
-
-		type reviewResult struct {
-			reviews []models.Review
-			err     error
-		}
-
-		// Use worker pool to limit concurrent requests
-		concurrency := a.config.Options.ConcurrentRequests
-		if concurrency <= 0 {
-			concurrency = 5
-		}
-
-		results := make(chan reviewResult, len(prs))
-		sem := make(chan struct{}, concurrency)
-
-		for _, pr := range prs {
-			go func(prNum int) {
-				sem <- struct{}{}        // Acquire
-				defer func() { <-sem }() // Release
-
-				reviews, err := a.client.FetchReviews(ctx, owner, name, prNum)
-				results <- reviewResult{reviews: reviews, err: err}
-			}(pr.Number)
-		}
-
-		// Collect results
-		reviewCount := 0
-		for i := 0; i < len(prs); i++ {
-			result := <-results
-			if result.err != nil {
-				continue
+	// Fetch pull requests and reviews
+	// Use GraphQL if available (much fewer API calls), otherwise fall back to REST
+	if a.client.HasGraphQL() {
+		prs, reviews, err := a.client.FetchPRsWithReviewsGraphQL(ctx, owner, name, dateRange.Start, dateRange.End)
+		if err != nil {
+			a.log("    Warning: GraphQL fetch failed, falling back to REST: %v", err)
+			// Fall back to REST
+			prs, reviews, err = a.fetchPRsAndReviewsREST(ctx, owner, name, dateRange, data)
+			if err != nil {
+				return err
 			}
-			for _, r := range result.reviews {
-				if !a.config.IsBot(r.Author.Login) {
-					data.Reviews = append(data.Reviews, r)
-					reviewCount++
+		}
+
+		// Filter out bots
+		for _, pr := range prs {
+			if !a.config.IsBot(pr.Author.Login) {
+				data.PullRequests = append(data.PullRequests, pr)
+			}
+		}
+		for _, r := range reviews {
+			if !a.config.IsBot(r.Author.Login) {
+				data.Reviews = append(data.Reviews, r)
+			}
+		}
+	} else {
+		// Use REST API
+		if _, _, err := a.fetchPRsAndReviewsREST(ctx, owner, name, dateRange, data); err != nil {
+			return err
+		}
+	}
+
+	// Fetch issues and comments
+	// Use GraphQL if available (much fewer API calls), otherwise fall back to REST
+	if a.client.HasGraphQL() {
+		issues, comments, err := a.client.FetchIssuesWithCommentsGraphQL(ctx, owner, name, dateRange.Start, dateRange.End)
+		if err != nil {
+			a.log("    Warning: GraphQL fetch failed, falling back to REST: %v", err)
+			// Fall back to REST
+			if err := a.fetchIssuesAndCommentsREST(ctx, owner, name, dateRange, data); err != nil {
+				return err
+			}
+		} else {
+
+			// Filter out bots
+			for _, issue := range issues {
+				if !a.config.IsBot(issue.Author.Login) {
+					data.Issues = append(data.Issues, issue)
+				}
+			}
+			for _, comment := range comments {
+				if !a.config.IsBot(comment.Author.Login) {
+					data.IssueComments = append(data.IssueComments, comment)
 				}
 			}
 		}
-		a.log("    Found %d reviews across %d PRs", reviewCount, len(prs))
-	}
-
-	// Fetch issues
-	issues, err := a.client.FetchIssues(ctx, owner, name, dateRange.Start, dateRange.End)
-	if err != nil {
-		return fmt.Errorf("failed to fetch issues: %w", err)
-	}
-	a.log("    Found %d issues", len(issues))
-
-	for _, issue := range issues {
-		if !a.config.IsBot(issue.Author.Login) {
-			data.Issues = append(data.Issues, issue)
-		}
-	}
-
-	// Fetch issue comments
-	issueComments, err := a.client.FetchIssueComments(ctx, owner, name, dateRange.Start, dateRange.End)
-	if err != nil {
-		return fmt.Errorf("failed to fetch issue comments: %w", err)
-	}
-	a.log("    Found %d issue comments", len(issueComments))
-
-	for _, comment := range issueComments {
-		if !a.config.IsBot(comment.Author.Login) {
-			data.IssueComments = append(data.IssueComments, comment)
+	} else {
+		// Use REST API
+		if err := a.fetchIssuesAndCommentsREST(ctx, owner, name, dateRange, data); err != nil {
+			return err
 		}
 	}
 
@@ -353,4 +330,58 @@ func (a *App) fetchUserProfiles(ctx context.Context, data *models.RawData) (map[
 	}
 
 	return profiles, nil
+}
+
+// fetchPRsAndReviewsREST fetches PRs and reviews using the REST API (fallback when GraphQL fails)
+func (a *App) fetchPRsAndReviewsREST(ctx context.Context, owner, name string, dateRange *config.ParsedDateRange, data *models.RawData) ([]models.PullRequest, []models.Review, error) {
+	prs, err := a.client.FetchPullRequests(ctx, owner, name, dateRange.Start, dateRange.End)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to fetch pull requests: %w", err)
+	}
+	a.log("    Found %d pull requests", len(prs))
+
+	// Fetch reviews for each PR
+	var reviews []models.Review
+	for _, pr := range prs {
+		prReviews, err := a.client.FetchReviews(ctx, owner, name, pr.Number)
+		if err != nil {
+			a.log("    Warning: failed to fetch reviews for PR #%d: %v", pr.Number, err)
+			continue
+		}
+		reviews = append(reviews, prReviews...)
+	}
+	a.log("    Found %d reviews (REST)", len(reviews))
+
+	return prs, reviews, nil
+}
+
+// fetchIssuesAndCommentsREST fetches issues and comments using the REST API (fallback when GraphQL fails)
+func (a *App) fetchIssuesAndCommentsREST(ctx context.Context, owner, name string, dateRange *config.ParsedDateRange, data *models.RawData) error {
+	issues, err := a.client.FetchIssues(ctx, owner, name, dateRange.Start, dateRange.End)
+	if err != nil {
+		return fmt.Errorf("failed to fetch issues: %w", err)
+	}
+	a.log("    Found %d issues", len(issues))
+
+	// Filter out bots and add to data
+	for _, issue := range issues {
+		if !a.config.IsBot(issue.Author.Login) {
+			data.Issues = append(data.Issues, issue)
+		}
+	}
+
+	// Fetch all comments for the repository within date range
+	comments, err := a.client.FetchIssueComments(ctx, owner, name, dateRange.Start, dateRange.End)
+	if err != nil {
+		a.log("    Warning: failed to fetch issue comments: %v", err)
+	} else {
+		for _, comment := range comments {
+			if !a.config.IsBot(comment.Author.Login) {
+				data.IssueComments = append(data.IssueComments, comment)
+			}
+		}
+		a.log("    Found %d issue comments (REST)", len(comments))
+	}
+
+	return nil
 }

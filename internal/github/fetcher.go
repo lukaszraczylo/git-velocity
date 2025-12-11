@@ -52,6 +52,8 @@ type FetchConfig struct {
 	EarlyTermination bool
 	// EarlyTerminationThreshold is the number of consecutive old pages before stopping
 	EarlyTerminationThreshold int
+	// Quiet suppresses per-page progress messages (useful for sub-fetches like reviews)
+	Quiet bool
 }
 
 // DefaultFetchConfig returns sensible defaults
@@ -91,8 +93,15 @@ func FetchAllPages[T any, R any](
 			return nil, fmt.Errorf("failed to fetch %s: %w", config.ResourceName, err)
 		}
 
-		c.progress(fmt.Sprintf("      Fetching %s page %d (%d %s so far)...",
-			config.ResourceName, page, len(allResults), config.ResourceName))
+		// Safety check for nil response
+		if resp == nil {
+			break
+		}
+
+		if !config.Quiet {
+			c.progress(fmt.Sprintf("      Fetching %s page %d (%d %s so far)...",
+				config.ResourceName, page, len(allResults), config.ResourceName))
+		}
 
 		oldInPage := 0
 		totalEligible := 0
@@ -121,8 +130,10 @@ func FetchAllPages[T any, R any](
 		if config.EarlyTermination && totalEligible > 0 && oldInPage == totalEligible {
 			consecutiveOldPages++
 			if consecutiveOldPages >= config.EarlyTerminationThreshold {
-				c.progress(fmt.Sprintf("      Reached %s older than date range, stopping early (page %d)",
-					config.ResourceName, page))
+				if !config.Quiet {
+					c.progress(fmt.Sprintf("      Reached %s older than date range, stopping early (page %d)",
+						config.ResourceName, page))
+				}
 				break
 			}
 		} else {
@@ -260,8 +271,15 @@ func FetchAllPagesWithEnrichment[T any, R any](
 			return nil, fmt.Errorf("failed to fetch %s: %w", config.ResourceName, err)
 		}
 
-		c.progress(fmt.Sprintf("      Fetching %s page %d (%d %s so far)...",
-			config.ResourceName, page, len(allResults), config.ResourceName))
+		// Safety check for nil response
+		if resp == nil {
+			break
+		}
+
+		if !config.Quiet {
+			c.progress(fmt.Sprintf("      Fetching %s page %d (%d %s so far)...",
+				config.ResourceName, page, len(allResults), config.ResourceName))
+		}
 
 		itemsInPage := 0
 		for i, item := range items {

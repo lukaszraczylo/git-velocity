@@ -3,12 +3,15 @@ package git
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
 
+	"github.com/charmbracelet/bubbles/progress"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
@@ -17,6 +20,55 @@ import (
 	"github.com/lukaszraczylo/git-velocity/internal/diff"
 	"github.com/lukaszraczylo/git-velocity/internal/domain/models"
 )
+
+// commitProgressBar handles terminal progress display for commit iteration
+type commitProgressBar struct {
+	progress progress.Model
+	label    string
+	current  int
+	out      io.Writer
+}
+
+func newCommitProgressBar(label string) *commitProgressBar {
+	p := progress.New(
+		progress.WithDefaultGradient(),
+		progress.WithWidth(40),
+	)
+	return &commitProgressBar{
+		progress: p,
+		label:    label,
+		current:  0,
+		out:      os.Stderr,
+	}
+}
+
+func (p *commitProgressBar) update(count int) {
+	p.current = count
+
+	labelStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
+	countStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("241"))
+
+	// Use a spinner-like display since we don't know total
+	spinner := []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"}
+	spinChar := spinner[count%len(spinner)]
+
+	fmt.Fprintf(p.out, "\r%s %s %s",
+		labelStyle.Render(p.label),
+		spinChar,
+		countStyle.Render(fmt.Sprintf("%d commits", p.current)),
+	)
+}
+
+func (p *commitProgressBar) done(total int) {
+	labelStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
+	countStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("241"))
+
+	fmt.Fprintf(p.out, "\r%s %s %s\n",
+		labelStyle.Render(p.label),
+		p.progress.ViewAs(1.0),
+		countStyle.Render(fmt.Sprintf("%d commits", total)),
+	)
+}
 
 // ProgressCallback is called to report progress during git operations
 type ProgressCallback func(message string)
@@ -158,8 +210,6 @@ func (r *Repository) FetchCommits(ctx context.Context, owner, name string, since
 		return nil, fmt.Errorf("failed to open repository: %w", err)
 	}
 
-	r.progress("      Iterating commits with go-git...")
-
 	// Get all references to iterate all branches
 	refs, err := repo.References()
 	if err != nil {
@@ -170,6 +220,20 @@ func (r *Repository) FetchCommits(ctx context.Context, owner, name string, since
 	seenCommits := make(map[plumbing.Hash]bool)
 	var commits []models.Commit
 	testPatterns := []string{"_test.go", ".test.", ".spec.", "/tests/", "/test/", "__tests__"}
+
+	// Progress bar for commit iteration
+	pbar := newCommitProgressBar("      Iterating commits:")
+	processedCount := 0
+
+	// Hard cutoff: 1 week before start date - stop iterating entirely past this point
+	var hardCutoff *time.Time
+	if since != nil {
+		cutoff := since.AddDate(0, 0, -7)
+		hardCutoff = &cutoff
+	}
+
+	// errStopIteration is used to signal early termination (not a real error)
+	var errStopIteration = fmt.Errorf("stop iteration")
 
 	err = refs.ForEach(func(ref *plumbing.Reference) error {
 		// Skip non-branch references
@@ -188,6 +252,7 @@ func (r *Repository) FetchCommits(ctx context.Context, owner, name string, since
 			return nil
 		}
 
+		consecutiveOld := 0
 		err = commitIter.ForEach(func(c *object.Commit) error {
 			// Check context cancellation
 			select {
@@ -201,13 +266,31 @@ func (r *Repository) FetchCommits(ctx context.Context, owner, name string, since
 				return nil
 			}
 			seenCommits[c.Hash] = true
+			processedCount++
+
+			// Update progress every 10 commits to avoid too much I/O
+			if processedCount%10 == 0 {
+				pbar.update(processedCount)
+			}
 
 			commitTime := c.Author.When
 
+			// Hard cutoff - stop entirely if past this date
+			if hardCutoff != nil && commitTime.Before(*hardCutoff) {
+				return errStopIteration
+			}
+
 			// Filter by date range
 			if since != nil && commitTime.Before(*since) {
+				consecutiveOld++
+				// Early termination: if we've seen 100 consecutive old commits, stop this branch
+				if consecutiveOld >= 100 {
+					return errStopIteration
+				}
 				return nil
 			}
+			consecutiveOld = 0 // Reset counter when we find a valid commit
+
 			if until != nil && commitTime.After(*until) {
 				return nil
 			}
@@ -249,14 +332,26 @@ func (r *Repository) FetchCommits(ctx context.Context, owner, name string, since
 			return nil
 		})
 
+		// Handle expected termination conditions
+		if err == errStopIteration {
+			return nil // Not an error, just early termination for this branch
+		}
+
+		// Handle shallow clone boundary - "object not found" means we've reached
+		// the edge of the shallow clone history, which is expected behavior
+		if err != nil && isShallowBoundaryError(err) {
+			err = nil // Treat as normal end of history
+		}
+
 		return err
 	})
+
+	// Complete progress bar
+	pbar.done(len(commits))
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to iterate commits: %w", err)
 	}
-
-	r.progress(fmt.Sprintf("      Found %d commits", len(commits)))
 
 	return commits, nil
 }
@@ -370,6 +465,16 @@ func (r *Repository) getCommitStats(c *object.Commit, testPatterns []string) com
 	}
 
 	return stats
+}
+
+// isShallowBoundaryError checks if an error indicates we've hit the shallow clone boundary
+func isShallowBoundaryError(err error) bool {
+	if err == nil {
+		return false
+	}
+	errStr := err.Error()
+	// go-git returns "object not found" when trying to access commits beyond shallow depth
+	return strings.Contains(errStr, "object not found")
 }
 
 // extractLoginFromEmail tries to extract GitHub login from email
