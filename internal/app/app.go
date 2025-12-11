@@ -170,7 +170,24 @@ func (a *App) collectRepoData(ctx context.Context, owner, name string, dateRange
 	if a.gitRepo != nil {
 		// Clone/update repository locally
 		token := a.config.Auth.GithubToken
-		cloneErr := a.gitRepo.EnsureCloned(ctx, owner, name, token)
+
+		// Determine clone options (shallow clone if enabled)
+		var cloneOpts *git.CloneOptions
+		if a.config.Options.ShallowClone && dateRange.Start != nil {
+			// Get commit count since start date to determine shallow clone depth
+			commitCount, countErr := a.client.GetCommitCountSince(ctx, owner, name, *dateRange.Start)
+			if countErr != nil {
+				a.log("    Warning: failed to get commit count for shallow clone: %v", countErr)
+				// Proceed with full clone
+			} else if commitCount > 0 {
+				// Add buffer for safety margin
+				depth := commitCount + a.config.Options.ShallowCloneBuffer
+				cloneOpts = &git.CloneOptions{Depth: depth}
+				a.log("    Using shallow clone (depth: %d = %d commits + %d buffer)", depth, commitCount, a.config.Options.ShallowCloneBuffer)
+			}
+		}
+
+		cloneErr := a.gitRepo.EnsureClonedWithOptions(ctx, owner, name, token, cloneOpts)
 		if cloneErr != nil {
 			a.log("    Warning: failed to clone repository locally, falling back to API: %v", cloneErr)
 			// Fallback to API

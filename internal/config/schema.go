@@ -150,6 +150,8 @@ type OptionsConfig struct {
 	AdditionalBotPatterns []string    `yaml:"additional_bot_patterns"` // User-defined patterns (added to hardcoded defaults)
 	CloneDirectory        string      `yaml:"clone_directory"`         // Directory for local git clones
 	UseLocalGit           bool        `yaml:"use_local_git"`           // Use local git for commits (faster)
+	ShallowClone          bool        `yaml:"shallow_clone"`           // Use shallow clone based on date range (faster cloning)
+	ShallowCloneBuffer    int         `yaml:"shallow_clone_buffer"`    // Extra commits to fetch beyond date range (default: 100)
 	UserAliases           []UserAlias `yaml:"user_aliases,omitempty"`  // Manual email/name to login mappings
 }
 
@@ -229,6 +231,8 @@ func DefaultConfig() *Config {
 			AdditionalBotPatterns: []string{}, // Users can add custom patterns here
 			CloneDirectory:        "./.repos",
 			UseLocalGit:           true, // Default to faster local git analysis
+			ShallowClone:          true, // Default to shallow clone for faster cloning
+			ShallowCloneBuffer:    25,   // Extra commits beyond date range for safety margin
 		},
 	}
 }

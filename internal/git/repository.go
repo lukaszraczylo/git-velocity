@@ -52,8 +52,19 @@ func (r *Repository) repoPath(owner, name string) string {
 	return filepath.Join(r.baseDir, owner, name)
 }
 
+// CloneOptions contains options for cloning a repository
+type CloneOptions struct {
+	// Depth limits the clone to the specified number of commits (0 = full clone)
+	Depth int
+}
+
 // EnsureCloned ensures a repository is cloned and up to date
 func (r *Repository) EnsureCloned(ctx context.Context, owner, name, token string) error {
+	return r.EnsureClonedWithOptions(ctx, owner, name, token, nil)
+}
+
+// EnsureClonedWithOptions ensures a repository is cloned with specific options
+func (r *Repository) EnsureClonedWithOptions(ctx context.Context, owner, name, token string, opts *CloneOptions) error {
 	repoPath := r.repoPath(owner, name)
 
 	// Check if already cloned
@@ -65,12 +76,16 @@ func (r *Repository) EnsureCloned(ctx context.Context, owner, name, token string
 	}
 
 	// Clone the repository
-	r.progress(fmt.Sprintf("      Cloning %s/%s...", owner, name))
-	return r.clone(ctx, owner, name, token, repoPath)
+	if opts != nil && opts.Depth > 0 {
+		r.progress(fmt.Sprintf("      Shallow cloning %s/%s (depth: %d)...", owner, name, opts.Depth))
+	} else {
+		r.progress(fmt.Sprintf("      Cloning %s/%s...", owner, name))
+	}
+	return r.clone(ctx, owner, name, token, repoPath, opts)
 }
 
 // clone clones a repository using go-git
-func (r *Repository) clone(ctx context.Context, owner, name, token, destPath string) error {
+func (r *Repository) clone(ctx context.Context, owner, name, token, destPath string, opts *CloneOptions) error {
 	// Create parent directory
 	if err := os.MkdirAll(filepath.Dir(destPath), 0750); err != nil {
 		return fmt.Errorf("failed to create parent directory: %w", err)
@@ -81,6 +96,11 @@ func (r *Repository) clone(ctx context.Context, owner, name, token, destPath str
 	cloneOpts := &git.CloneOptions{
 		URL:      cloneURL,
 		Progress: nil, // Could add progress writer here
+	}
+
+	// Apply shallow clone depth if provided
+	if opts != nil && opts.Depth > 0 {
+		cloneOpts.Depth = opts.Depth
 	}
 
 	// Add authentication if token provided

@@ -272,6 +272,53 @@ func (c *Client) ListOrgRepos(ctx context.Context, org, pattern string) ([]strin
 	return allRepos, nil
 }
 
+// GetCommitCountSince returns the approximate number of commits since a given date.
+// This is used to determine the optimal shallow clone depth.
+// It makes a single lightweight API call with per_page=1 to get pagination info.
+func (c *Client) GetCommitCountSince(ctx context.Context, owner, repo string, since time.Time) (int, error) {
+	opts := &github.CommitsListOptions{
+		Since: since,
+		ListOptions: github.ListOptions{
+			PerPage: 1,
+		},
+	}
+
+	var resp *github.Response
+	err := c.retryWithBackoff(ctx, "get commit count", func() error {
+		var err error
+		_, resp, err = c.gh.Repositories.ListCommits(ctx, owner, repo, opts)
+		return err
+	})
+	if err != nil {
+		return 0, fmt.Errorf("failed to get commit count: %w", err)
+	}
+
+	// GitHub returns pagination info in the response
+	// LastPage indicates total number of pages (with 1 item per page = total commits)
+	if resp.LastPage > 0 {
+		return resp.LastPage, nil
+	}
+
+	// If LastPage is 0, there's only one page (or no commits)
+	// In this case, we need to check if there are any commits at all
+	if resp.FirstPage == 0 && resp.NextPage == 0 {
+		// Make another call to actually count
+		opts.ListOptions.PerPage = 100
+		var commits []*github.RepositoryCommit
+		err := c.retryWithBackoff(ctx, "count commits", func() error {
+			var err error
+			commits, _, err = c.gh.Repositories.ListCommits(ctx, owner, repo, opts)
+			return err
+		})
+		if err != nil {
+			return 0, err
+		}
+		return len(commits), nil
+	}
+
+	return 1, nil
+}
+
 // FetchCommits fetches commits from a repository within a date range
 func (c *Client) FetchCommits(ctx context.Context, owner, repo string, since, until *time.Time) ([]models.Commit, error) {
 	cacheKey := fmt.Sprintf("commits:%s/%s:%v:%v", owner, repo, since, until)
