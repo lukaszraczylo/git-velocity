@@ -139,12 +139,29 @@ type CacheConfig struct {
 
 // OptionsConfig holds advanced options
 type OptionsConfig struct {
-	ConcurrentRequests int         `yaml:"concurrent_requests"`
-	IncludeBots        bool        `yaml:"include_bots"`
-	BotPatterns        []string    `yaml:"bot_patterns"`
-	CloneDirectory     string      `yaml:"clone_directory"`        // Directory for local git clones
-	UseLocalGit        bool        `yaml:"use_local_git"`          // Use local git for commits (faster)
-	UserAliases        []UserAlias `yaml:"user_aliases,omitempty"` // Manual email/name to login mappings
+	ConcurrentRequests    int         `yaml:"concurrent_requests"`
+	IncludeBots           bool        `yaml:"include_bots"`
+	AdditionalBotPatterns []string    `yaml:"additional_bot_patterns"` // User-defined patterns (added to hardcoded defaults)
+	CloneDirectory        string      `yaml:"clone_directory"`         // Directory for local git clones
+	UseLocalGit           bool        `yaml:"use_local_git"`           // Use local git for commits (faster)
+	UserAliases           []UserAlias `yaml:"user_aliases,omitempty"`  // Manual email/name to login mappings
+}
+
+// DefaultBotPatterns returns the hardcoded bot patterns that are always applied
+// These cannot be overridden by users to ensure consistent bot filtering
+func DefaultBotPatterns() []string {
+	return []string{
+		"*[bot]",            // GitHub App bots: dependabot[bot], renovate[bot], etc.
+		"dependabot*",       // Dependabot variants
+		"renovate*",         // Renovate bot variants
+		"github-actions*",   // GitHub Actions
+		"codecov*",          // Codecov bot
+		"snyk*",             // Snyk security bot
+		"greenkeeper*",      // Greenkeeper (legacy)
+		"imgbot*",           // Image optimization bot
+		"allcontributors*",  // All Contributors bot
+		"semantic-release*", // Semantic release bot
+	}
 }
 
 // UserAlias maps git emails or names to a GitHub login
@@ -198,16 +215,11 @@ func DefaultConfig() *Config {
 			TTL:       "24h",
 		},
 		Options: OptionsConfig{
-			ConcurrentRequests: 5,
-			IncludeBots:        false,
-			BotPatterns: []string{
-				"*[bot]",
-				"dependabot*",
-				"renovate*",
-				"github-actions*",
-			},
-			CloneDirectory: "./.repos",
-			UseLocalGit:    true, // Default to faster local git analysis
+			ConcurrentRequests:    5,
+			IncludeBots:           false,
+			AdditionalBotPatterns: []string{}, // Users can add custom patterns here
+			CloneDirectory:        "./.repos",
+			UseLocalGit:           true, // Default to faster local git analysis
 		},
 	}
 }

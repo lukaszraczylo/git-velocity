@@ -50,9 +50,11 @@ $ git-velocity serve --port 8080
 
 ### 🎮 Gamification Engine
 - **Scoring System**: Earn points for every contribution
-- **34 Achievements**: From "First Steps" to "Code Warrior"
+- **93 Achievements**: Tiered progression from "First Steps" to "Code Warrior"
 - **Leaderboards**: Compete with your team
-- **Tier Progression**: Bronze → Silver → Gold → Diamond
+- **Tier Progression**: Multiple tiers per achievement category
+- **Activity Patterns**: Track early bird, night owl, weekend, and out-of-hours commits
+- **Streak Tracking**: Daily streaks and work-week streaks (weekends don't break it!)
 - **General velocity chart**: Visualize your velocity over time
 
 ### 👥 Team Analytics
@@ -64,7 +66,7 @@ $ git-velocity serve --port 8080
 - **Local Git Analysis**: Clone repos locally for 10x faster commit analysis
 - **Smart Caching**: File-based caching with configurable TTL
 - **Concurrent Requests**: Parallel API calls for faster data fetching
-- **Bot Filtering**: Automatically excludes Dependabot, Renovate, and other bots
+- **Bot Filtering**: Hardcoded patterns automatically exclude common bots (Dependabot, Renovate, GitHub Actions, etc.) with optional custom patterns
 
 ### 🎨 Beautiful Dashboard
 - Modern Vue.js SPA with dark/light mode
@@ -220,54 +222,44 @@ jobs:
 
 ## 🏆 Achievements
 
-Git Velocity includes 34 unlockable achievements:
+Git Velocity includes **93 hardcoded achievements** across 18 categories with multiple progression tiers. Achievements cannot be modified via configuration to prevent manipulation.
 
-### Commit Achievements
-| Achievement | Description | Threshold |
-|-------------|-------------|-----------|
-| 🍼 First Steps | Made your first commit | 1 commit |
-| 🌱 Getting Started | Made 10 commits | 10 commits |
-| 🔥 Committed | Made 100 commits | 100 commits |
-| 🤖 Code Machine | Made 500 commits | 500 commits |
-| 👑 Code Warrior | Made 1000 commits | 1000 commits |
+### Achievement Categories
 
-### Pull Request Achievements
-| Achievement | Description | Threshold |
-|-------------|-------------|-----------|
-| 🔀 PR Pioneer | Opened your first PR | 1 PR |
-| 🌿 Pull Request Pro | Opened 10 PRs | 10 PRs |
-| 🔀 Merge Master | Opened 50 PRs | 50 PRs |
+| Category | Tiers | Description |
+|----------|-------|-------------|
+| **Commits** | 1, 10, 50, 100, 500, 1000 | Track total commits made |
+| **PRs Opened** | 1, 10, 25, 50, 100, 250 | Track pull requests created |
+| **Reviews** | 1, 10, 25, 50, 100, 250 | Track code reviews performed |
+| **Comments** | 10, 50, 100, 250, 500 | Track PR review comments |
+| **Lines Added** | 100, 1K, 5K, 10K, 50K | Track code additions |
+| **Lines Deleted** | 100, 500, 1K, 5K, 10K | Track code cleanup |
+| **Review Time** | 24h, 4h, 1h | Fast review response times |
+| **Multi-Repo** | 2, 5, 10 | Contribution across repositories |
+| **Unique Reviewees** | 3, 10, 25 | Reviewing different contributors |
+| **Large PRs** | 500, 1K, 5K lines | Big changes merged |
+| **Small PRs** | 5, 10, 25, 50 | Atomic commits under 100 lines |
+| **Perfect PRs** | 1, 5, 10, 25 | Merged without changes requested |
+| **Active Days** | 7, 30, 60, 100 | Unique days with activity |
+| **Streaks** | 3, 7, 14, 30 days | Consecutive day contributions |
+| **Work Week Streak** | 3, 5, 10, 20 days | Weekday streaks (weekends don't break it!) |
+| **Early Bird** | 10, 25, 50, 100 | Commits before 9am |
+| **Night Owl** | 10, 25, 50, 100 | Commits after 9pm |
+| **Midnight** | 5, 10, 25, 50 | Commits between midnight-4am |
+| **Weekend** | 5, 10, 25, 50 | Weekend commits |
+| **Out of Hours** | 10, 25, 50, 100 | Commits outside 9am-5pm |
 
-### Review Achievements
-| Achievement | Description | Threshold |
-|-------------|-------------|-----------|
-| 🔍 Code Reviewer | Reviewed your first PR | 1 review |
-| 👁️ Review Regular | Reviewed 25 PRs | 25 reviews |
-| 🎓 Review Guru | Reviewed 100 PRs | 100 reviews |
+### Example Achievements
 
-### Speed Achievements
-| Achievement | Description | Threshold |
-|-------------|-------------|-----------|
-| ⚡ Speed Demon | Avg review response < 1 hour | < 1h |
-| ⏰ Quick Responder | Avg review response < 4 hours | < 4h |
-
-### Activity Pattern Achievements
-| Achievement | Description | Threshold |
-|-------------|-------------|-----------|
-| 📅 Week Warrior | 7 day contribution streak | 7 days |
-| 📆 Month Master | 30 day contribution streak | 30 days |
-| 🌅 Early Bird | 50 commits before 9am | 50 commits |
-| 🌙 Night Owl | 50 commits after 9pm | 50 commits |
-| 💀 Nosferatu | 25 commits between midnight-4am | 25 commits |
-| 🛋️ Weekend Warrior | 25 weekend commits | 25 commits |
-
-### Code Quality Achievements
-| Achievement | Description | Threshold |
-|-------------|-------------|-----------|
-| 🗜️ Small PR Advocate | 10 PRs under 100 lines | 10 PRs |
-| ⚛️ Atomic Commits Hero | 50 PRs under 100 lines | 50 PRs |
-| ✅ Clean Code | 5 PRs merged without changes requested | 5 PRs |
-| 💎 Flawless | 25 PRs merged without changes requested | 25 PRs |
+| Achievement | Description |
+|-------------|-------------|
+| 🍼 First Steps | Made your first commit |
+| 👑 Code Warrior | Made 1000 commits |
+| ⚡ Speed Demon | Average review response under 1 hour |
+| 💎 Flawless | 25 PRs merged without changes requested |
+| 🏢 Full Work Week | 5 consecutive weekday streak |
+| 🌙 Night Owl | 50 commits after 9pm |
+| ♾️ Time Bender | 100 commits outside 9am-5pm |
 
 ## ⚙️ Configuration
 
@@ -322,6 +314,7 @@ scoring:
     fast_review_1h: 50
     fast_review_4h: 25
     fast_review_24h: 10
+    out_of_hours: 2  # Bonus per commit outside 9am-5pm
 
 output:
   directory: "./dist"
@@ -338,10 +331,10 @@ cache:
 options:
   concurrent_requests: 5
   include_bots: false
-  bot_patterns:
-    - "*[bot]"
-    - "dependabot*"
-    - "renovate*"
+  # Add custom bot patterns (hardcoded defaults always apply)
+  additional_bot_patterns:
+    - "my-org-bot"
+    - "jenkins*"
   use_local_git: true
   clone_directory: "./.repos"
   user_aliases:
@@ -364,6 +357,33 @@ options:
       names:
         - "John Doe"
         - "JD"
+```
+
+### Bot Filtering
+
+Bot filtering uses **hardcoded default patterns** that always apply when `include_bots: false`. These cannot be disabled to ensure consistent filtering:
+
+**Default Bot Patterns (always applied):**
+- `*[bot]` - GitHub App bots (dependabot[bot], renovate[bot], etc.)
+- `dependabot*` - Dependabot variants
+- `renovate*` - Renovate bot variants
+- `github-actions*` - GitHub Actions
+- `codecov*` - Codecov bot
+- `snyk*` - Snyk security bot
+- `greenkeeper*` - Greenkeeper (legacy)
+- `imgbot*` - Image optimization bot
+- `allcontributors*` - All Contributors bot
+- `semantic-release*` - Semantic release bot
+
+**Add custom patterns** for your organization's bots:
+
+```yaml
+options:
+  include_bots: false  # When false, hardcoded + additional patterns apply
+  additional_bot_patterns:
+    - "my-org-bot"     # Exact match
+    - "jenkins*"       # Prefix match
+    - "*-ci"           # Suffix match
 ```
 
 ### Environment Variables

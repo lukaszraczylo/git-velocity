@@ -615,15 +615,10 @@ func TestConfig_GetTeamForUser(t *testing.T) {
 func TestConfig_IsBot(t *testing.T) {
 	t.Parallel()
 
+	// Bot patterns are now hardcoded, so we just need IncludeBots: false
 	cfg := &Config{
 		Options: OptionsConfig{
 			IncludeBots: false,
-			BotPatterns: []string{
-				"*[bot]",
-				"dependabot*",
-				"renovate*",
-				"github-actions*",
-			},
 		},
 	}
 
@@ -653,6 +648,16 @@ func TestConfig_IsBot(t *testing.T) {
 			expected: true,
 		},
 		{
+			name:     "codecov bot (hardcoded)",
+			username: "codecov[bot]",
+			expected: true,
+		},
+		{
+			name:     "snyk bot (hardcoded)",
+			username: "snyk-bot",
+			expected: true,
+		},
+		{
 			name:     "regular user",
 			username: "alice",
 			expected: false,
@@ -674,19 +679,43 @@ func TestConfig_IsBot(t *testing.T) {
 	}
 }
 
+func TestConfig_IsBot_AdditionalPatterns(t *testing.T) {
+	t.Parallel()
+
+	cfg := &Config{
+		Options: OptionsConfig{
+			IncludeBots:           false,
+			AdditionalBotPatterns: []string{"my-custom-bot", "ci-*"},
+		},
+	}
+
+	// Custom patterns should work
+	assert.True(t, cfg.IsBot("my-custom-bot"))
+	assert.True(t, cfg.IsBot("ci-runner"))
+	assert.True(t, cfg.IsBot("ci-bot"))
+
+	// Hardcoded patterns should still work
+	assert.True(t, cfg.IsBot("dependabot[bot]"))
+	assert.True(t, cfg.IsBot("renovate[bot]"))
+
+	// Regular users should not match
+	assert.False(t, cfg.IsBot("alice"))
+}
+
 func TestConfig_IsBot_IncludeBots(t *testing.T) {
 	t.Parallel()
 
 	cfg := &Config{
 		Options: OptionsConfig{
 			IncludeBots: true,
-			BotPatterns: []string{"*[bot]"},
 		},
 	}
 
 	// When IncludeBots is true, nothing should be considered a bot
+	// (even hardcoded patterns are bypassed)
 	assert.False(t, cfg.IsBot("my-app[bot]"))
 	assert.False(t, cfg.IsBot("dependabot"))
+	assert.False(t, cfg.IsBot("renovate[bot]"))
 }
 
 func TestMatchPattern(t *testing.T) {

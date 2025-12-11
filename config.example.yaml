@@ -98,16 +98,10 @@ scoring:
     fast_review_1h: 50    # Review response under 1 hour
     fast_review_4h: 25    # Review response under 4 hours
     fast_review_24h: 10   # Review response under 24 hours
+    out_of_hours: 2       # Bonus per commit outside 9am-5pm
 
-  # Achievement badges (optional, uses defaults if not specified)
-  # achievements:
-  #   - id: "custom-achievement"
-  #     name: "Custom Badge"
-  #     description: "Earned for custom condition"
-  #     icon: "fa-star"
-  #     condition:
-  #       type: "commit_count"  # commit_count, pr_opened_count, review_count, etc.
-  #       threshold: 100
+  # Note: Achievements are hardcoded (93 achievements across 18 categories)
+  # They cannot be configured to prevent manipulation
 
 # Output configuration
 output:
@@ -129,8 +123,13 @@ cache:
 options:
   concurrent_requests: 5  # Max parallel API requests (1-20)
   include_bots: false     # Include bot accounts in metrics
-  bot_patterns:           # Patterns to identify bot accounts
-    - "*[bot]"
-    - "dependabot*"
-    - "renovate*"
-    - "github-actions*"
+
+  # Bot filtering uses hardcoded default patterns that always apply:
+  #   *[bot], dependabot*, renovate*, github-actions*, codecov*,
+  #   snyk*, greenkeeper*, imgbot*, allcontributors*, semantic-release*
+  #
+  # Add your own custom patterns here (in addition to defaults):
+  additional_bot_patterns: []
+    # - "my-org-bot"     # Exact match
+    # - "jenkins*"       # Prefix match
+    # - "*-ci"           # Suffix match

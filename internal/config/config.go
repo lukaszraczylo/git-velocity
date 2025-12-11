@@ -192,19 +192,30 @@ func (c *Config) GetTeamForUser(username string) *TeamConfig {
 	return nil
 }
 
-// IsBot checks if a username matches bot patterns
+// IsBot checks if a username matches bot patterns (hardcoded defaults + user-defined)
 func (c *Config) IsBot(username string) bool {
 	if c.Options.IncludeBots {
 		return false
 	}
 
 	lower := strings.ToLower(username)
-	for _, pattern := range c.Options.BotPatterns {
+
+	// Check hardcoded default patterns first
+	for _, pattern := range DefaultBotPatterns() {
 		pattern = strings.ToLower(pattern)
 		if matchPattern(lower, pattern) {
 			return true
 		}
 	}
+
+	// Check user-defined additional patterns
+	for _, pattern := range c.Options.AdditionalBotPatterns {
+		pattern = strings.ToLower(pattern)
+		if matchPattern(lower, pattern) {
+			return true
+		}
+	}
+
 	return false
 }
 
