@@ -878,3 +878,128 @@ func TestCalculator_MeaningfulLinesScoring(t *testing.T) {
 		assert.Equal(t, 50, contributor.Score.Total)
 	})
 }
+
+func TestCalculator_CommentLinesAchievements(t *testing.T) {
+	t.Parallel()
+
+	t.Run("earns documentation achievements for adding comments", func(t *testing.T) {
+		t.Parallel()
+
+		cfg := config.DefaultConfig()
+		cfg.Scoring.Enabled = true
+		calc := NewCalculator(cfg)
+
+		metrics := &models.GlobalMetrics{
+			Repositories: []models.RepositoryMetrics{
+				{
+					FullName: "owner/repo",
+					Contributors: []models.ContributorMetrics{
+						{
+							Login:                   "documenter",
+							CommitCount:             10,
+							CommentLinesAdded:       1500, // Should earn docs-100, docs-500, docs-1000
+							CommentLinesDeleted:     100,  // Should earn docs-del-50
+							RepositoriesContributed: []string{"owner/repo"},
+						},
+					},
+				},
+			},
+		}
+
+		result := calc.Calculate(metrics)
+
+		contributor := result.Repositories[0].Contributors[0]
+		// Should have documentation achievements
+		assert.Contains(t, contributor.Achievements, "docs-100", "Should earn docs-100 for 100+ comment lines")
+		assert.Contains(t, contributor.Achievements, "docs-500", "Should earn docs-500 for 500+ comment lines")
+		assert.Contains(t, contributor.Achievements, "docs-1000", "Should earn docs-1000 for 1000+ comment lines")
+		assert.NotContains(t, contributor.Achievements, "docs-2500", "Should not earn docs-2500 for <2500 comment lines")
+		// Should have comment cleanup achievement
+		assert.Contains(t, contributor.Achievements, "docs-del-50", "Should earn docs-del-50 for 50+ comment deletions")
+		assert.NotContains(t, contributor.Achievements, "docs-del-200", "Should not earn docs-del-200 for <200 deletions")
+	})
+
+	t.Run("earns all documentation deletion achievements", func(t *testing.T) {
+		t.Parallel()
+
+		cfg := config.DefaultConfig()
+		cfg.Scoring.Enabled = true
+		calc := NewCalculator(cfg)
+
+		metrics := &models.GlobalMetrics{
+			Repositories: []models.RepositoryMetrics{
+				{
+					FullName: "owner/repo",
+					Contributors: []models.ContributorMetrics{
+						{
+							Login:                   "cleanup-expert",
+							CommitCount:             50,
+							CommentLinesAdded:       100,
+							CommentLinesDeleted:     3000, // Should earn all deletion tiers
+							RepositoriesContributed: []string{"owner/repo"},
+						},
+					},
+				},
+			},
+		}
+
+		result := calc.Calculate(metrics)
+
+		contributor := result.Repositories[0].Contributors[0]
+		// Should have all comment cleanup achievements
+		assert.Contains(t, contributor.Achievements, "docs-del-50")
+		assert.Contains(t, contributor.Achievements, "docs-del-200")
+		assert.Contains(t, contributor.Achievements, "docs-del-500")
+		assert.Contains(t, contributor.Achievements, "docs-del-1000")
+		assert.Contains(t, contributor.Achievements, "docs-del-2500")
+	})
+
+	t.Run("aggregates comment lines across multiple repositories", func(t *testing.T) {
+		t.Parallel()
+
+		cfg := config.DefaultConfig()
+		cfg.Scoring.Enabled = true
+		calc := NewCalculator(cfg)
+
+		metrics := &models.GlobalMetrics{
+			Repositories: []models.RepositoryMetrics{
+				{
+					FullName: "owner/repo1",
+					Contributors: []models.ContributorMetrics{
+						{
+							Login:                   "multi-repo-doc",
+							CommitCount:             5,
+							CommentLinesAdded:       300,
+							CommentLinesDeleted:     30,
+							RepositoriesContributed: []string{"owner/repo1"},
+						},
+					},
+				},
+				{
+					FullName: "owner/repo2",
+					Contributors: []models.ContributorMetrics{
+						{
+							Login:                   "multi-repo-doc",
+							CommitCount:             5,
+							CommentLinesAdded:       300,
+							CommentLinesDeleted:     30,
+							RepositoriesContributed: []string{"owner/repo2"},
+						},
+					},
+				},
+			},
+		}
+
+		result := calc.Calculate(metrics)
+
+		// Check leaderboard entry (aggregated)
+		require.Len(t, result.Leaderboard, 1)
+		entry := result.Leaderboard[0]
+		// Aggregated: 300 + 300 = 600 comment lines added, 30 + 30 = 60 deleted
+		assert.Contains(t, entry.Achievements, "docs-100")
+		assert.Contains(t, entry.Achievements, "docs-500")
+		assert.NotContains(t, entry.Achievements, "docs-1000", "600 < 1000")
+		assert.Contains(t, entry.Achievements, "docs-del-50")
+		assert.NotContains(t, entry.Achievements, "docs-del-200", "60 < 200")
+	})
+}

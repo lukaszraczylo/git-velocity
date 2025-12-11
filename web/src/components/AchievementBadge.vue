@@ -29,97 +29,153 @@ const getTierFromThreshold = (threshold) => {
   return 1
 }
 
-// Extract threshold from achievement ID (e.g., "commit-100" -> 100)
+// Extract threshold from achievement ID (e.g., "commit-100" -> 100, "docs-del-50" -> 50)
 const extractThreshold = (id) => {
   const match = id.match(/(\d+)$/)
   if (match) return parseInt(match[1], 10)
-  // Special cases for non-numeric achievements
-  if (id === 'first-commit' || id === 'pr-opener' || id === 'reviewer') return 1
   return 50 // Default for special achievements
 }
 
-// Achievement definitions matching the Go backend
+// Achievement definitions matching the Go backend (internal/config/schema.go)
 const achievements = {
-  // Commit achievements - Journey from apprentice to legend
-  'first-commit': { name: 'Hello World', description: 'Made your first commit', icon: 'fa-baby' },
-  'commit-10': { name: 'Seedling', description: 'Made 10 commits', icon: 'fa-seedling' },
-  'commit-25': { name: 'Momentum', description: 'Made 25 commits', icon: 'fa-wind' },
-  'commit-50': { name: 'Trailblazer', description: 'Made 50 commits', icon: 'fa-hiking' },
-  'commit-100': { name: 'Centurion', description: 'Made 100 commits', icon: 'fa-shield-halved' },
-  'commit-250': { name: 'Relentless', description: 'Made 250 commits', icon: 'fa-bolt-lightning' },
-  'commit-500': { name: 'Unstoppable', description: 'Made 500 commits', icon: 'fa-meteor' },
-  'commit-1000': { name: 'Grandmaster', description: 'Made 1000 commits', icon: 'fa-chess-king' },
-  'commit-5000': { name: 'Titan', description: 'Made 5000 commits', icon: 'fa-mountain-sun' },
-  'commit-10000': { name: 'Immortal', description: 'Made 10000 commits', icon: 'fa-dragon' },
-  'commit-25000': { name: 'Ascended', description: 'Made 25000 commits', icon: 'fa-infinity' },
+  // ===== COMMIT COUNT (Tiers: 1, 10, 50, 100, 500, 1000) =====
+  'commit-1': { name: 'First Steps', description: 'Made your first commit', icon: 'fa-baby' },
+  'commit-10': { name: 'Getting Started', description: 'Made 10 commits', icon: 'fa-seedling' },
+  'commit-50': { name: 'Contributor', description: 'Made 50 commits', icon: 'fa-code' },
+  'commit-100': { name: 'Committed', description: 'Made 100 commits', icon: 'fa-fire' },
+  'commit-500': { name: 'Code Machine', description: 'Made 500 commits', icon: 'fa-robot' },
+  'commit-1000': { name: 'Code Warrior', description: 'Made 1000 commits', icon: 'fa-crown' },
 
-  // PR achievements - The art of collaboration
-  'pr-opener': { name: 'First Blood', description: 'Opened your first pull request', icon: 'fa-flag-checkered' },
-  'pr-10': { name: 'Collaborator', description: 'Opened 10 pull requests', icon: 'fa-handshake' },
-  'pr-25': { name: 'Integrator', description: 'Opened 25 pull requests', icon: 'fa-code-branch' },
-  'pr-50': { name: 'Architect', description: 'Opened 50 pull requests', icon: 'fa-building' },
-  'pr-100': { name: 'Vanguard', description: 'Opened 100 pull requests', icon: 'fa-rocket' },
+  // ===== PR OPENED (Tiers: 1, 10, 25, 50, 100, 250) =====
+  'pr-1': { name: 'PR Pioneer', description: 'Opened your first pull request', icon: 'fa-code-pull-request' },
+  'pr-10': { name: 'PR Regular', description: 'Opened 10 pull requests', icon: 'fa-code-branch' },
+  'pr-25': { name: 'PR Pro', description: 'Opened 25 pull requests', icon: 'fa-code-compare' },
+  'pr-50': { name: 'Merge Master', description: 'Opened 50 pull requests', icon: 'fa-code-merge' },
+  'pr-100': { name: 'PR Champion', description: 'Opened 100 pull requests', icon: 'fa-trophy' },
+  'pr-250': { name: 'PR Legend', description: 'Opened 250 pull requests', icon: 'fa-medal' },
 
-  // Review achievements - The guardian path
-  'reviewer': { name: 'Watchful Eye', description: 'Reviewed your first pull request', icon: 'fa-eye' },
-  'reviewer-10': { name: 'Sentinel', description: 'Reviewed 10 pull requests', icon: 'fa-shield' },
-  'reviewer-25': { name: 'Gatekeeper', description: 'Reviewed 25 pull requests', icon: 'fa-dungeon' },
-  'reviewer-50': { name: 'Oracle', description: 'Reviewed 50 pull requests', icon: 'fa-hat-wizard' },
-  'reviewer-100': { name: 'Sage', description: 'Reviewed 100 pull requests', icon: 'fa-book-skull' },
+  // ===== REVIEWS (Tiers: 1, 10, 25, 50, 100, 250) =====
+  'review-1': { name: 'First Review', description: 'Reviewed your first pull request', icon: 'fa-magnifying-glass' },
+  'review-10': { name: 'Reviewer', description: 'Reviewed 10 pull requests', icon: 'fa-eye' },
+  'review-25': { name: 'Review Regular', description: 'Reviewed 25 pull requests', icon: 'fa-glasses' },
+  'review-50': { name: 'Review Expert', description: 'Reviewed 50 pull requests', icon: 'fa-user-check' },
+  'review-100': { name: 'Review Guru', description: 'Reviewed 100 pull requests', icon: 'fa-user-graduate' },
+  'review-250': { name: 'Review Master', description: 'Reviewed 250 pull requests', icon: 'fa-award' },
 
-  // Speed achievements - Time is of the essence
-  'speed-demon': { name: 'Lightning Rod', description: 'Average review response under 1 hour', icon: 'fa-bolt' },
-  'quick-responder': { name: 'Flash', description: 'Average review response under 4 hours', icon: 'fa-gauge-high' },
+  // ===== REVIEW COMMENTS (Tiers: 10, 50, 100, 250, 500) =====
+  'comment-10': { name: 'Commentator', description: 'Left 10 PR review comments', icon: 'fa-comment' },
+  'comment-50': { name: 'Feedback Giver', description: 'Left 50 PR review comments', icon: 'fa-comments' },
+  'comment-100': { name: 'Code Critic', description: 'Left 100 PR review comments', icon: 'fa-comment-dots' },
+  'comment-250': { name: 'Feedback Expert', description: 'Left 250 PR review comments', icon: 'fa-message' },
+  'comment-500': { name: 'Comment Champion', description: 'Left 500 PR review comments', icon: 'fa-scroll' },
 
-  // Comment achievements
-  'commentator': { name: 'Wordsmith', description: 'Left 50 PR review comments', icon: 'fa-feather-pointed' },
+  // ===== LINES ADDED (Tiers: 100, 1000, 5000, 10000, 50000) =====
+  'lines-added-100': { name: 'First Hundred', description: 'Added 100 lines of code', icon: 'fa-plus' },
+  'lines-added-1000': { name: 'Thousand Lines', description: 'Added 1000 lines of code', icon: 'fa-layer-group' },
+  'lines-added-5000': { name: 'Five Thousand', description: 'Added 5000 lines of code', icon: 'fa-cubes' },
+  'lines-added-10000': { name: 'Ten Thousand', description: 'Added 10000 lines of code', icon: 'fa-mountain' },
+  'lines-added-50000': { name: 'Code Mountain', description: 'Added 50000 lines of code', icon: 'fa-mountain-sun' },
 
-  // Lines of code achievements - Volume mastery
-  'lines-1000': { name: 'Scribe', description: 'Added 1000 lines of code', icon: 'fa-scroll' },
-  'lines-10000': { name: 'Novelist', description: 'Added 10000 lines of code', icon: 'fa-book' },
-  'lines-100000': { name: 'Encyclopedia', description: 'Added 100000 lines of code', icon: 'fa-landmark' },
+  // ===== LINES DELETED (Tiers: 100, 500, 1000, 5000, 10000) =====
+  'lines-deleted-100': { name: 'Tidying Up', description: 'Deleted 100 lines of code', icon: 'fa-eraser' },
+  'lines-deleted-500': { name: 'Spring Cleaning', description: 'Deleted 500 lines of code', icon: 'fa-broom' },
+  'lines-deleted-1000': { name: 'Code Cleaner', description: 'Deleted 1000 lines of code', icon: 'fa-trash-can' },
+  'lines-deleted-5000': { name: 'Refactoring Hero', description: 'Deleted 5000 lines of code', icon: 'fa-recycle' },
+  'lines-deleted-10000': { name: 'Deletion Master', description: 'Deleted 10000 lines of code', icon: 'fa-dumpster-fire' },
 
-  // Deletion achievements - The minimalist way
-  'cleaner': { name: 'Pruner', description: 'Deleted 1000 lines of code', icon: 'fa-scissors' },
-  'refactorer': { name: 'Surgeon', description: 'Deleted 10000 lines of code', icon: 'fa-syringe' },
-  'annihilator': { name: 'Annihilator', description: 'Deleted 100000 lines of code', icon: 'fa-explosion' },
+  // ===== REVIEW RESPONSE TIME (Tiers: 24h, 4h, 1h) =====
+  'review-time-24h': { name: 'Same Day Reviewer', description: 'Average review response under 24 hours', icon: 'fa-clock' },
+  'review-time-4h': { name: 'Quick Responder', description: 'Average review response under 4 hours', icon: 'fa-stopwatch' },
+  'review-time-1h': { name: 'Speed Demon', description: 'Average review response under 1 hour', icon: 'fa-bolt' },
 
-  // Multi-repo achievements - The wanderer
-  'multi-repo': { name: 'Nomad', description: 'Contributed to 5 repositories', icon: 'fa-compass' },
-  'multi-repo-10': { name: 'Explorer', description: 'Contributed to 10 repositories', icon: 'fa-map' },
+  // ===== MULTI-REPO (Tiers: 2, 5, 10) =====
+  'repo-2': { name: 'Multi-Repo', description: 'Contributed to 2 repositories', icon: 'fa-folder' },
+  'repo-5': { name: 'Repo Explorer', description: 'Contributed to 5 repositories', icon: 'fa-folder-tree' },
+  'repo-10': { name: 'Repo Master', description: 'Contributed to 10 repositories', icon: 'fa-network-wired' },
 
-  // Team collaboration - Social butterfly
-  'team-player': { name: 'Ambassador', description: 'Reviewed PRs from 10 different contributors', icon: 'fa-users' },
-  'team-player-25': { name: 'Diplomat', description: 'Reviewed PRs from 25 different contributors', icon: 'fa-globe' },
+  // ===== UNIQUE REVIEWEES (Tiers: 3, 10, 25) =====
+  'reviewees-3': { name: 'Helpful Colleague', description: 'Reviewed PRs from 3 different contributors', icon: 'fa-user-group' },
+  'reviewees-10': { name: 'Team Player', description: 'Reviewed PRs from 10 different contributors', icon: 'fa-people-group' },
+  'reviewees-25': { name: 'Community Pillar', description: 'Reviewed PRs from 25 different contributors', icon: 'fa-people-roof' },
 
-  // PR size achievements - Go big or go home
-  'big-pr': { name: 'Heavyweight', description: 'Merged a PR with 1000+ lines', icon: 'fa-dumbbell' },
-  'mega-pr': { name: 'Colossus', description: 'Merged a PR with 5000+ lines', icon: 'fa-monument' },
+  // ===== PR SIZE - LARGE (Tiers: 500, 1000, 5000) =====
+  'large-pr-500': { name: 'Big Change', description: 'Merged a PR with 500+ lines changed', icon: 'fa-expand' },
+  'large-pr-1000': { name: 'Heavy Lifter', description: 'Merged a PR with 1000+ lines changed', icon: 'fa-weight-hanging' },
+  'large-pr-5000': { name: 'Mega Merge', description: 'Merged a PR with 5000+ lines changed', icon: 'fa-dumbbell' },
 
-  // Small PR achievements - Precision strikes
-  'small-pr-10': { name: 'Minimalist', description: 'Merged 10 PRs under 100 lines', icon: 'fa-compress' },
-  'small-pr-50': { name: 'Atomic', description: 'Merged 50 PRs under 100 lines', icon: 'fa-atom' },
+  // ===== SMALL PRs (Tiers: 5, 10, 25, 50) =====
+  'small-pr-5': { name: 'Small Changes', description: 'Merged 5 PRs under 100 lines', icon: 'fa-compress' },
+  'small-pr-10': { name: 'Small PR Advocate', description: 'Merged 10 PRs under 100 lines', icon: 'fa-minimize' },
+  'small-pr-25': { name: 'Atomic Commits', description: 'Merged 25 PRs under 100 lines', icon: 'fa-atom' },
+  'small-pr-50': { name: 'Micro PR Master', description: 'Merged 50 PRs under 100 lines', icon: 'fa-microchip' },
 
-  // Perfect PR achievements - Flawless execution
-  'perfect-pr-5': { name: 'Sharpshooter', description: '5 PRs merged without changes requested', icon: 'fa-bullseye' },
-  'perfect-pr-25': { name: 'Perfectionist', description: '25 PRs merged without changes requested', icon: 'fa-gem' },
-  'perfect-pr-100': { name: 'Immaculate', description: '100 PRs merged without changes requested', icon: 'fa-crown' },
+  // ===== PERFECT PRs (Tiers: 1, 5, 10, 25) =====
+  'perfect-pr-1': { name: 'First Try', description: '1 PR merged without changes requested', icon: 'fa-check' },
+  'perfect-pr-5': { name: 'Clean Code', description: '5 PRs merged without changes requested', icon: 'fa-check-double' },
+  'perfect-pr-10': { name: 'Quality Author', description: '10 PRs merged without changes requested', icon: 'fa-circle-check' },
+  'perfect-pr-25': { name: 'Flawless', description: '25 PRs merged without changes requested', icon: 'fa-gem' },
 
-  // Streak achievements - Consistency is key
-  'streak-7': { name: 'Hot Streak', description: '7 day contribution streak', icon: 'fa-fire' },
-  'streak-30': { name: 'Ironclad', description: '30 day contribution streak', icon: 'fa-link' },
-  'streak-90': { name: 'Unbreakable', description: '90 day contribution streak', icon: 'fa-diamond' },
+  // ===== ACTIVE DAYS (Tiers: 7, 30, 60, 100) =====
+  'active-7': { name: 'Week Active', description: 'Active on 7 different days', icon: 'fa-calendar-day' },
+  'active-30': { name: 'Month Active', description: 'Active on 30 different days', icon: 'fa-calendar-week' },
+  'active-60': { name: 'Consistent Contributor', description: 'Active on 60 different days', icon: 'fa-chart-line' },
+  'active-100': { name: 'Dedicated Developer', description: 'Active on 100 different days', icon: 'fa-fire-flame-curved' },
 
-  // Time-based achievements - When you code matters
-  'early-bird': { name: 'Dawn Patrol', description: '50 commits before 9am', icon: 'fa-sun' },
-  'night-owl': { name: 'Nighthawk', description: '50 commits after 9pm', icon: 'fa-moon' },
-  'nosferatu': { name: 'Vampire', description: '25 commits between midnight and 4am', icon: 'fa-ghost' },
-  'weekend-warrior': { name: 'No Days Off', description: '25 weekend commits', icon: 'fa-calendar-xmark' },
+  // ===== LONGEST STREAK (Tiers: 3, 7, 14, 30) =====
+  'streak-3': { name: 'Getting Rolling', description: '3 day contribution streak', icon: 'fa-forward' },
+  'streak-7': { name: 'Week Warrior', description: '7 day contribution streak', icon: 'fa-calendar-week' },
+  'streak-14': { name: 'Two Week Streak', description: '14 day contribution streak', icon: 'fa-fire' },
+  'streak-30': { name: 'Month Master', description: '30 day contribution streak', icon: 'fa-calendar-check' },
 
-  // Activity achievements - Showing up matters
-  'active-30': { name: 'Reliable', description: 'Active on 30 different days', icon: 'fa-calendar-check' },
-  'active-100': { name: 'Stalwart', description: 'Active on 100 different days', icon: 'fa-tower-observation' },
-  'active-365': { name: 'Eternal', description: 'Active on 365 different days', icon: 'fa-sun-plant-wilt' }
+  // ===== WORK WEEK STREAK (Tiers: 3, 5, 10, 20) =====
+  'workweek-3': { name: 'Work Week Start', description: '3 consecutive weekday streak', icon: 'fa-briefcase' },
+  'workweek-5': { name: 'Full Work Week', description: '5 consecutive weekday streak', icon: 'fa-building' },
+  'workweek-10': { name: 'Two Week Grind', description: '10 consecutive weekday streak', icon: 'fa-business-time' },
+  'workweek-20': { name: 'Month of Mondays', description: '20 consecutive weekday streak', icon: 'fa-landmark' },
+
+  // ===== EARLY BIRD (Tiers: 10, 25, 50, 100) =====
+  'earlybird-10': { name: 'Early Riser', description: '10 commits before 9am', icon: 'fa-mug-hot' },
+  'earlybird-25': { name: 'Morning Person', description: '25 commits before 9am', icon: 'fa-cloud-sun' },
+  'earlybird-50': { name: 'Early Bird', description: '50 commits before 9am', icon: 'fa-sun' },
+  'earlybird-100': { name: 'Dawn Warrior', description: '100 commits before 9am', icon: 'fa-sunrise' },
+
+  // ===== NIGHT OWL (Tiers: 10, 25, 50, 100) =====
+  'nightowl-10': { name: 'Late Worker', description: '10 commits after 9pm', icon: 'fa-cloud-moon' },
+  'nightowl-25': { name: 'Evening Coder', description: '25 commits after 9pm', icon: 'fa-moon' },
+  'nightowl-50': { name: 'Night Owl', description: '50 commits after 9pm', icon: 'fa-star' },
+  'nightowl-100': { name: 'Nocturnal', description: '100 commits after 9pm', icon: 'fa-star-and-crescent' },
+
+  // ===== MIDNIGHT CODER (Tiers: 5, 10, 25, 50) =====
+  'midnight-5': { name: 'Night Shift', description: '5 commits between midnight and 4am', icon: 'fa-ghost' },
+  'midnight-10': { name: 'Insomniac', description: '10 commits between midnight and 4am', icon: 'fa-bed' },
+  'midnight-25': { name: 'Nosferatu', description: '25 commits between midnight and 4am', icon: 'fa-skull' },
+  'midnight-50': { name: 'Vampire Coder', description: '50 commits between midnight and 4am', icon: 'fa-skull-crossbones' },
+
+  // ===== WEEKEND WARRIOR (Tiers: 5, 10, 25, 50) =====
+  'weekend-5': { name: 'Weekend Work', description: '5 weekend commits', icon: 'fa-couch' },
+  'weekend-10': { name: 'Weekend Regular', description: '10 weekend commits', icon: 'fa-house-laptop' },
+  'weekend-25': { name: 'Weekend Warrior', description: '25 weekend commits', icon: 'fa-gamepad' },
+  'weekend-50': { name: 'No Days Off', description: '50 weekend commits', icon: 'fa-person-running' },
+
+  // ===== OUT OF HOURS (Tiers: 10, 25, 50, 100) =====
+  'ooh-10': { name: 'Extra Hours', description: '10 commits outside 9am-5pm', icon: 'fa-clock-rotate-left' },
+  'ooh-25': { name: 'Flexible Schedule', description: '25 commits outside 9am-5pm', icon: 'fa-user-clock' },
+  'ooh-50': { name: 'Off-Hours Hero', description: '50 commits outside 9am-5pm', icon: 'fa-hourglass-half' },
+  'ooh-100': { name: 'Time Bender', description: '100 commits outside 9am-5pm', icon: 'fa-infinity' },
+
+  // ===== DOCUMENTATION & COMMENTS ADDED (Tiers: 100, 500, 1000, 2500, 5000) =====
+  'docs-100': { name: 'Documenter', description: 'Added 100 lines of comments/docs', icon: 'fa-file-lines' },
+  'docs-500': { name: 'Technical Writer', description: 'Added 500 lines of comments/docs', icon: 'fa-book' },
+  'docs-1000': { name: 'Documentation Hero', description: 'Added 1000 lines of comments/docs', icon: 'fa-book-open' },
+  'docs-2500': { name: 'Knowledge Keeper', description: 'Added 2500 lines of comments/docs', icon: 'fa-scroll' },
+  'docs-5000': { name: 'Code Historian', description: 'Added 5000 lines of comments/docs', icon: 'fa-landmark' },
+
+  // ===== COMMENT CLEANUP (Tiers: 50, 200, 500, 1000, 2500) =====
+  'docs-del-50': { name: 'Comment Trimmer', description: 'Removed 50 lines of outdated comments', icon: 'fa-scissors' },
+  'docs-del-200': { name: 'Cleanup Crew', description: 'Removed 200 lines of outdated comments', icon: 'fa-broom' },
+  'docs-del-500': { name: 'Dead Code Hunter', description: 'Removed 500 lines of outdated comments', icon: 'fa-skull-crossbones' },
+  'docs-del-1000': { name: 'Comment Surgeon', description: 'Removed 1000 lines of outdated comments', icon: 'fa-user-doctor' },
+  'docs-del-2500': { name: 'Noise Eliminator', description: 'Removed 2500 lines of outdated comments', icon: 'fa-volume-xmark' },
 }
 
 const getAchievement = (id) => {

@@ -357,5 +357,19 @@ func defaultAchievements() []AchievementConfig {
 		{ID: "ooh-25", Name: "Flexible Schedule", Description: "25 commits outside 9am-5pm", Icon: "fa-user-clock", Condition: AchievementCondition{Type: "out_of_hours_count", Threshold: 25}},
 		{ID: "ooh-50", Name: "Off-Hours Hero", Description: "50 commits outside 9am-5pm", Icon: "fa-hourglass-half", Condition: AchievementCondition{Type: "out_of_hours_count", Threshold: 50}},
 		{ID: "ooh-100", Name: "Time Bender", Description: "100 commits outside 9am-5pm", Icon: "fa-infinity", Condition: AchievementCondition{Type: "out_of_hours_count", Threshold: 100}},
+
+		// ===== DOCUMENTATION & COMMENTS ADDED (Tiers: 100, 500, 1000, 2500, 5000) =====
+		{ID: "docs-100", Name: "Documenter", Description: "Added 100 lines of comments/docs", Icon: "fa-file-lines", Condition: AchievementCondition{Type: "comment_lines_added", Threshold: 100}},
+		{ID: "docs-500", Name: "Technical Writer", Description: "Added 500 lines of comments/docs", Icon: "fa-book", Condition: AchievementCondition{Type: "comment_lines_added", Threshold: 500}},
+		{ID: "docs-1000", Name: "Documentation Hero", Description: "Added 1000 lines of comments/docs", Icon: "fa-book-open", Condition: AchievementCondition{Type: "comment_lines_added", Threshold: 1000}},
+		{ID: "docs-2500", Name: "Knowledge Keeper", Description: "Added 2500 lines of comments/docs", Icon: "fa-scroll", Condition: AchievementCondition{Type: "comment_lines_added", Threshold: 2500}},
+		{ID: "docs-5000", Name: "Code Historian", Description: "Added 5000 lines of comments/docs", Icon: "fa-landmark", Condition: AchievementCondition{Type: "comment_lines_added", Threshold: 5000}},
+
+		// ===== COMMENT CLEANUP (Tiers: 50, 200, 500, 1000, 2500) =====
+		{ID: "docs-del-50", Name: "Comment Trimmer", Description: "Removed 50 lines of outdated comments", Icon: "fa-scissors", Condition: AchievementCondition{Type: "comment_lines_deleted", Threshold: 50}},
+		{ID: "docs-del-200", Name: "Cleanup Crew", Description: "Removed 200 lines of outdated comments", Icon: "fa-broom", Condition: AchievementCondition{Type: "comment_lines_deleted", Threshold: 200}},
+		{ID: "docs-del-500", Name: "Dead Code Hunter", Description: "Removed 500 lines of outdated comments", Icon: "fa-skull-crossbones", Condition: AchievementCondition{Type: "comment_lines_deleted", Threshold: 500}},
+		{ID: "docs-del-1000", Name: "Comment Surgeon", Description: "Removed 1000 lines of outdated comments", Icon: "fa-scalpel", Condition: AchievementCondition{Type: "comment_lines_deleted", Threshold: 1000}},
+		{ID: "docs-del-2500", Name: "Noise Eliminator", Description: "Removed 2500 lines of outdated comments", Icon: "fa-volume-xmark", Condition: AchievementCondition{Type: "comment_lines_deleted", Threshold: 2500}},
 	}
 }

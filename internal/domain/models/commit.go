@@ -19,6 +19,10 @@ type Commit struct {
 	MeaningfulAdditions int `json:"meaningful_additions"`
 	MeaningfulDeletions int `json:"meaningful_deletions"`
 
+	// Comment line counts
+	CommentAdditions int `json:"comment_additions"`
+	CommentDeletions int `json:"comment_deletions"`
+
 	// Derived fields
 	HasTests bool `json:"has_tests"`
 }

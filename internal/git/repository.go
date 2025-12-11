@@ -217,6 +217,8 @@ func (r *Repository) FetchCommits(ctx context.Context, owner, name string, since
 				Deletions:           stats.Deletions,
 				MeaningfulAdditions: stats.MeaningfulAdditions,
 				MeaningfulDeletions: stats.MeaningfulDeletions,
+				CommentAdditions:    stats.CommentAdditions,
+				CommentDeletions:    stats.CommentDeletions,
 				FilesChanged:        stats.FilesChanged,
 				Repository:          fmt.Sprintf("%s/%s", owner, name),
 				URL:                 fmt.Sprintf("https://github.com/%s/%s/commit/%s", owner, name, c.Hash.String()),
@@ -245,6 +247,8 @@ type commitStats struct {
 	Deletions           int
 	MeaningfulAdditions int
 	MeaningfulDeletions int
+	CommentAdditions    int
+	CommentDeletions    int
 	FilesChanged        int
 	HasTests            bool
 }
@@ -327,6 +331,8 @@ func (r *Repository) getCommitStats(c *object.Commit, testPatterns []string) com
 						stats.Additions++
 						if diff.IsMeaningfulLine(line) {
 							stats.MeaningfulAdditions++
+						} else if diff.IsCommentLine(line) && !diff.IsWhitespaceLine(line) {
+							stats.CommentAdditions++
 						}
 					}
 				case 2: // Delete
@@ -334,6 +340,8 @@ func (r *Repository) getCommitStats(c *object.Commit, testPatterns []string) com
 						stats.Deletions++
 						if diff.IsMeaningfulLine(line) {
 							stats.MeaningfulDeletions++
+						} else if diff.IsCommentLine(line) && !diff.IsWhitespaceLine(line) {
+							stats.CommentDeletions++
 						}
 					}
 				}

@@ -11,6 +11,7 @@ import AchievementProgress from '../components/AchievementProgress.vue'
 import SectionHeader from '../components/SectionHeader.vue'
 import GithubLink from '../components/GithubLink.vue'
 import { formatNumber, formatPercent, formatDuration } from '../composables/formatters'
+import { getHighestTierAchievements } from '../composables/achievements'
 
 const route = useRoute()
 const globalData = inject('globalData')
@@ -127,7 +128,7 @@ watch(globalData, loadContributor)
 
               <div v-if="contributor.achievements?.length" class="mt-6 flex flex-wrap justify-center md:justify-start gap-3">
                 <AchievementBadge
-                  v-for="achievement in contributor.achievements"
+                  v-for="achievement in getHighestTierAchievements(contributor.achievements)"
                   :key="achievement"
                   :achievement-id="achievement"
                   size="lg"
@@ -192,6 +193,30 @@ watch(globalData, loadContributor)
                   <span class="text-gray-600 dark:text-gray-300">Lines Deleted</span>
                   <span class="text-red-500 font-semibold">
                     -{{ formatNumber(contributor.lines_deleted || 0) }}
+                  </span>
+                </div>
+                <div v-if="contributor.meaningful_lines_added !== undefined" class="flex items-center justify-between">
+                  <span class="text-gray-600 dark:text-gray-300">Meaningful Lines Added</span>
+                  <span class="text-emerald-500 font-semibold">
+                    +{{ formatNumber(contributor.meaningful_lines_added || 0) }}
+                  </span>
+                </div>
+                <div v-if="contributor.meaningful_lines_deleted !== undefined" class="flex items-center justify-between">
+                  <span class="text-gray-600 dark:text-gray-300">Meaningful Lines Deleted</span>
+                  <span class="text-rose-500 font-semibold">
+                    -{{ formatNumber(contributor.meaningful_lines_deleted || 0) }}
+                  </span>
+                </div>
+                <div v-if="contributor.comment_lines_added !== undefined" class="flex items-center justify-between">
+                  <span class="text-gray-600 dark:text-gray-300">Comment Lines Added</span>
+                  <span class="text-cyan-500 font-semibold">
+                    +{{ formatNumber(contributor.comment_lines_added || 0) }}
+                  </span>
+                </div>
+                <div v-if="contributor.comment_lines_deleted !== undefined" class="flex items-center justify-between">
+                  <span class="text-gray-600 dark:text-gray-300">Comment Lines Deleted</span>
+                  <span class="text-amber-500 font-semibold">
+                    -{{ formatNumber(contributor.comment_lines_deleted || 0) }}
                   </span>
                 </div>
                 <div class="flex items-center justify-between">
@@ -260,36 +285,55 @@ watch(globalData, loadContributor)
               <i class="fas fa-chart-pie gradient-text mr-2"></i>Score Breakdown
             </h3>
 
-            <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
               <div class="text-center p-4 rounded-lg bg-gray-50 dark:bg-gray-800/50">
                 <div class="text-2xl font-bold text-green-500">
                   {{ formatNumber(contributor.score.breakdown.commits || 0) }}
                 </div>
                 <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">Commits</div>
+                <div class="text-xs text-gray-400 dark:text-gray-500">{{ contributor.commit_count || 0 }} × 10 pts</div>
               </div>
               <div class="text-center p-4 rounded-lg bg-gray-50 dark:bg-gray-800/50">
                 <div class="text-2xl font-bold text-blue-500">
                   {{ formatNumber(contributor.score.breakdown.prs || 0) }}
                 </div>
                 <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">PRs</div>
+                <div class="text-xs text-gray-400 dark:text-gray-500">{{ contributor.prs_opened || 0 }} opened + {{ contributor.prs_merged || 0 }} merged</div>
               </div>
               <div class="text-center p-4 rounded-lg bg-gray-50 dark:bg-gray-800/50">
                 <div class="text-2xl font-bold text-purple-500">
                   {{ formatNumber(contributor.score.breakdown.reviews || 0) }}
                 </div>
                 <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">Reviews</div>
+                <div class="text-xs text-gray-400 dark:text-gray-500">{{ contributor.reviews_given || 0 }} × 30 pts</div>
+              </div>
+              <div class="text-center p-4 rounded-lg bg-gray-50 dark:bg-gray-800/50">
+                <div class="text-2xl font-bold text-pink-500">
+                  {{ formatNumber(contributor.score.breakdown.comments || 0) }}
+                </div>
+                <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">Comments</div>
+                <div class="text-xs text-gray-400 dark:text-gray-500">{{ contributor.review_comments || 0 }} × 5 pts</div>
               </div>
               <div class="text-center p-4 rounded-lg bg-gray-50 dark:bg-gray-800/50">
                 <div class="text-2xl font-bold text-orange-500">
                   {{ formatNumber(contributor.score.breakdown.line_changes || 0) }}
                 </div>
                 <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">Line Changes</div>
+                <div class="text-xs text-gray-400 dark:text-gray-500">meaningful lines × 0.1 pts</div>
               </div>
               <div class="text-center p-4 rounded-lg bg-gray-50 dark:bg-gray-800/50">
                 <div class="text-2xl font-bold text-yellow-500">
                   {{ formatNumber(contributor.score.breakdown.response_bonus || 0) }}
                 </div>
                 <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">Response Bonus</div>
+                <div class="text-xs text-gray-400 dark:text-gray-500">fast review bonus</div>
+              </div>
+              <div class="text-center p-4 rounded-lg bg-gray-50 dark:bg-gray-800/50">
+                <div class="text-2xl font-bold text-indigo-500">
+                  {{ formatNumber(contributor.score.breakdown.out_of_hours || 0) }}
+                </div>
+                <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">Out of Hours</div>
+                <div class="text-xs text-gray-400 dark:text-gray-500">{{ contributor.out_of_hours_count || 0 }} × 2 pts</div>
               </div>
             </div>
           </div>

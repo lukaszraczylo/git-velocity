@@ -727,9 +727,10 @@ func convertCommit(c *github.RepositoryCommit, owner, repo string) models.Commit
 	}
 	filesChanged = len(c.Files)
 
-	// Detect if commit includes tests and calculate meaningful line counts
+	// Detect if commit includes tests and calculate meaningful/comment line counts
 	hasTests := false
 	var meaningfulAdditions, meaningfulDeletions int
+	var commentAdditions, commentDeletions int
 
 	for _, f := range c.Files {
 		filename := f.GetFilename()
@@ -749,12 +750,14 @@ func convertCommit(c *github.RepositoryCommit, owner, repo string) models.Commit
 			continue
 		}
 
-		// Analyze file patch to get meaningful line counts
+		// Analyze file patch to get meaningful and comment line counts
 		patch := f.GetPatch()
 		if patch != "" {
 			stats := diff.AnalyzePatch(patch)
 			meaningfulAdditions += stats.MeaningfulAdditions
 			meaningfulDeletions += stats.MeaningfulDeletions
+			commentAdditions += stats.CommentAdditions
+			commentDeletions += stats.CommentDeletions
 		}
 	}
 
@@ -773,6 +776,8 @@ func convertCommit(c *github.RepositoryCommit, owner, repo string) models.Commit
 		Deletions:           deletions,
 		MeaningfulAdditions: meaningfulAdditions,
 		MeaningfulDeletions: meaningfulDeletions,
+		CommentAdditions:    commentAdditions,
+		CommentDeletions:    commentDeletions,
 		FilesChanged:        filesChanged,
 		Repository:          fmt.Sprintf("%s/%s", owner, repo),
 		URL:                 c.GetHTMLURL(),

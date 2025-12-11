@@ -27,6 +27,10 @@ type ContributorMetrics struct {
 	MeaningfulLinesAdded   int `json:"meaningful_lines_added"`
 	MeaningfulLinesDeleted int `json:"meaningful_lines_deleted"`
 
+	// Comment and documentation line counts
+	CommentLinesAdded   int `json:"comment_lines_added"`
+	CommentLinesDeleted int `json:"comment_lines_deleted"`
+
 	// PR metrics
 	PRsOpened      int     `json:"prs_opened"`
 	PRsMerged      int     `json:"prs_merged"`

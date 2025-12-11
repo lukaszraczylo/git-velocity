@@ -42,6 +42,8 @@ func (c *Calculator) Calculate(metrics *models.GlobalMetrics) *models.GlobalMetr
 				existing.LinesDeleted += cm.LinesDeleted
 				existing.MeaningfulLinesAdded += cm.MeaningfulLinesAdded
 				existing.MeaningfulLinesDeleted += cm.MeaningfulLinesDeleted
+				existing.CommentLinesAdded += cm.CommentLinesAdded
+				existing.CommentLinesDeleted += cm.CommentLinesDeleted
 				existing.PRsOpened += cm.PRsOpened
 				existing.PRsMerged += cm.PRsMerged
 				existing.ReviewsGiven += cm.ReviewsGiven
@@ -257,6 +259,11 @@ func (c *Calculator) checkAchievements(cm *models.ContributorMetrics) []string {
 			earned = float64(cm.OutOfHoursCount) >= ach.Condition.Threshold
 		case "work_week_streak":
 			earned = float64(cm.WorkWeekStreak) >= ach.Condition.Threshold
+		// Documentation & comments
+		case "comment_lines_added":
+			earned = float64(cm.CommentLinesAdded) >= ach.Condition.Threshold
+		case "comment_lines_deleted":
+			earned = float64(cm.CommentLinesDeleted) >= ach.Condition.Threshold
 		}
 
 		if earned {

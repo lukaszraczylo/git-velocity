@@ -6,6 +6,7 @@ import ContributorRow from '../components/ContributorRow.vue'
 import RankBadge from '../components/RankBadge.vue'
 import AchievementBadge from '../components/AchievementBadge.vue'
 import { formatNumber } from '../composables/formatters'
+import { getHighestTierAchievements } from '../composables/achievements'
 
 const globalData = inject('globalData')
 const leaderboard = computed(() => globalData.value?.leaderboard || [])
@@ -59,9 +60,9 @@ const categoryIcon = (category) => {
           </template>
 
           <template #achievements="{ item }">
-            <div class="flex flex-wrap gap-1.5 max-w-[180px]">
+            <div class="flex flex-wrap gap-1.5 max-w-[280px]">
               <AchievementBadge
-                v-for="achievement in (item.achievements || []).slice(0, 6)"
+                v-for="achievement in getHighestTierAchievements(item.achievements)"
                 :key="achievement"
                 :achievement-id="achievement"
                 size="sm"

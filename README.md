@@ -51,7 +51,7 @@ $ git-velocity serve --port 8080
 
 ### 🎮 Gamification Engine
 - **Scoring System**: Earn points for every contribution
-- **93 Achievements**: Tiered progression from "First Steps" to "Code Warrior"
+- **95 Achievements**: Tiered progression from "First Steps" to "Code Warrior"
 - **Leaderboards**: Compete with your team
 - **Tier Progression**: Multiple tiers per achievement category
 - **Activity Patterns**: Track early bird, night owl, weekend, and out-of-hours commits
@@ -223,7 +223,7 @@ jobs:
 
 ## 🏆 Achievements
 
-Git Velocity includes **93 hardcoded achievements** across 18 categories with multiple progression tiers. Achievements cannot be modified via configuration to prevent manipulation.
+Git Velocity includes **95 hardcoded achievements** across 20 categories with multiple progression tiers. Achievements cannot be modified via configuration to prevent manipulation.
 
 ### Achievement Categories
 
@@ -249,6 +249,8 @@ Git Velocity includes **93 hardcoded achievements** across 18 categories with mu
 | **Midnight** | 5, 10, 25, 50 | Commits between midnight-4am |
 | **Weekend** | 5, 10, 25, 50 | Weekend commits |
 | **Out of Hours** | 10, 25, 50, 100 | Commits outside 9am-5pm |
+| **Documentation** | 100, 500, 1K, 2.5K, 5K | Comment/doc lines added |
+| **Comment Cleanup** | 50, 200, 500, 1K, 2.5K | Outdated comments removed |
 
 ### Example Achievements
 
@@ -261,6 +263,10 @@ Git Velocity includes **93 hardcoded achievements** across 18 categories with mu
 | 🏢 Full Work Week | 5 consecutive weekday streak |
 | 🌙 Night Owl | 50 commits after 9pm |
 | ♾️ Time Bender | 100 commits outside 9am-5pm |
+| 📚 Documentation Hero | Added 1000 lines of comments/docs |
+| 🏛️ Code Historian | Added 5000 lines of comments/docs |
+| ✂️ Comment Trimmer | Removed 50 outdated comment lines |
+| 💀 Dead Code Hunter | Removed 500 outdated comment lines |
 
 ## ⚙️ Configuration
 

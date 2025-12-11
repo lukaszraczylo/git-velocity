@@ -139,6 +139,8 @@ func (a *Aggregator) Aggregate(data *models.RawData, dateRange *config.ParsedDat
 		cm.LinesDeleted += commit.Deletions
 		cm.MeaningfulLinesAdded += commit.MeaningfulAdditions
 		cm.MeaningfulLinesDeleted += commit.MeaningfulDeletions
+		cm.CommentLinesAdded += commit.CommentAdditions
+		cm.CommentLinesDeleted += commit.CommentDeletions
 		cm.FilesChanged += commit.FilesChanged
 
 		// Update per-repo contributor stats
@@ -148,6 +150,8 @@ func (a *Aggregator) Aggregate(data *models.RawData, dateRange *config.ParsedDat
 		rcm.LinesDeleted += commit.Deletions
 		rcm.MeaningfulLinesAdded += commit.MeaningfulAdditions
 		rcm.MeaningfulLinesDeleted += commit.MeaningfulDeletions
+		rcm.CommentLinesAdded += commit.CommentAdditions
+		rcm.CommentLinesDeleted += commit.CommentDeletions
 		rcm.FilesChanged += commit.FilesChanged
 
 		// Track activity patterns based on commit time
