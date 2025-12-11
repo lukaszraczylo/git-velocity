@@ -137,6 +137,8 @@ func (a *Aggregator) Aggregate(data *models.RawData, dateRange *config.ParsedDat
 		cm.CommitCount++
 		cm.LinesAdded += commit.Additions
 		cm.LinesDeleted += commit.Deletions
+		cm.MeaningfulLinesAdded += commit.MeaningfulAdditions
+		cm.MeaningfulLinesDeleted += commit.MeaningfulDeletions
 		cm.FilesChanged += commit.FilesChanged
 
 		// Update per-repo contributor stats
@@ -144,6 +146,8 @@ func (a *Aggregator) Aggregate(data *models.RawData, dateRange *config.ParsedDat
 		rcm.CommitCount++
 		rcm.LinesAdded += commit.Additions
 		rcm.LinesDeleted += commit.Deletions
+		rcm.MeaningfulLinesAdded += commit.MeaningfulAdditions
+		rcm.MeaningfulLinesDeleted += commit.MeaningfulDeletions
 		rcm.FilesChanged += commit.FilesChanged
 
 		// Track activity patterns based on commit time
@@ -203,6 +207,8 @@ func (a *Aggregator) Aggregate(data *models.RawData, dateRange *config.ParsedDat
 		rm.TotalCommits++
 		rm.TotalLinesAdded += commit.Additions
 		rm.TotalLinesDeleted += commit.Deletions
+		rm.TotalMeaningfulLinesAdded += commit.MeaningfulAdditions
+		rm.TotalMeaningfulLinesDeleted += commit.MeaningfulDeletions
 	}
 
 	// Calculate active days and streaks for each contributor
@@ -535,28 +541,33 @@ func (a *Aggregator) Aggregate(data *models.RawData, dateRange *config.ParsedDat
 
 	// Calculate totals
 	var totalCommits, totalPRs, totalReviews, totalLinesAdded, totalLinesDeleted int
+	var totalMeaningfulLinesAdded, totalMeaningfulLinesDeleted int
 	for _, rm := range repositories {
 		totalCommits += rm.TotalCommits
 		totalPRs += rm.TotalPRs
 		totalReviews += rm.TotalReviews
 		totalLinesAdded += rm.TotalLinesAdded
 		totalLinesDeleted += rm.TotalLinesDeleted
+		totalMeaningfulLinesAdded += rm.TotalMeaningfulLinesAdded
+		totalMeaningfulLinesDeleted += rm.TotalMeaningfulLinesDeleted
 	}
 
 	// Build velocity timeline (weekly aggregation)
 	velocityTimeline := buildVelocityTimeline(data, period, a.config.Scoring)
 
 	return &models.GlobalMetrics{
-		Period:            period,
-		Repositories:      repositories,
-		Teams:             teams,
-		TotalContributors: len(contributors),
-		TotalCommits:      totalCommits,
-		TotalPRs:          totalPRs,
-		TotalReviews:      totalReviews,
-		TotalLinesAdded:   totalLinesAdded,
-		TotalLinesDeleted: totalLinesDeleted,
-		VelocityTimeline:  velocityTimeline,
+		Period:                      period,
+		Repositories:                repositories,
+		Teams:                       teams,
+		TotalContributors:           len(contributors),
+		TotalCommits:                totalCommits,
+		TotalPRs:                    totalPRs,
+		TotalReviews:                totalReviews,
+		TotalLinesAdded:             totalLinesAdded,
+		TotalLinesDeleted:           totalLinesDeleted,
+		TotalMeaningfulLinesAdded:   totalMeaningfulLinesAdded,
+		TotalMeaningfulLinesDeleted: totalMeaningfulLinesDeleted,
+		VelocityTimeline:            velocityTimeline,
 	}, nil
 }
 

@@ -23,6 +23,10 @@ type ContributorMetrics struct {
 	LinesDeleted int `json:"lines_deleted"`
 	FilesChanged int `json:"files_changed"`
 
+	// Meaningful line counts (excludes comments and whitespace)
+	MeaningfulLinesAdded   int `json:"meaningful_lines_added"`
+	MeaningfulLinesDeleted int `json:"meaningful_lines_deleted"`
+
 	// PR metrics
 	PRsOpened      int     `json:"prs_opened"`
 	PRsMerged      int     `json:"prs_merged"`
@@ -97,6 +101,10 @@ type RepositoryMetrics struct {
 	ActiveContributors int                  `json:"active_contributors"`
 	TotalLinesAdded    int                  `json:"total_lines_added"`
 	TotalLinesDeleted  int                  `json:"total_lines_deleted"`
+
+	// Meaningful line counts (excludes comments and whitespace)
+	TotalMeaningfulLinesAdded   int `json:"total_meaningful_lines_added"`
+	TotalMeaningfulLinesDeleted int `json:"total_meaningful_lines_deleted"`
 }
 
 // TeamMetrics holds aggregated metrics for a team
@@ -126,6 +134,10 @@ type GlobalMetrics struct {
 	TotalReviews      int `json:"total_reviews"`
 	TotalLinesAdded   int `json:"total_lines_added"`
 	TotalLinesDeleted int `json:"total_lines_deleted"`
+
+	// Meaningful line counts (excludes comments and whitespace)
+	TotalMeaningfulLinesAdded   int `json:"total_meaningful_lines_added"`
+	TotalMeaningfulLinesDeleted int `json:"total_meaningful_lines_deleted"`
 
 	// Velocity timeline (weekly granularity)
 	VelocityTimeline *VelocityTimeline `json:"velocity_timeline,omitempty"`

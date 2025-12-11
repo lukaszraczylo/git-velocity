@@ -15,6 +15,10 @@ type Commit struct {
 	Repository   string    `json:"repository"` // owner/repo format
 	URL          string    `json:"url"`
 
+	// Meaningful line counts (excludes comments and whitespace)
+	MeaningfulAdditions int `json:"meaningful_additions"`
+	MeaningfulDeletions int `json:"meaningful_deletions"`
+
 	// Derived fields
 	HasTests bool `json:"has_tests"`
 }

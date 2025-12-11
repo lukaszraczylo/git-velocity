@@ -47,6 +47,7 @@ $ git-velocity serve --port 8080
 - **Pull Requests**: Opened, merged, closed, average size, time to merge
 - **Code Reviews**: Reviews given, comments, approvals, response time
 - **Issues**: Opened, closed, comments
+- **Meaningful Lines**: Filter out comments, whitespace, and documentation changes from line counts
 
 ### 🎮 Gamification Engine
 - **Scoring System**: Earn points for every contribution
@@ -305,6 +306,7 @@ scoring:
     commit_with_tests: 15
     lines_added: 0.1
     lines_deleted: 0.05
+    use_meaningful_lines: true  # Exclude comments/whitespace from line scoring
     pr_opened: 25
     pr_merged: 50
     pr_reviewed: 30
@@ -384,6 +386,31 @@ options:
     - "my-org-bot"     # Exact match
     - "jenkins*"       # Prefix match
     - "*-ci"           # Suffix match
+```
+
+### Meaningful Lines Filtering
+
+By default, Git Velocity filters out non-meaningful code changes when scoring line additions and deletions. This provides a more accurate measure of actual code contributions.
+
+**What's filtered out:**
+- **Comments**: Single-line (`//`, `#`, `--`), block (`/* */`, `<!-- -->`), docstrings (`"""`, `'''`)
+- **Whitespace**: Empty lines, whitespace-only lines
+- **Documentation files**: `.md`, `.rst`, `.txt`, `README`, `CHANGELOG`, `LICENSE`, files in `docs/` directories
+
+**Supported comment styles:**
+- C-style: `//`, `/* */`, `*` (block continuation)
+- Python/Shell: `#`, `"""`, `'''`
+- SQL/Lua/Haskell: `--`
+- Assembly/Lisp/INI: `;`
+- VB: `'`
+- HTML/XML: `<!-- -->`
+
+To disable this filtering and score raw line counts:
+
+```yaml
+scoring:
+  points:
+    use_meaningful_lines: false  # Score all lines including comments/whitespace
 ```
 
 ### Environment Variables

@@ -748,3 +748,133 @@ func TestContains(t *testing.T) {
 	assert.False(t, contains(slice, "d"))
 	assert.False(t, contains([]string{}, "a"))
 }
+
+func TestCalculator_MeaningfulLinesScoring(t *testing.T) {
+	t.Parallel()
+
+	t.Run("uses meaningful lines when enabled", func(t *testing.T) {
+		t.Parallel()
+
+		cfg := config.DefaultConfig()
+		cfg.Scoring.Enabled = true
+		cfg.Scoring.Points = config.PointsConfig{
+			Commit:             10,
+			LinesAdded:         0.1,
+			LinesDeleted:       0.05,
+			UseMeaningfulLines: true, // Use meaningful lines
+		}
+		calc := NewCalculator(cfg)
+
+		metrics := &models.GlobalMetrics{
+			Repositories: []models.RepositoryMetrics{
+				{
+					FullName: "owner/repo",
+					Contributors: []models.ContributorMetrics{
+						{
+							Login:                   "user1",
+							CommitCount:             10,
+							LinesAdded:              1000, // Raw lines
+							LinesDeleted:            500,
+							MeaningfulLinesAdded:    800, // Meaningful lines (excluding comments/whitespace)
+							MeaningfulLinesDeleted:  400,
+							RepositoriesContributed: []string{"owner/repo"},
+						},
+					},
+				},
+			},
+		}
+
+		result := calc.Calculate(metrics)
+
+		contributor := result.Repositories[0].Contributors[0]
+		// Line change points should use meaningful lines:
+		// Meaningful: 800 * 0.1 + 400 * 0.05 = 80 + 20 = 100
+		// (Not raw: 1000 * 0.1 + 500 * 0.05 = 100 + 25 = 125)
+		assert.Equal(t, 100, contributor.Score.Breakdown.LineChanges)
+		// Total: Commits (10 * 10 = 100) + Lines (100) = 200
+		assert.Equal(t, 200, contributor.Score.Total)
+	})
+
+	t.Run("uses raw lines when disabled", func(t *testing.T) {
+		t.Parallel()
+
+		cfg := config.DefaultConfig()
+		cfg.Scoring.Enabled = true
+		cfg.Scoring.Points = config.PointsConfig{
+			Commit:             10,
+			LinesAdded:         0.1,
+			LinesDeleted:       0.05,
+			UseMeaningfulLines: false, // Use raw lines
+		}
+		calc := NewCalculator(cfg)
+
+		metrics := &models.GlobalMetrics{
+			Repositories: []models.RepositoryMetrics{
+				{
+					FullName: "owner/repo",
+					Contributors: []models.ContributorMetrics{
+						{
+							Login:                   "user1",
+							CommitCount:             10,
+							LinesAdded:              1000, // Raw lines
+							LinesDeleted:            500,
+							MeaningfulLinesAdded:    800, // Meaningful lines (should be ignored)
+							MeaningfulLinesDeleted:  400,
+							RepositoriesContributed: []string{"owner/repo"},
+						},
+					},
+				},
+			},
+		}
+
+		result := calc.Calculate(metrics)
+
+		contributor := result.Repositories[0].Contributors[0]
+		// Line change points should use raw lines:
+		// Raw: 1000 * 0.1 + 500 * 0.05 = 100 + 25 = 125
+		assert.Equal(t, 125, contributor.Score.Breakdown.LineChanges)
+		// Total: Commits (10 * 10 = 100) + Lines (125) = 225
+		assert.Equal(t, 225, contributor.Score.Total)
+	})
+
+	t.Run("comment-only changes score zero meaningful lines", func(t *testing.T) {
+		t.Parallel()
+
+		cfg := config.DefaultConfig()
+		cfg.Scoring.Enabled = true
+		cfg.Scoring.Points = config.PointsConfig{
+			Commit:             10,
+			LinesAdded:         0.1,
+			LinesDeleted:       0.05,
+			UseMeaningfulLines: true,
+		}
+		calc := NewCalculator(cfg)
+
+		metrics := &models.GlobalMetrics{
+			Repositories: []models.RepositoryMetrics{
+				{
+					FullName: "owner/repo",
+					Contributors: []models.ContributorMetrics{
+						{
+							Login:                   "commenter",
+							CommitCount:             5,
+							LinesAdded:              100, // All comment lines
+							LinesDeleted:            50,
+							MeaningfulLinesAdded:    0, // No meaningful code
+							MeaningfulLinesDeleted:  0,
+							RepositoriesContributed: []string{"owner/repo"},
+						},
+					},
+				},
+			},
+		}
+
+		result := calc.Calculate(metrics)
+
+		contributor := result.Repositories[0].Contributors[0]
+		// Line change points should be 0 since all lines were comments
+		assert.Equal(t, 0, contributor.Score.Breakdown.LineChanges)
+		// Total: Commits (5 * 10 = 50) + Lines (0) = 50
+		assert.Equal(t, 50, contributor.Score.Total)
+	})
+}

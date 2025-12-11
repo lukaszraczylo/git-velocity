@@ -13,6 +13,7 @@ import (
 	"github.com/google/go-github/v68/github"
 
 	"github.com/lukaszraczylo/git-velocity/internal/config"
+	"github.com/lukaszraczylo/git-velocity/internal/diff"
 	"github.com/lukaszraczylo/git-velocity/internal/domain/models"
 	"github.com/lukaszraczylo/git-velocity/internal/github/cache"
 )
@@ -726,10 +727,14 @@ func convertCommit(c *github.RepositoryCommit, owner, repo string) models.Commit
 	}
 	filesChanged = len(c.Files)
 
-	// Detect if commit includes tests
+	// Detect if commit includes tests and calculate meaningful line counts
 	hasTests := false
+	var meaningfulAdditions, meaningfulDeletions int
+
 	for _, f := range c.Files {
 		filename := f.GetFilename()
+
+		// Check for test files
 		if strings.Contains(filename, "_test.go") ||
 			strings.Contains(filename, ".test.") ||
 			strings.Contains(filename, ".spec.") ||
@@ -737,7 +742,19 @@ func convertCommit(c *github.RepositoryCommit, owner, repo string) models.Commit
 			strings.Contains(filename, "/test/") ||
 			strings.Contains(filename, "__tests__") {
 			hasTests = true
-			break
+		}
+
+		// Skip documentation files for meaningful line calculation
+		if diff.IsDocumentationFile(filename) {
+			continue
+		}
+
+		// Analyze file patch to get meaningful line counts
+		patch := f.GetPatch()
+		if patch != "" {
+			stats := diff.AnalyzePatch(patch)
+			meaningfulAdditions += stats.MeaningfulAdditions
+			meaningfulDeletions += stats.MeaningfulDeletions
 		}
 	}
 
@@ -747,17 +764,19 @@ func convertCommit(c *github.RepositoryCommit, owner, repo string) models.Commit
 	}
 
 	return models.Commit{
-		SHA:          c.GetSHA(),
-		Message:      message,
-		Author:       author,
-		Committer:    committer,
-		Date:         date,
-		Additions:    additions,
-		Deletions:    deletions,
-		FilesChanged: filesChanged,
-		Repository:   fmt.Sprintf("%s/%s", owner, repo),
-		URL:          c.GetHTMLURL(),
-		HasTests:     hasTests,
+		SHA:                 c.GetSHA(),
+		Message:             message,
+		Author:              author,
+		Committer:           committer,
+		Date:                date,
+		Additions:           additions,
+		Deletions:           deletions,
+		MeaningfulAdditions: meaningfulAdditions,
+		MeaningfulDeletions: meaningfulDeletions,
+		FilesChanged:        filesChanged,
+		Repository:          fmt.Sprintf("%s/%s", owner, repo),
+		URL:                 c.GetHTMLURL(),
+		HasTests:            hasTests,
 	}
 }
 

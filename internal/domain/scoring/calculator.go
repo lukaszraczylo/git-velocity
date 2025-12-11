@@ -40,6 +40,8 @@ func (c *Calculator) Calculate(metrics *models.GlobalMetrics) *models.GlobalMetr
 				existing.CommitCount += cm.CommitCount
 				existing.LinesAdded += cm.LinesAdded
 				existing.LinesDeleted += cm.LinesDeleted
+				existing.MeaningfulLinesAdded += cm.MeaningfulLinesAdded
+				existing.MeaningfulLinesDeleted += cm.MeaningfulLinesDeleted
 				existing.PRsOpened += cm.PRsOpened
 				existing.PRsMerged += cm.PRsMerged
 				existing.ReviewsGiven += cm.ReviewsGiven
@@ -157,9 +159,15 @@ func (c *Calculator) calculateScore(cm *models.ContributorMetrics) models.Score 
 	// Commit points
 	breakdown.Commits = cm.CommitCount * points.Commit
 
-	// Line change points
-	breakdown.LineChanges = int(float64(cm.LinesAdded)*points.LinesAdded +
-		float64(cm.LinesDeleted)*points.LinesDeleted)
+	// Line change points - use meaningful lines if configured, otherwise raw counts
+	linesAdded := cm.LinesAdded
+	linesDeleted := cm.LinesDeleted
+	if points.UseMeaningfulLines {
+		linesAdded = cm.MeaningfulLinesAdded
+		linesDeleted = cm.MeaningfulLinesDeleted
+	}
+	breakdown.LineChanges = int(float64(linesAdded)*points.LinesAdded +
+		float64(linesDeleted)*points.LinesDeleted)
 
 	// PR points
 	breakdown.PRs = cm.PRsOpened*points.PROpened + cm.PRsMerged*points.PRMerged

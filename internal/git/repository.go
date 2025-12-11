@@ -14,6 +14,7 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
+	"github.com/lukaszraczylo/git-velocity/internal/diff"
 	"github.com/lukaszraczylo/git-velocity/internal/domain/models"
 )
 
@@ -128,56 +129,6 @@ func (r *Repository) fetch(ctx context.Context, repoPath, token string) error {
 	return nil
 }
 
-// isCommentLine checks if a line is a code comment (should not count as contribution)
-func isCommentLine(line string) bool {
-	trimmed := strings.TrimSpace(line)
-	if trimmed == "" {
-		return true // Empty lines don't count
-	}
-
-	// Common comment patterns across languages
-	commentPrefixes := []string{
-		"//",     // C, C++, Java, Go, JS, etc.
-		"#",      // Python, Ruby, Shell, YAML
-		"/*",     // C-style block comment start
-		"*/",     // C-style block comment end
-		"*",      // C-style block comment continuation
-		"<!--",   // HTML/XML comment
-		"-->",    // HTML/XML comment end
-		"--",     // SQL, Lua, Haskell
-		";",      // Assembly, Lisp, INI files
-		"'",      // VB comment
-		"\"\"\"", // Python docstring
-		"'''",    // Python docstring
-	}
-
-	for _, prefix := range commentPrefixes {
-		if strings.HasPrefix(trimmed, prefix) {
-			return true
-		}
-	}
-
-	return false
-}
-
-// isDocumentationFile checks if a file is documentation-only
-func isDocumentationFile(filename string) bool {
-	// Documentation file extensions and patterns
-	docPatterns := []string{
-		".md", ".markdown", ".rst", ".txt", ".adoc",
-		"README", "CHANGELOG", "LICENSE", "CONTRIBUTING",
-		"docs/", "documentation/", "/doc/",
-	}
-
-	lowerFilename := strings.ToLower(filename)
-	for _, pattern := range docPatterns {
-		if strings.Contains(lowerFilename, strings.ToLower(pattern)) {
-			return true
-		}
-	}
-	return false
-}
-
 // FetchCommits retrieves commits from the local repository using go-git
 func (r *Repository) FetchCommits(ctx context.Context, owner, name string, since, until *time.Time) ([]models.Commit, error) {
 	repoPath := r.repoPath(owner, name)
@@ -242,7 +193,7 @@ func (r *Repository) FetchCommits(ctx context.Context, owner, name string, since
 			}
 
 			// Get file stats for this commit
-			additions, deletions, filesChanged, hasTests := r.getCommitStats(c, testPatterns)
+			stats := r.getCommitStats(c, testPatterns)
 
 			// Extract login from email
 			authorLogin := extractLoginFromEmail(c.Author.Email, c.Author.Name)
@@ -261,13 +212,15 @@ func (r *Repository) FetchCommits(ctx context.Context, owner, name string, since
 					Name:  c.Committer.Name,
 					Email: c.Committer.Email,
 				},
-				Date:         commitTime,
-				Additions:    additions,
-				Deletions:    deletions,
-				FilesChanged: filesChanged,
-				Repository:   fmt.Sprintf("%s/%s", owner, name),
-				URL:          fmt.Sprintf("https://github.com/%s/%s/commit/%s", owner, name, c.Hash.String()),
-				HasTests:     hasTests,
+				Date:                commitTime,
+				Additions:           stats.Additions,
+				Deletions:           stats.Deletions,
+				MeaningfulAdditions: stats.MeaningfulAdditions,
+				MeaningfulDeletions: stats.MeaningfulDeletions,
+				FilesChanged:        stats.FilesChanged,
+				Repository:          fmt.Sprintf("%s/%s", owner, name),
+				URL:                 fmt.Sprintf("https://github.com/%s/%s/commit/%s", owner, name, c.Hash.String()),
+				HasTests:            stats.HasTests,
 			}
 
 			commits = append(commits, commit)
@@ -286,8 +239,20 @@ func (r *Repository) FetchCommits(ctx context.Context, owner, name string, since
 	return commits, nil
 }
 
+// commitStats holds the statistics for a commit
+type commitStats struct {
+	Additions           int
+	Deletions           int
+	MeaningfulAdditions int
+	MeaningfulDeletions int
+	FilesChanged        int
+	HasTests            bool
+}
+
 // getCommitStats calculates additions, deletions, files changed for a commit
-func (r *Repository) getCommitStats(c *object.Commit, testPatterns []string) (additions, deletions, filesChanged int, hasTests bool) {
+func (r *Repository) getCommitStats(c *object.Commit, testPatterns []string) commitStats {
+	stats := commitStats{}
+
 	// Get parent commit for diff
 	parentIter := c.Parents()
 	parent, err := parentIter.Next()
@@ -299,7 +264,7 @@ func (r *Repository) getCommitStats(c *object.Commit, testPatterns []string) (ad
 
 	currentTree, err := c.Tree()
 	if err != nil {
-		return 0, 0, 0, false
+		return stats
 	}
 
 	// Get changes between parent and current
@@ -312,7 +277,7 @@ func (r *Repository) getCommitStats(c *object.Commit, testPatterns []string) (ad
 	}
 
 	if err != nil {
-		return 0, 0, 0, false
+		return stats
 	}
 
 	filesSet := make(map[string]bool)
@@ -327,19 +292,19 @@ func (r *Repository) getCommitStats(c *object.Commit, testPatterns []string) (ad
 		}
 
 		// Skip documentation files
-		if isDocumentationFile(filePath) {
+		if diff.IsDocumentationFile(filePath) {
 			continue
 		}
 
 		// Count unique files
 		if !filesSet[filePath] {
 			filesSet[filePath] = true
-			filesChanged++
+			stats.FilesChanged++
 
 			// Check for test files
 			for _, pattern := range testPatterns {
 				if strings.Contains(filePath, pattern) {
-					hasTests = true
+					stats.HasTests = true
 					break
 				}
 			}
@@ -359,14 +324,16 @@ func (r *Repository) getCommitStats(c *object.Commit, testPatterns []string) (ad
 				switch chunk.Type() {
 				case 1: // Add
 					for _, line := range lines {
-						if !isCommentLine(line) {
-							additions++
+						stats.Additions++
+						if diff.IsMeaningfulLine(line) {
+							stats.MeaningfulAdditions++
 						}
 					}
 				case 2: // Delete
 					for _, line := range lines {
-						if !isCommentLine(line) {
-							deletions++
+						stats.Deletions++
+						if diff.IsMeaningfulLine(line) {
+							stats.MeaningfulDeletions++
 						}
 					}
 				}
@@ -374,7 +341,7 @@ func (r *Repository) getCommitStats(c *object.Commit, testPatterns []string) (ad
 		}
 	}
 
-	return additions, deletions, filesChanged, hasTests
+	return stats
 }
 
 // extractLoginFromEmail tries to extract GitHub login from email

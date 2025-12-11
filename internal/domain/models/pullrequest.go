@@ -32,6 +32,10 @@ type PullRequest struct {
 	Reviews      []Review   `json:"reviews,omitempty"`
 	URL          string     `json:"url"`
 
+	// Meaningful line counts (excludes comments and whitespace)
+	MeaningfulAdditions int `json:"meaningful_additions"`
+	MeaningfulDeletions int `json:"meaningful_deletions"`
+
 	// Derived fields
 	TimeToMerge       *time.Duration `json:"time_to_merge,omitempty"`
 	TimeToFirstReview *time.Duration `json:"time_to_first_review,omitempty"`

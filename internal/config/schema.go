@@ -88,6 +88,10 @@ type PointsConfig struct {
 	FastReview4h    int     `yaml:"fast_review_4h"`
 	FastReview24h   int     `yaml:"fast_review_24h"`
 	OutOfHours      int     `yaml:"out_of_hours"` // Bonus per commit outside 9am-5pm
+
+	// UseMeaningfulLines determines whether scoring uses meaningful lines (excluding comments/whitespace)
+	// or raw line counts. Default is true for more accurate contribution scoring.
+	UseMeaningfulLines bool `yaml:"use_meaningful_lines"`
 }
 
 // AchievementConfig defines an achievement badge
@@ -185,20 +189,21 @@ func DefaultConfig() *Config {
 		Scoring: ScoringConfig{
 			Enabled: true,
 			Points: PointsConfig{
-				Commit:          10,
-				CommitWithTests: 15,
-				LinesAdded:      0.1,
-				LinesDeleted:    0.05,
-				PROpened:        25,
-				PRMerged:        50,
-				PRReviewed:      30,
-				ReviewComment:   5,
-				IssueOpened:     15,
-				IssueClosed:     20,
-				FastReview1h:    50,
-				FastReview4h:    25,
-				FastReview24h:   10,
-				OutOfHours:      2,
+				Commit:             10,
+				CommitWithTests:    15,
+				LinesAdded:         0.1,
+				LinesDeleted:       0.05,
+				PROpened:           25,
+				PRMerged:           50,
+				PRReviewed:         30,
+				ReviewComment:      5,
+				IssueOpened:        15,
+				IssueClosed:        20,
+				FastReview1h:       50,
+				FastReview4h:       25,
+				FastReview24h:      10,
+				OutOfHours:         2,
+				UseMeaningfulLines: true, // Default to meaningful lines for accurate contribution scoring
 			},
 		},
 		Output: OutputConfig{
