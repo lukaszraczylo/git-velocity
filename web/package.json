@@ -16,6 +16,7 @@
     "vue-router": "^4.2.5"
   },
   "devDependencies": {
+    "@playwright/test": "^1.57.0",
     "@vitejs/plugin-vue": "^6.0.2",
     "autoprefixer": "^10.4.16",
     "postcss": "^8.4.32",

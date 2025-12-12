@@ -266,12 +266,12 @@ const remainingCount = computed(() => {
             <i class="fas text-white text-sm" :class="item.icon"></i>
           </div>
           <div>
-            <div class="text-sm font-semibold text-gray-800 dark:text-white">
+            <div class="text-sm font-semibold text-gray-900 dark:text-white">
               {{ item.name }}
             </div>
-            <div class="flex items-center space-x-2 text-xs text-gray-500 dark:text-gray-400">
+            <div class="flex items-center space-x-2 text-xs text-gray-600 dark:text-gray-400">
               <span>{{ item.category }}</span>
-              <span class="text-gray-300 dark:text-gray-600">•</span>
+              <span class="text-gray-600 dark:text-gray-400">•</span>
               <span class="font-medium">Tier {{ item.tierIndex }}/{{ item.totalTiers }}</span>
             </div>
           </div>
@@ -279,10 +279,10 @@ const remainingCount = computed(() => {
         <div class="text-right">
           <div class="text-sm font-bold" :class="item.isClose ? 'text-green-500' : 'text-gray-700 dark:text-gray-200'">
             {{ formatNumber(item.currentValue) }}
-            <span class="text-gray-400 dark:text-gray-500 font-normal">/</span>
-            <span class="text-gray-500 dark:text-gray-400 font-medium">{{ formatNumber(item.target) }}</span>
+            <span class="text-gray-600 dark:text-gray-400 font-normal">/</span>
+            <span class="text-gray-600 dark:text-gray-400 font-medium">{{ formatNumber(item.target) }}</span>
           </div>
-          <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+          <div class="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
             {{ item.remaining > 0 ? `${formatNumber(item.remaining)} to go` : 'Ready to claim!' }}
           </div>
         </div>
@@ -307,11 +307,11 @@ const remainingCount = computed(() => {
             :class="idx < item.tierIndex ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'"
             :title="`Tier ${idx + 1}: ${t.name} (${formatNumber(t.threshold)})`"
           ></span>
-          <span v-if="item.totalTiers > 5" class="text-[10px] text-gray-400">+{{ item.totalTiers - 5 }}</span>
+          <span v-if="item.totalTiers > 5" class="text-[10px] text-gray-600 dark:text-gray-400">+{{ item.totalTiers - 5 }}</span>
         </div>
         <span
           class="text-xs font-semibold"
-          :class="item.isClose ? 'text-green-500' : 'text-gray-400 dark:text-gray-500'"
+          :class="item.isClose ? 'text-green-500' : 'text-gray-600 dark:text-gray-400'"
         >
           {{ item.progress }}%
         </span>
@@ -319,12 +319,12 @@ const remainingCount = computed(() => {
     </div>
 
     <!-- Show more indicator -->
-    <div v-if="remainingCount > 0" class="text-center text-xs text-gray-500 dark:text-gray-400 pt-2">
+    <div v-if="remainingCount > 0" class="text-center text-xs text-gray-600 dark:text-gray-400 pt-2">
       +{{ remainingCount }} more achievements to unlock
     </div>
 
     <!-- Empty state -->
-    <div v-if="!progressItems.length" class="text-center py-8 text-gray-500 dark:text-gray-400">
+    <div v-if="!progressItems.length" class="text-center py-8 text-gray-600 dark:text-gray-400">
       <div class="w-16 h-16 mx-auto mb-3 rounded-2xl bg-gradient-to-br from-yellow-400 to-amber-500 flex items-center justify-center shadow-lg">
         <i class="fas fa-trophy text-2xl text-white"></i>
       </div>

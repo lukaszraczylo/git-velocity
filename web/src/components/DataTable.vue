@@ -1,4 +1,6 @@
 <script setup>
+import Card from './Card.vue'
+
 defineProps({
   columns: {
     type: Array,
@@ -39,7 +41,7 @@ const getAlignClass = (align) => {
 </script>
 
 <template>
-  <div class="card overflow-hidden p-0">
+  <Card :padding="false" class="overflow-hidden">
     <table class="w-full">
       <thead class="bg-gray-50 dark:bg-gray-800/50">
         <tr>
@@ -47,7 +49,7 @@ const getAlignClass = (align) => {
             v-for="col in columns"
             :key="col.key"
             :class="[
-              'px-3 sm:px-6 py-3 sm:py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider',
+              'px-3 sm:px-6 py-3 sm:py-4 text-xs font-semibold text-gray-700 dark:text-gray-400 uppercase tracking-wider',
               getAlignClass(col.align),
               col.headerClass
             ]"
@@ -78,8 +80,8 @@ const getAlignClass = (align) => {
 
     <!-- Empty State -->
     <div v-if="!items.length" class="text-center py-12">
-      <i :class="emptyIcon" class="text-4xl text-gray-300 dark:text-gray-600 mb-4"></i>
-      <p class="text-gray-500 dark:text-gray-400">{{ emptyMessage }}</p>
+      <i :class="emptyIcon" class="text-4xl text-gray-400 dark:text-gray-600 mb-4"></i>
+      <p class="text-gray-600 dark:text-gray-400">{{ emptyMessage }}</p>
     </div>
-  </div>
+  </Card>
 </template>

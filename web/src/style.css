@@ -26,123 +26,18 @@
   --color-accent-800: #6b21a8;
   --color-accent-900: #581c87;
 
-  --animate-fade-in-up: fadeInUp 0.6s ease-out;
-  --animate-float: float 3s ease-in-out infinite;
-
   @keyframes fadeInUp {
     0% { opacity: 0; transform: translateY(20px); }
     100% { opacity: 1; transform: translateY(0); }
   }
-
-  @keyframes float {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-10px); }
-  }
 }
 
-@utility glass {
-  background-color: rgb(255 255 255 / 0.7);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgb(255 255 255 / 0.2);
+/* Dark mode body background - Tailwind v4 doesn't process dark: variants on body properly */
+.dark body,
+body.dark {
+  background-image: linear-gradient(to bottom right, var(--color-gray-900), var(--color-gray-800));
 }
 
-.dark .glass {
-  background-color: rgb(17 24 39 / 0.7);
-  border-color: rgb(255 255 255 / 0.1);
-}
-
-@utility gradient-text {
-  background-image: linear-gradient(to right, var(--color-primary-400), var(--color-accent-400));
-  background-clip: text;
-  -webkit-background-clip: text;
-  color: transparent;
-}
-
-@utility shadow-modern {
-  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.15);
-}
-
-.dark .shadow-modern {
-  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.4);
-}
-
-@utility score-card {
-  background-image: linear-gradient(to right, rgb(244 114 182 / 0.1), rgb(192 132 252 / 0.1));
-  border: 1px solid rgb(244 114 182 / 0.2);
-}
-
-.dark .score-card {
-  background-image: linear-gradient(to right, rgb(244 114 182 / 0.05), rgb(192 132 252 / 0.05));
-  border-color: rgb(244 114 182 / 0.1);
-}
-
-@utility rank-1 {
-  background-image: linear-gradient(to right, #facc15, #f59e0b);
-}
-
-@utility rank-2 {
-  background-image: linear-gradient(to right, #94a3b8, #64748b);
-}
-
-@utility rank-3 {
-  background-image: linear-gradient(to right, #d97706, #b45309);
-}
-
-@utility achievement-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 9999px;
-  background-image: linear-gradient(to right, var(--color-primary-400), var(--color-accent-400));
-  color: white;
-  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-}
-
-@utility btn-primary {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.75rem 1.5rem;
-  background-image: linear-gradient(to right, var(--color-primary-500), var(--color-accent-500));
-  color: white;
-  font-weight: 500;
-  border-radius: 0.5rem;
-  transition: all 0.2s;
-  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.15);
-}
-
-.btn-primary:hover {
-  background-image: linear-gradient(to right, var(--color-primary-600), var(--color-accent-600));
-}
-
-@utility card {
-  border-radius: 0.75rem;
-  padding: 1.5rem;
-}
-
-@utility nav-link {
-  color: #374151;
-  transition: color 0.2s;
-}
-
-.nav-link:hover {
-  color: var(--color-primary-500);
-}
-
-.dark .nav-link {
-  color: #e5e7eb;
-}
-
-.dark .nav-link:hover {
-  color: var(--color-primary-400);
-}
-
-@utility nav-link-active {
-  color: var(--color-primary-500);
-  font-weight: 500;
-}
-
-@utility animate-fade-in-up {
-  animation: fadeInUp 0.6s ease-out;
+html.dark {
+  background-color: var(--color-gray-900);
 }

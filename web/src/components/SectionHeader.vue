@@ -16,7 +16,7 @@ defineProps({
 </script>
 
 <template>
-  <h2 class="text-2xl font-bold text-gray-800 dark:text-white mb-6">
+  <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">
     <i v-if="icon" :class="[icon, iconColor]" class="mr-2"></i>{{ title }}
     <slot name="suffix"></slot>
   </h2>

@@ -177,7 +177,7 @@ watch(() => props.showScore, () => {
   <div class="velocity-chart" :style="{ height }">
     <canvas ref="chartRef"></canvas>
     <div v-if="!timeline?.labels?.length" class="flex items-center justify-center h-full">
-      <p class="text-gray-400">No velocity data available</p>
+      <p class="text-gray-500 dark:text-gray-400">No velocity data available</p>
     </div>
   </div>
 </template>

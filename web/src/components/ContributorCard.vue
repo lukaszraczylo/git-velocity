@@ -1,5 +1,6 @@
 <script setup>
 import { RouterLink } from 'vue-router'
+import Card from './Card.vue'
 import Avatar from './Avatar.vue'
 import RankBadge from './RankBadge.vue'
 import AchievementBadge from './AchievementBadge.vue'
@@ -16,63 +17,74 @@ defineProps({
 <template>
   <RouterLink
     :to="{ name: 'contributor', params: { login: contributor.login } }"
-    :class="[
-      'card animate-fade-in-up block cursor-pointer hover:shadow-lg transition-shadow',
-      featured && rank === 1 ? 'ring-2 ring-yellow-400' : ''
-    ]"
+    class="block group"
   >
-    <div class="flex items-center space-x-4">
-      <div class="relative">
-        <Avatar
-          :src="contributor.avatar_url"
-          :name="contributor.login"
-          :size="featured ? 'xl' : 'lg'"
-        />
-        <RankBadge
-          v-if="showRank && rank > 0"
-          :rank="rank"
-          size="sm"
-          class="absolute -top-1 -right-1"
-        />
-      </div>
-
-      <div class="flex-1">
-        <h3 class="font-semibold text-gray-800 dark:text-white group-hover:text-primary-500 transition-colors">
-          {{ contributor.name || contributor.login }}
-        </h3>
-        <p class="text-sm text-gray-500 dark:text-gray-400">
-          <span
-            class="hover:text-primary-500 transition-colors"
-            @click.stop.prevent="window.open(`https://github.com/${contributor.login}`, '_blank')"
-          >
-            @{{ contributor.login }}
-            <i class="fas fa-external-link-alt text-xs ml-0.5 opacity-50"></i>
-          </span>
-        </p>
-        <p v-if="contributor.team" class="text-xs text-accent-500">{{ contributor.team }}</p>
-      </div>
-
-      <div class="text-right">
-        <div class="text-2xl font-bold gradient-text">
-          {{ formatNumber(contributor.score?.total || contributor.score || 0) }}
+    <Card
+      hover
+      :class="[
+        'animate-[fadeInUp_0.6s_ease-out] h-full',
+        featured && rank === 1 ? 'ring-2 ring-yellow-400' : '',
+        featured && rank === 2 ? 'ring-2 ring-gray-300' : '',
+        featured && rank === 3 ? 'ring-2 ring-amber-600' : ''
+      ]"
+    >
+      <div class="flex flex-col h-full">
+        <!-- Header with avatar and rank -->
+        <div class="flex items-start justify-between mb-4">
+          <div class="flex items-center gap-4">
+            <div class="relative">
+              <Avatar
+                :src="contributor.avatar_url"
+                :name="contributor.login"
+                :size="featured ? 'xl' : 'lg'"
+                class="ring-2 ring-gray-100 dark:ring-gray-700"
+              />
+              <RankBadge
+                v-if="showRank && rank > 0"
+                :rank="rank"
+                size="sm"
+                class="absolute -bottom-1 -right-1"
+              />
+            </div>
+            <div>
+              <h3 class="font-bold text-lg text-gray-900 dark:text-white group-hover:text-primary-500 transition-colors">
+                {{ contributor.name || contributor.login }}
+              </h3>
+              <p class="text-sm text-gray-600 dark:text-gray-400">
+                @{{ contributor.login }}
+              </p>
+              <p v-if="contributor.team" class="text-xs text-accent-500 mt-0.5">{{ contributor.team }}</p>
+            </div>
+          </div>
         </div>
-        <div class="text-xs text-gray-500 dark:text-gray-400">points</div>
-      </div>
-    </div>
 
-    <div v-if="contributor.achievements?.length" class="mt-4 flex flex-wrap gap-1.5">
-      <AchievementBadge
-        v-for="achievement in contributor.achievements.slice(0, 6)"
-        :key="achievement"
-        :achievement-id="achievement"
-        size="sm"
-      />
-      <span
-        v-if="contributor.achievements.length > 6"
-        class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs font-bold"
-      >
-        +{{ contributor.achievements.length - 6 }}
-      </span>
-    </div>
+        <!-- Score display -->
+        <div class="flex items-center justify-between py-3 px-4 -mx-2 rounded-lg bg-gradient-to-r from-primary-50 to-accent-50 dark:from-primary-900/20 dark:to-accent-900/20 mb-4">
+          <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Score</span>
+          <span class="text-2xl font-bold bg-gradient-to-r from-primary-600 to-accent-600 dark:from-primary-400 dark:to-accent-400 bg-clip-text text-transparent">
+            {{ formatNumber(contributor.score?.total || contributor.score || 0) }}
+          </span>
+        </div>
+
+        <!-- Achievements -->
+        <div v-if="contributor.achievements?.length" class="mt-auto">
+          <div class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">Achievements</div>
+          <div class="flex flex-wrap gap-1.5">
+            <AchievementBadge
+              v-for="achievement in contributor.achievements.slice(0, 8)"
+              :key="achievement"
+              :achievement-id="achievement"
+              size="sm"
+            />
+            <span
+              v-if="contributor.achievements.length > 8"
+              class="inline-flex items-center justify-center px-2 h-7 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs font-bold"
+            >
+              +{{ contributor.achievements.length - 8 }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </Card>
   </RouterLink>
 </template>

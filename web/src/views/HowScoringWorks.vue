@@ -1,4 +1,5 @@
 <script setup>
+import Card from '../components/Card.vue'
 import SectionHeader from '../components/SectionHeader.vue'
 </script>
 
@@ -6,9 +7,9 @@ import SectionHeader from '../components/SectionHeader.vue'
   <div>
     <!-- Hero Section -->
     <header class="py-10 sm:py-16 px-4">
-      <div class="container mx-auto text-center animate-fade-in-up">
-        <h1 class="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4">
-          How <span class="gradient-text">Scoring</span> Works
+      <div class="container mx-auto text-center animate-[fadeInUp_0.6s_ease-out]">
+        <h1 class="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4 text-gray-900 dark:text-white">
+          How <span class="bg-gradient-to-r from-primary-600 to-accent-600 dark:from-primary-400 dark:to-accent-400 bg-clip-text text-transparent">Scoring</span> Works
         </h1>
         <p class="text-base sm:text-lg md:text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto px-2">
           Understanding the point system, leaderboard rankings, and achievement criteria that power Git Velocity.
@@ -19,7 +20,7 @@ import SectionHeader from '../components/SectionHeader.vue'
     <!-- Overview Section -->
     <section class="py-8 px-4">
       <div class="container mx-auto">
-        <div class="card glass shadow-modern mb-8">
+        <Card class="shadow-lg mb-8">
           <h2 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
             <i class="fas fa-info-circle mr-3 text-blue-500"></i>
             Overview
@@ -33,20 +34,20 @@ import SectionHeader from '../components/SectionHeader.vue'
             <div class="text-center p-4 bg-primary-50 dark:bg-primary-900/20 rounded-lg">
               <i class="fas fa-calculator text-primary-500 text-2xl mb-2"></i>
               <h3 class="font-medium text-gray-900 dark:text-gray-100">Point-Based</h3>
-              <p class="text-sm text-gray-500 dark:text-gray-400">Activities earn configurable points</p>
+              <p class="text-sm text-gray-600 dark:text-gray-400">Activities earn configurable points</p>
             </div>
             <div class="text-center p-4 bg-accent-50 dark:bg-accent-900/20 rounded-lg">
               <i class="fas fa-layer-group text-accent-500 text-2xl mb-2"></i>
               <h3 class="font-medium text-gray-900 dark:text-gray-100">Aggregated</h3>
-              <p class="text-sm text-gray-500 dark:text-gray-400">Combined across all repositories</p>
+              <p class="text-sm text-gray-600 dark:text-gray-400">Combined across all repositories</p>
             </div>
             <div class="text-center p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg">
               <i class="fas fa-trophy text-indigo-500 text-2xl mb-2"></i>
               <h3 class="font-medium text-gray-900 dark:text-gray-100">Achievement-Driven</h3>
-              <p class="text-sm text-gray-500 dark:text-gray-400">Unlock badges for milestones</p>
+              <p class="text-sm text-gray-600 dark:text-gray-400">Unlock badges for milestones</p>
             </div>
           </div>
-        </div>
+        </Card>
       </div>
     </section>
 
@@ -57,7 +58,7 @@ import SectionHeader from '../components/SectionHeader.vue'
 
         <div class="space-y-6">
           <!-- Score Formula -->
-          <div class="card glass shadow-modern">
+          <Card class="shadow-lg">
             <h3 class="font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center text-lg sm:text-xl">
               <i class="fas fa-function mr-2 text-primary-500"></i>
               Score Formula
@@ -75,14 +76,14 @@ Where:
   Response   = fast review bonus (0-50 pts)
   Out of Hrs = commits outside 9-5 x 2 pts</code></pre>
             </div>
-            <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+            <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
               <i class="fas fa-info-circle mr-1"></i>
               All point values are configurable in your <code class="text-primary-600 dark:text-primary-400">.git-velocity.yaml</code> file.
             </p>
-          </div>
+          </Card>
 
           <!-- Default Point Values -->
-          <div class="card glass shadow-modern">
+          <Card class="shadow-lg">
             <h3 class="font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center text-xl">
               <i class="fas fa-coins mr-2 text-yellow-500"></i>
               Default Point Values
@@ -168,7 +169,7 @@ Where:
               </div>
               <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                 <div class="flex items-center gap-2">
-                  <i class="fas fa-moon text-gray-500"></i>
+                  <i class="fas fa-moon text-gray-600 dark:text-gray-400"></i>
                   <span class="text-sm font-medium text-gray-900 dark:text-gray-100">Out of Hours</span>
                 </div>
                 <span class="font-mono font-bold text-primary-600 dark:text-primary-400">2 pts</span>
@@ -207,9 +208,9 @@ Where:
               <table class="w-full text-sm">
                 <thead>
                   <tr class="border-b border-gray-200 dark:border-gray-700">
-                    <th class="text-left py-3 text-gray-600 dark:text-gray-400">Activity</th>
-                    <th class="text-left py-3 text-gray-600 dark:text-gray-400">Points</th>
-                    <th class="text-left py-3 text-gray-600 dark:text-gray-400">Description</th>
+                    <th class="text-left py-3 text-gray-700 dark:text-gray-400">Activity</th>
+                    <th class="text-left py-3 text-gray-700 dark:text-gray-400">Points</th>
+                    <th class="text-left py-3 text-gray-700 dark:text-gray-400">Description</th>
                   </tr>
                 </thead>
                 <tbody class="text-gray-700 dark:text-gray-300">
@@ -296,10 +297,10 @@ Where:
                 </tbody>
               </table>
             </div>
-          </div>
+          </Card>
 
           <!-- Meaningful Lines -->
-          <div class="card glass shadow-modern">
+          <Card class="shadow-lg">
             <h3 class="font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center text-xl">
               <i class="fas fa-filter mr-2 text-green-500"></i>
               Meaningful Lines
@@ -332,11 +333,11 @@ Where:
                 </ul>
               </div>
             </div>
-            <p class="text-sm text-gray-500 dark:text-gray-400 mt-4">
+            <p class="text-sm text-gray-600 dark:text-gray-400 mt-4">
               <i class="fas fa-info-circle mr-1"></i>
               Meaningful lines filtering is always enabled to accurately reflect code contributions.
             </p>
-          </div>
+          </Card>
         </div>
       </div>
     </section>
@@ -348,7 +349,7 @@ Where:
 
         <div class="space-y-6">
           <!-- Ranking Process -->
-          <div class="card glass shadow-modern">
+          <Card class="shadow-lg">
             <h3 class="font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center text-xl">
               <i class="fas fa-list-ol mr-2 text-accent-500"></i>
               Ranking Process
@@ -383,10 +384,10 @@ Where:
                 </div>
               </li>
             </ol>
-          </div>
+          </Card>
 
           <!-- Top Categories -->
-          <div class="card glass shadow-modern">
+          <Card class="shadow-lg">
             <h3 class="font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center text-xl">
               <i class="fas fa-medal mr-2 text-yellow-500"></i>
               Top Achievers
@@ -400,34 +401,34 @@ Where:
                   <i class="fas fa-trophy text-yellow-500"></i>
                   <span class="font-medium text-gray-900 dark:text-gray-100">Overall Leader</span>
                 </div>
-                <p class="text-sm text-gray-500 dark:text-gray-400">Highest total score</p>
+                <p class="text-sm text-gray-600 dark:text-gray-400">Highest total score</p>
               </div>
               <div class="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
                 <div class="flex items-center gap-2 mb-2">
                   <i class="fas fa-code-commit text-primary-500"></i>
                   <span class="font-medium text-gray-900 dark:text-gray-100">Top Committer</span>
                 </div>
-                <p class="text-sm text-gray-500 dark:text-gray-400">Most commits</p>
+                <p class="text-sm text-gray-600 dark:text-gray-400">Most commits</p>
               </div>
               <div class="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
                 <div class="flex items-center gap-2 mb-2">
                   <i class="fas fa-eye text-accent-500"></i>
                   <span class="font-medium text-gray-900 dark:text-gray-100">Top Reviewer</span>
                 </div>
-                <p class="text-sm text-gray-500 dark:text-gray-400">Most reviews given</p>
+                <p class="text-sm text-gray-600 dark:text-gray-400">Most reviews given</p>
               </div>
               <div class="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
                 <div class="flex items-center gap-2 mb-2">
                   <i class="fas fa-code-pull-request text-indigo-500"></i>
                   <span class="font-medium text-gray-900 dark:text-gray-100">Top PR Author</span>
                 </div>
-                <p class="text-sm text-gray-500 dark:text-gray-400">Most PRs opened</p>
+                <p class="text-sm text-gray-600 dark:text-gray-400">Most PRs opened</p>
               </div>
             </div>
-          </div>
+          </Card>
 
           <!-- Team Scoring -->
-          <div class="card glass shadow-modern">
+          <Card class="shadow-lg">
             <h3 class="font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center text-xl">
               <i class="fas fa-users mr-2 text-blue-500"></i>
               Team Scoring
@@ -440,7 +441,7 @@ Where:
               <li><i class="fas fa-check text-green-500 mr-2"></i><strong>Average Score:</strong> Total score / number of members</li>
               <li><i class="fas fa-check text-green-500 mr-2"></i><strong>Member Breakdown:</strong> Individual scores and achievements per team member</li>
             </ul>
-          </div>
+          </Card>
         </div>
       </div>
     </section>
@@ -453,7 +454,7 @@ Where:
 
         <div class="space-y-6">
           <!-- Achievement Categories -->
-          <div class="card glass shadow-modern">
+          <Card class="shadow-lg">
             <h3 class="font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center text-xl">
               <i class="fas fa-trophy mr-2 text-yellow-500"></i>
               Achievement Categories
@@ -464,7 +465,7 @@ Where:
                 <h4 class="font-medium text-gray-900 dark:text-gray-100 mb-2">
                   <i class="fas fa-code-commit text-primary-500 mr-2"></i>Commits
                 </h4>
-                <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">Tiers: 1, 10, 50, 100, 500, 1000</p>
+                <p class="text-xs text-gray-600 dark:text-gray-400 mb-2">Tiers: 1, 10, 50, 100, 500, 1000</p>
                 <div class="text-xs text-gray-600 dark:text-gray-400">
                   First Steps, Getting Started, Contributor, Committed, Code Machine, Code Warrior
                 </div>
@@ -474,7 +475,7 @@ Where:
                 <h4 class="font-medium text-gray-900 dark:text-gray-100 mb-2">
                   <i class="fas fa-code-pull-request text-accent-500 mr-2"></i>PRs Opened
                 </h4>
-                <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">Tiers: 1, 10, 25, 50, 100, 250</p>
+                <p class="text-xs text-gray-600 dark:text-gray-400 mb-2">Tiers: 1, 10, 25, 50, 100, 250</p>
                 <div class="text-xs text-gray-600 dark:text-gray-400">
                   PR Pioneer, PR Regular, PR Pro, Merge Master, PR Champion, PR Legend
                 </div>
@@ -484,7 +485,7 @@ Where:
                 <h4 class="font-medium text-gray-900 dark:text-gray-100 mb-2">
                   <i class="fas fa-eye text-indigo-500 mr-2"></i>Reviews Given
                 </h4>
-                <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">Tiers: 1, 10, 25, 50, 100, 250</p>
+                <p class="text-xs text-gray-600 dark:text-gray-400 mb-2">Tiers: 1, 10, 25, 50, 100, 250</p>
                 <div class="text-xs text-gray-600 dark:text-gray-400">
                   First Review, Reviewer, Review Regular, Review Expert, Review Guru, Review Master
                 </div>
@@ -494,7 +495,7 @@ Where:
                 <h4 class="font-medium text-gray-900 dark:text-gray-100 mb-2">
                   <i class="fas fa-comment text-blue-500 mr-2"></i>Review Comments
                 </h4>
-                <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">Tiers: 10, 50, 100, 250, 500</p>
+                <p class="text-xs text-gray-600 dark:text-gray-400 mb-2">Tiers: 10, 50, 100, 250, 500</p>
                 <div class="text-xs text-gray-600 dark:text-gray-400">
                   Commentator, Feedback Giver, Code Critic, Feedback Expert, Comment Champion
                 </div>
@@ -504,7 +505,7 @@ Where:
                 <h4 class="font-medium text-gray-900 dark:text-gray-100 mb-2">
                   <i class="fas fa-plus text-green-500 mr-2"></i>Lines Added
                 </h4>
-                <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">Tiers: 100, 1K, 5K, 10K, 50K</p>
+                <p class="text-xs text-gray-600 dark:text-gray-400 mb-2">Tiers: 100, 1K, 5K, 10K, 50K</p>
                 <div class="text-xs text-gray-600 dark:text-gray-400">
                   First Hundred, Thousand Lines, Five Thousand, Ten Thousand, Code Mountain
                 </div>
@@ -514,7 +515,7 @@ Where:
                 <h4 class="font-medium text-gray-900 dark:text-gray-100 mb-2">
                   <i class="fas fa-minus text-red-500 mr-2"></i>Lines Deleted
                 </h4>
-                <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">Tiers: 100, 500, 1K, 5K, 10K</p>
+                <p class="text-xs text-gray-600 dark:text-gray-400 mb-2">Tiers: 100, 500, 1K, 5K, 10K</p>
                 <div class="text-xs text-gray-600 dark:text-gray-400">
                   Tidying Up, Spring Cleaning, Code Cleaner, Refactoring Hero, Deletion Master
                 </div>
@@ -524,7 +525,7 @@ Where:
                 <h4 class="font-medium text-gray-900 dark:text-gray-100 mb-2">
                   <i class="fas fa-bolt text-yellow-500 mr-2"></i>Response Time
                 </h4>
-                <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">Tiers: &lt;24h, &lt;4h, &lt;1h</p>
+                <p class="text-xs text-gray-600 dark:text-gray-400 mb-2">Tiers: &lt;24h, &lt;4h, &lt;1h</p>
                 <div class="text-xs text-gray-600 dark:text-gray-400">
                   Same Day Reviewer, Quick Responder, Speed Demon
                 </div>
@@ -534,7 +535,7 @@ Where:
                 <h4 class="font-medium text-gray-900 dark:text-gray-100 mb-2">
                   <i class="fas fa-fire text-orange-500 mr-2"></i>Contribution Streaks
                 </h4>
-                <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">Tiers: 3, 7, 14, 30 days</p>
+                <p class="text-xs text-gray-600 dark:text-gray-400 mb-2">Tiers: 3, 7, 14, 30 days</p>
                 <div class="text-xs text-gray-600 dark:text-gray-400">
                   Getting Rolling, Week Warrior, Two Week Streak, Month Master
                 </div>
@@ -544,7 +545,7 @@ Where:
                 <h4 class="font-medium text-gray-900 dark:text-gray-100 mb-2">
                   <i class="fas fa-clock text-cyan-500 mr-2"></i>Activity Patterns
                 </h4>
-                <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">Early Bird, Night Owl, Weekend Warrior</p>
+                <p class="text-xs text-gray-600 dark:text-gray-400 mb-2">Early Bird, Night Owl, Weekend Warrior</p>
                 <div class="text-xs text-gray-600 dark:text-gray-400">
                   Commits at different times of day unlock special badges
                 </div>
@@ -554,7 +555,7 @@ Where:
                 <h4 class="font-medium text-gray-900 dark:text-gray-100 mb-2">
                   <i class="fas fa-circle-exclamation text-teal-500 mr-2"></i>Issues Opened
                 </h4>
-                <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">Tiers: 1, 5, 10, 25, 50</p>
+                <p class="text-xs text-gray-600 dark:text-gray-400 mb-2">Tiers: 1, 5, 10, 25, 50</p>
                 <div class="text-xs text-gray-600 dark:text-gray-400">
                   Issue Opener, Reporter, Bug Hunter, Issue Tracker, Issue Master
                 </div>
@@ -564,7 +565,7 @@ Where:
                 <h4 class="font-medium text-gray-900 dark:text-gray-100 mb-2">
                   <i class="fas fa-circle-check text-green-500 mr-2"></i>Issues Closed
                 </h4>
-                <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">Tiers: 1, 5, 10, 25, 50</p>
+                <p class="text-xs text-gray-600 dark:text-gray-400 mb-2">Tiers: 1, 5, 10, 25, 50</p>
                 <div class="text-xs text-gray-600 dark:text-gray-400">
                   Issue Closer, Problem Solver, Resolver, Issue Crusher, Closure King
                 </div>
@@ -574,16 +575,16 @@ Where:
                 <h4 class="font-medium text-gray-900 dark:text-gray-100 mb-2">
                   <i class="fas fa-comment-dots text-blue-500 mr-2"></i>Issue Comments
                 </h4>
-                <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">Tiers: 5, 10, 25, 50, 100</p>
+                <p class="text-xs text-gray-600 dark:text-gray-400 mb-2">Tiers: 5, 10, 25, 50, 100</p>
                 <div class="text-xs text-gray-600 dark:text-gray-400">
                   Issue Commenter, Discussion Starter, Feedback Provider, Issue Conversationalist, Discussion Champion
                 </div>
               </div>
             </div>
-          </div>
+          </Card>
 
           <!-- Achievement Conditions -->
-          <div class="card glass shadow-modern">
+          <Card class="shadow-lg">
             <h3 class="font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center text-xl">
               <i class="fas fa-unlock mr-2 text-green-500"></i>
               How Achievements Are Earned
@@ -596,9 +597,9 @@ Where:
               <table class="w-full text-sm">
                 <thead>
                   <tr class="border-b border-gray-200 dark:border-gray-700">
-                    <th class="text-left py-2 text-gray-600 dark:text-gray-400">Condition Type</th>
-                    <th class="text-left py-2 text-gray-600 dark:text-gray-400">Metric Checked</th>
-                    <th class="text-left py-2 text-gray-600 dark:text-gray-400">Comparison</th>
+                    <th class="text-left py-2 text-gray-700 dark:text-gray-400">Condition Type</th>
+                    <th class="text-left py-2 text-gray-700 dark:text-gray-400">Metric Checked</th>
+                    <th class="text-left py-2 text-gray-700 dark:text-gray-400">Comparison</th>
                   </tr>
                 </thead>
                 <tbody class="text-gray-700 dark:text-gray-300">
@@ -645,14 +646,14 @@ Where:
                 </tbody>
               </table>
             </div>
-            <p class="text-sm text-gray-500 dark:text-gray-400 mt-4">
+            <p class="text-sm text-gray-600 dark:text-gray-400 mt-4">
               <i class="fas fa-shield-halved mr-1"></i>
               Achievement definitions are hardcoded and cannot be customized to prevent manipulation.
             </p>
-          </div>
+          </Card>
 
           <!-- Tiered Progression -->
-          <div class="card glass shadow-modern">
+          <Card class="shadow-lg">
             <h3 class="font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center text-xl">
               <i class="fas fa-layer-group mr-2 text-accent-500"></i>
               Tiered Progression
@@ -694,10 +695,10 @@ Where:
                 <div class="text-xs sm:text-sm"><span class="font-medium text-yellow-700 dark:text-yellow-400">Tier 8+</span></div>
               </div>
             </div>
-            <p class="text-sm text-gray-500 dark:text-gray-400">
+            <p class="text-sm text-gray-600 dark:text-gray-400">
               The leaderboard shows only the highest tier achieved per category for each contributor.
             </p>
-          </div>
+          </Card>
         </div>
       </div>
     </section>
@@ -708,7 +709,7 @@ Where:
         <SectionHeader title="Data Sources" icon="fab fa-github" icon-color="text-gray-700 dark:text-gray-300" />
 
         <div class="space-y-6">
-          <div class="card glass shadow-modern">
+          <Card class="shadow-lg">
             <h3 class="font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center text-xl">
               <i class="fab fa-github mr-2 text-gray-700 dark:text-gray-300"></i>
               GitHub API Data
@@ -751,10 +752,10 @@ Where:
                 </ul>
               </div>
             </div>
-          </div>
+          </Card>
 
           <!-- Calculated Metrics -->
-          <div class="card glass shadow-modern">
+          <Card class="shadow-lg">
             <h3 class="font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center text-xl">
               <i class="fas fa-calculator mr-2 text-blue-500"></i>
               Derived Metrics
@@ -765,33 +766,33 @@ Where:
             <div class="grid sm:grid-cols-2 gap-4 text-sm">
               <div class="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                 <strong class="text-gray-900 dark:text-gray-100">Meaningful Lines</strong>
-                <p class="text-gray-500 dark:text-gray-400">Parsed from commit diffs, filtering comments/whitespace</p>
+                <p class="text-gray-600 dark:text-gray-400">Parsed from commit diffs, filtering comments/whitespace</p>
               </div>
               <div class="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                 <strong class="text-gray-900 dark:text-gray-100">Average Review Time</strong>
-                <p class="text-gray-500 dark:text-gray-400">Time between PR creation and first review</p>
+                <p class="text-gray-600 dark:text-gray-400">Time between PR creation and first review</p>
               </div>
               <div class="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                 <strong class="text-gray-900 dark:text-gray-100">Contribution Streaks</strong>
-                <p class="text-gray-500 dark:text-gray-400">Consecutive days with activity</p>
+                <p class="text-gray-600 dark:text-gray-400">Consecutive days with activity</p>
               </div>
               <div class="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                 <strong class="text-gray-900 dark:text-gray-100">Perfect PRs</strong>
-                <p class="text-gray-500 dark:text-gray-400">PRs merged without "changes requested" reviews</p>
+                <p class="text-gray-600 dark:text-gray-400">PRs merged without "changes requested" reviews</p>
               </div>
               <div class="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                 <strong class="text-gray-900 dark:text-gray-100">Out of Hours</strong>
-                <p class="text-gray-500 dark:text-gray-400">Commits outside 9am-5pm based on commit timestamp</p>
+                <p class="text-gray-600 dark:text-gray-400">Commits outside 9am-5pm based on commit timestamp</p>
               </div>
               <div class="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                 <strong class="text-gray-900 dark:text-gray-100">Issue References</strong>
-                <p class="text-gray-500 dark:text-gray-400">Commits containing #123 patterns (fixes, closes, resolves, refs)</p>
+                <p class="text-gray-600 dark:text-gray-400">Commits containing #123 patterns (fixes, closes, resolves, refs)</p>
               </div>
             </div>
-          </div>
+          </Card>
 
           <!-- Bot Filtering -->
-          <div class="card glass shadow-modern">
+          <Card class="shadow-lg">
             <h3 class="font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center text-xl">
               <i class="fas fa-robot mr-2 text-red-500"></i>
               Bot Filtering
@@ -811,11 +812,11 @@ Where:
               <code class="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-sm">allcontributors*</code>
               <code class="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-sm">semantic-release*</code>
             </div>
-            <p class="text-sm text-gray-500 dark:text-gray-400 mt-4">
+            <p class="text-sm text-gray-600 dark:text-gray-400 mt-4">
               <i class="fas fa-cog mr-1"></i>
               Enable with <code class="text-primary-600 dark:text-primary-400">include_bots: true</code> or add custom patterns with <code class="text-primary-600 dark:text-primary-400">additional_bot_patterns</code>.
             </p>
-          </div>
+          </Card>
         </div>
       </div>
     </section>

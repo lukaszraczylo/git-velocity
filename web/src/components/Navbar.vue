@@ -11,32 +11,32 @@ const repositories = computed(() => globalData.value?.Repositories || [])
 </script>
 
 <template>
-  <nav class="sticky top-0 z-50 glass shadow-modern">
+  <nav class="sticky top-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-700 shadow-lg">
     <div class="container mx-auto px-4">
       <div class="flex items-center justify-between h-16">
         <!-- Logo -->
         <RouterLink to="/" class="flex items-center space-x-2">
-          <i class="fas fa-rocket text-2xl gradient-text"></i>
-          <span class="text-xl font-bold gradient-text">Git Velocity</span>
+          <i class="fas fa-rocket text-2xl bg-gradient-to-r from-primary-600 to-accent-600 dark:from-primary-400 dark:to-accent-400 bg-clip-text text-transparent"></i>
+          <span class="text-xl font-bold bg-gradient-to-r from-primary-600 to-accent-600 dark:from-primary-400 dark:to-accent-400 bg-clip-text text-transparent">Git Velocity</span>
         </RouterLink>
 
         <!-- Desktop Navigation -->
         <div class="hidden md:flex items-center space-x-6">
           <RouterLink
             to="/"
-            :class="route.path === '/' ? 'nav-link-active' : 'nav-link'"
+            :class="route.path === '/' ? 'text-primary-500 font-medium' : 'text-gray-800 dark:text-gray-200 font-medium hover:text-primary-600 dark:hover:text-primary-400 transition-colors'"
           >
             Dashboard
           </RouterLink>
           <RouterLink
             to="/leaderboard"
-            :class="route.path === '/leaderboard' ? 'nav-link-active' : 'nav-link'"
+            :class="route.path === '/leaderboard' ? 'text-primary-500 font-medium' : 'text-gray-800 dark:text-gray-200 font-medium hover:text-primary-600 dark:hover:text-primary-400 transition-colors'"
           >
             Leaderboard
           </RouterLink>
           <RouterLink
             to="/how-scoring-works"
-            :class="route.path === '/how-scoring-works' ? 'nav-link-active' : 'nav-link'"
+            :class="route.path === '/how-scoring-works' ? 'text-primary-500 font-medium' : 'text-gray-800 dark:text-gray-200 font-medium hover:text-primary-600 dark:hover:text-primary-400 transition-colors'"
           >
             How Scoring Works
           </RouterLink>
@@ -44,7 +44,7 @@ const repositories = computed(() => globalData.value?.Repositories || [])
             v-for="repo in repositories"
             :key="`${repo.Owner}/${repo.Name}`"
             :to="`/repos/${repo.Owner}/${repo.Name}`"
-            :class="route.path.includes(`/repos/${repo.Owner}/${repo.Name}`) ? 'nav-link-active' : 'nav-link'"
+            :class="route.path.includes(`/repos/${repo.Owner}/${repo.Name}`) ? 'text-primary-500 font-medium' : 'text-gray-800 dark:text-gray-200 font-medium hover:text-primary-600 dark:hover:text-primary-400 transition-colors'"
           >
             {{ repo.Name }}
           </RouterLink>

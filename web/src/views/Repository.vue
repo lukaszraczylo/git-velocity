@@ -122,13 +122,13 @@ watch(() => route.params, loadRepository)
             <SectionHeader title="Contributors" icon="fas fa-users" icon-color="text-blue-500" class="mb-0" />
 
             <!-- Search Input -->
-            <div class="relative w-full sm:w-64">
-              <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+            <div class="relative w-full sm:w-72 lg:w-96">
+              <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"></i>
               <input
                 v-model="searchQuery"
                 type="text"
                 placeholder="Search contributors..."
-                class="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition text-sm"
+                class="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition text-sm"
               />
               <button
                 v-if="searchQuery"
@@ -140,7 +140,7 @@ watch(() => route.params, loadRepository)
             </div>
           </div>
 
-          <p v-if="searchQuery && filteredContributors.length !== allContributors.length" class="mb-4 text-sm text-gray-500 dark:text-gray-400">
+          <p v-if="searchQuery && filteredContributors.length !== allContributors.length" class="mb-4 text-sm text-gray-600 dark:text-gray-400">
             Showing {{ filteredContributors.length }} of {{ allContributors.length }} contributors
           </p>
 
@@ -155,21 +155,21 @@ watch(() => route.params, loadRepository)
               <ContributorRow :contributor="item" />
             </template>
             <template #commits="{ item }">
-              <span class="text-gray-800 dark:text-white">{{ formatNumber(item.commit_count) }}</span>
+              <span class="text-gray-900 dark:text-white">{{ formatNumber(item.commit_count) }}</span>
             </template>
             <template #prs="{ item }">
-              <span class="text-gray-800 dark:text-white">{{ formatNumber(item.prs_opened) }}</span>
+              <span class="text-gray-900 dark:text-white">{{ formatNumber(item.prs_opened) }}</span>
             </template>
             <template #reviews="{ item }">
-              <span class="text-gray-800 dark:text-white">{{ formatNumber(item.reviews_given) }}</span>
+              <span class="text-gray-900 dark:text-white">{{ formatNumber(item.reviews_given) }}</span>
             </template>
             <template #lines="{ item }">
               <span class="text-green-500">+{{ formatNumber(item.lines_added) }}</span>
-              <span class="text-gray-400 mx-1">/</span>
+              <span class="text-gray-600 dark:text-gray-400 mx-1">/</span>
               <span class="text-red-500">-{{ formatNumber(item.lines_deleted) }}</span>
             </template>
             <template #score="{ item }">
-              <span class="text-lg font-bold gradient-text">
+              <span class="text-lg font-bold bg-gradient-to-r from-primary-600 to-accent-600 dark:from-primary-400 dark:to-accent-400 bg-clip-text text-transparent">
                 {{ formatNumber(item.score?.total || 0) }}
               </span>
             </template>
