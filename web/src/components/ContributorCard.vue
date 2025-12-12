@@ -37,7 +37,7 @@ defineProps({
                 :src="contributor.avatar_url"
                 :name="contributor.login"
                 :size="featured ? 'xl' : 'lg'"
-                class="ring-2 ring-gray-100 dark:ring-gray-700"
+                class="ring-2 ring-gray-700"
               />
               <RankBadge
                 v-if="showRank && rank > 0"
@@ -47,10 +47,10 @@ defineProps({
               />
             </div>
             <div>
-              <h3 class="font-bold text-lg text-gray-900 dark:text-white group-hover:text-primary-500 transition-colors">
+              <h3 class="font-bold text-lg text-white group-hover:text-primary-500 transition-colors">
                 {{ contributor.name || contributor.login }}
               </h3>
-              <p class="text-sm text-gray-600 dark:text-gray-400">
+              <p class="text-sm text-gray-400">
                 @{{ contributor.login }}
               </p>
               <p v-if="contributor.team" class="text-xs text-accent-500 mt-0.5">{{ contributor.team }}</p>
@@ -59,16 +59,16 @@ defineProps({
         </div>
 
         <!-- Score display -->
-        <div class="flex items-center justify-between py-3 px-4 -mx-2 rounded-lg bg-gradient-to-r from-primary-50 to-accent-50 dark:from-primary-900/20 dark:to-accent-900/20 mb-4">
-          <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Score</span>
-          <span class="text-2xl font-bold bg-gradient-to-r from-primary-600 to-accent-600 dark:from-primary-400 dark:to-accent-400 bg-clip-text text-transparent">
+        <div class="flex items-center justify-between py-3 px-4 -mx-2 rounded-lg bg-gradient-to-r from-primary-900/20 to-accent-900/20 mb-4">
+          <span class="text-sm font-medium text-gray-300">Score</span>
+          <span class="text-2xl font-bold bg-gradient-to-r from-primary-400 to-accent-400 bg-clip-text text-transparent">
             {{ formatNumber(contributor.score?.total || contributor.score || 0) }}
           </span>
         </div>
 
         <!-- Achievements -->
         <div v-if="contributor.achievements?.length" class="mt-auto">
-          <div class="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">Achievements</div>
+          <div class="text-xs font-medium text-gray-400 mb-2">Achievements</div>
           <div class="flex flex-wrap gap-1.5">
             <AchievementBadge
               v-for="achievement in contributor.achievements.slice(0, 8)"
@@ -78,7 +78,7 @@ defineProps({
             />
             <span
               v-if="contributor.achievements.length > 8"
-              class="inline-flex items-center justify-center px-2 h-7 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs font-bold"
+              class="inline-flex items-center justify-center px-2 h-7 rounded-lg bg-gray-700 text-gray-300 text-xs font-bold"
             >
               +{{ contributor.achievements.length - 8 }}
             </span>

@@ -19,7 +19,7 @@ defineProps({
   >
     <Card hover>
       <div class="flex items-center justify-between mb-4">
-        <h3 class="font-semibold text-gray-900 dark:text-white group-hover:text-primary-500 transition">
+        <h3 class="font-semibold text-white group-hover:text-primary-500 transition">
           {{ team.name }}
         </h3>
         <span
@@ -34,7 +34,7 @@ defineProps({
         </template>
         <span
           v-if="(team.members?.length || 0) > 5"
-          class="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-300 text-xs font-bold"
+          class="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-gray-300 text-xs font-bold"
         >
           +{{ team.members.length - 5 }}
         </span>
@@ -42,16 +42,16 @@ defineProps({
 
       <div class="grid grid-cols-2 gap-4 text-center">
         <div>
-          <div class="text-lg font-semibold bg-gradient-to-r from-primary-600 to-accent-600 dark:from-primary-400 dark:to-accent-400 bg-clip-text text-transparent">
+          <div class="text-lg font-semibold bg-gradient-to-r from-primary-400 to-accent-400 bg-clip-text text-transparent">
             {{ formatNumber(team.total_score) }}
           </div>
-          <div class="text-xs text-gray-600 dark:text-gray-400">Total Score</div>
+          <div class="text-xs text-gray-400">Total Score</div>
         </div>
         <div>
-          <div class="text-lg font-semibold text-gray-900 dark:text-white">
+          <div class="text-lg font-semibold text-white">
             {{ team.members?.length || 0 }}
           </div>
-          <div class="text-xs text-gray-600 dark:text-gray-400">Members</div>
+          <div class="text-xs text-gray-400">Members</div>
         </div>
       </div>
     </Card>

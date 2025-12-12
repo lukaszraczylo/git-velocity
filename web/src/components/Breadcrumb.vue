@@ -11,7 +11,7 @@ defineProps({
 </script>
 
 <template>
-  <div class="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400 mb-6">
+  <div class="flex items-center space-x-2 text-sm text-gray-400 mb-6">
     <template v-for="(item, index) in items" :key="index">
       <RouterLink
         v-if="item.to"
@@ -22,7 +22,7 @@ defineProps({
       </RouterLink>
       <span
         v-else
-        :class="index === items.length - 1 ? 'text-gray-900 dark:text-white' : ''"
+        :class="index === items.length - 1 ? 'text-white' : ''"
       >
         {{ item.label }}
       </span>

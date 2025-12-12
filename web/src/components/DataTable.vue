@@ -21,7 +21,7 @@ defineProps({
   },
   rowClass: {
     type: String,
-    default: 'hover:bg-gray-50 dark:hover:bg-gray-800/30 transition'
+    default: 'hover:bg-gray-800/30 transition'
   },
   clickableRows: {
     type: Boolean,
@@ -43,13 +43,13 @@ const getAlignClass = (align) => {
 <template>
   <Card :padding="false" class="overflow-hidden">
     <table class="w-full">
-      <thead class="bg-gray-50 dark:bg-gray-800/50">
+      <thead class="bg-gray-800/50">
         <tr>
           <th
             v-for="col in columns"
             :key="col.key"
             :class="[
-              'px-3 sm:px-6 py-3 sm:py-4 text-xs font-semibold text-gray-700 dark:text-gray-400 uppercase tracking-wider',
+              'px-3 sm:px-6 py-3 sm:py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider',
               getAlignClass(col.align),
               col.headerClass
             ]"
@@ -58,7 +58,7 @@ const getAlignClass = (align) => {
           </th>
         </tr>
       </thead>
-      <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+      <tbody class="divide-y divide-gray-700">
         <tr
           v-for="(item, index) in items"
           :key="item.id || item.login || index"
@@ -80,8 +80,8 @@ const getAlignClass = (align) => {
 
     <!-- Empty State -->
     <div v-if="!items.length" class="text-center py-12">
-      <i :class="emptyIcon" class="text-4xl text-gray-400 dark:text-gray-600 mb-4"></i>
-      <p class="text-gray-600 dark:text-gray-400">{{ emptyMessage }}</p>
+      <i :class="emptyIcon" class="text-4xl text-gray-600 mb-4"></i>
+      <p class="text-gray-400">{{ emptyMessage }}</p>
     </div>
   </Card>
 </template>

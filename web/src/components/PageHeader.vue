@@ -38,11 +38,11 @@ defineProps({
         <slot name="prefix"></slot>
         <h1 class="text-4xl font-bold mb-4">
           <i v-if="icon" :class="[icon, iconColor]" class="mr-3"></i>
-          <span class="bg-gradient-to-r from-primary-600 to-accent-600 dark:from-primary-400 dark:to-accent-400 bg-clip-text text-transparent">{{ title }}</span>
+          <span class="bg-gradient-to-r from-primary-400 to-accent-400 bg-clip-text text-transparent">{{ title }}</span>
         </h1>
       </div>
 
-      <p v-if="subtitle || $slots.subtitle" class="text-gray-600 dark:text-gray-300">
+      <p v-if="subtitle || $slots.subtitle" class="text-gray-300">
         <slot name="subtitle">{{ subtitle }}</slot>
       </p>
 

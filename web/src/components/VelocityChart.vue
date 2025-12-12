@@ -51,6 +51,15 @@ const chartData = computed(() => {
 
 const isMobile = ref(window.innerWidth < 640)
 
+// Dark mode colors
+const themeColors = {
+  gridColor: 'rgba(255, 255, 255, 0.1)',
+  textColor: 'rgba(255, 255, 255, 0.7)',
+  tooltipBg: 'rgba(30, 30, 30, 0.95)',
+  tooltipText: '#fff',
+  tooltipBorder: 'rgba(255, 255, 255, 0.1)'
+}
+
 const chartOptions = computed(() => ({
   responsive: true,
   maintainAspectRatio: false,
@@ -65,13 +74,18 @@ const chartOptions = computed(() => ({
         usePointStyle: true,
         padding: isMobile.value ? 10 : 20,
         boxWidth: isMobile.value ? 8 : 12,
+        color: themeColors.textColor,
         font: {
           size: isMobile.value ? 10 : 12
         }
       }
     },
     tooltip: {
-      backgroundColor: 'rgba(0, 0, 0, 0.8)',
+      backgroundColor: themeColors.tooltipBg,
+      titleColor: themeColors.tooltipText,
+      bodyColor: themeColors.tooltipText,
+      borderColor: themeColors.tooltipBorder,
+      borderWidth: 1,
       padding: isMobile.value ? 8 : 12,
       titleFont: {
         size: isMobile.value ? 12 : 14
@@ -92,6 +106,7 @@ const chartOptions = computed(() => ({
         display: false
       },
       ticks: {
+        color: themeColors.textColor,
         font: {
           size: isMobile.value ? 9 : 11
         },
@@ -103,9 +118,10 @@ const chartOptions = computed(() => ({
     y: {
       beginAtZero: true,
       grid: {
-        color: 'rgba(0, 0, 0, 0.05)'
+        color: themeColors.gridColor
       },
       ticks: {
+        color: themeColors.textColor,
         font: {
           size: isMobile.value ? 9 : 11
         },
@@ -177,7 +193,7 @@ watch(() => props.showScore, () => {
   <div class="velocity-chart" :style="{ height }">
     <canvas ref="chartRef"></canvas>
     <div v-if="!timeline?.labels?.length" class="flex items-center justify-center h-full">
-      <p class="text-gray-500 dark:text-gray-400">No velocity data available</p>
+      <p class="text-gray-400">No velocity data available</p>
     </div>
   </div>
 </template>

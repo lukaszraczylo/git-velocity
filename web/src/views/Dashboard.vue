@@ -27,13 +27,13 @@ const showScoreInChart = ref(false)
     <header class="py-10 sm:py-16 px-4">
       <div class="container mx-auto text-center animate-[fadeInUp_0.6s_ease-out]">
         <h1 class="text-3xl sm:text-4xl md:text-6xl font-bold mb-3 sm:mb-4">
-          <span class="bg-gradient-to-r from-primary-600 to-accent-600 dark:from-primary-400 dark:to-accent-400 bg-clip-text text-transparent">Git Velocity</span>
+          <span class="bg-gradient-to-r from-primary-400 to-accent-400 bg-clip-text text-transparent">Git Velocity</span>
         </h1>
-        <p class="text-base sm:text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto px-2">
+        <p class="text-base sm:text-xl text-gray-300 max-w-2xl mx-auto px-2">
           Celebrate your team's achievements and contributions with beautiful insights.
         </p>
         <!-- Period and Generation Info -->
-        <div class="flex flex-col items-center space-y-2 mt-4 text-sm text-gray-600 dark:text-gray-400">
+        <div class="flex flex-col items-center space-y-2 mt-4 text-sm text-gray-400">
           <p v-if="metrics.period?.start || metrics.period?.end">
             <i class="fas fa-calendar-alt mr-1 text-primary-500"></i>
             <span class="font-medium">Period:</span>
@@ -55,11 +55,11 @@ const showScoreInChart = ref(false)
         <Card>
           <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 sm:mb-6">
             <SectionHeader title="Velocity Timeline" icon="fas fa-chart-line" icon-color="text-primary-500" />
-            <label class="flex items-center space-x-2 text-sm text-gray-700 dark:text-gray-400 cursor-pointer">
+            <label class="flex items-center space-x-2 text-sm text-gray-400 cursor-pointer">
               <input
                 type="checkbox"
                 v-model="showScoreInChart"
-                class="rounded border-gray-300 dark:border-gray-600 text-primary-500 focus:ring-primary-500"
+                class="rounded border-gray-600 text-primary-500 focus:ring-primary-500"
               />
               <span>Show Score</span>
             </label>

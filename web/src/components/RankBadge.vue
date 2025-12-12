@@ -16,7 +16,7 @@ const rankClass = computed(() => {
   if (props.rank === 1) return 'bg-gradient-to-r from-yellow-400 to-amber-500'
   if (props.rank === 2) return 'bg-gradient-to-r from-slate-400 to-slate-500'
   if (props.rank === 3) return 'bg-gradient-to-r from-amber-600 to-amber-700'
-  return 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+  return 'bg-gray-700 text-gray-300'
 })
 
 const classes = computed(() => sizeClasses[props.size] || sizeClasses.md)

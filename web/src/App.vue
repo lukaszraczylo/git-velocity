@@ -30,14 +30,14 @@ onMounted(async () => {
       <div v-if="loading" class="flex items-center justify-center min-h-[60vh]">
         <div class="text-center">
           <i class="fas fa-spinner fa-spin text-4xl text-primary-500 mb-4"></i>
-          <p class="text-gray-600 dark:text-gray-400">Loading dashboard...</p>
+          <p class="text-gray-400">Loading dashboard...</p>
         </div>
       </div>
 
       <div v-else-if="error" class="flex items-center justify-center min-h-[60vh]">
         <div class="text-center">
           <i class="fas fa-exclamation-triangle text-4xl text-red-500 mb-4"></i>
-          <p class="text-gray-600 dark:text-gray-400">{{ error }}</p>
+          <p class="text-gray-400">{{ error }}</p>
         </div>
       </div>
 

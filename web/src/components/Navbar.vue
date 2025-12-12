@@ -1,7 +1,6 @@
 <script setup>
 import { ref, inject, computed } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
-import ThemeToggle from './ThemeToggle.vue'
 
 const route = useRoute()
 const globalData = inject('globalData')
@@ -11,32 +10,32 @@ const repositories = computed(() => globalData.value?.Repositories || [])
 </script>
 
 <template>
-  <nav class="sticky top-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-700 shadow-lg">
+  <nav class="sticky top-0 z-50 bg-gray-900/80 backdrop-blur-md border-b border-gray-700 shadow-lg">
     <div class="container mx-auto px-4">
       <div class="flex items-center justify-between h-16">
         <!-- Logo -->
         <RouterLink to="/" class="flex items-center space-x-2">
-          <i class="fas fa-rocket text-2xl bg-gradient-to-r from-primary-600 to-accent-600 dark:from-primary-400 dark:to-accent-400 bg-clip-text text-transparent"></i>
-          <span class="text-xl font-bold bg-gradient-to-r from-primary-600 to-accent-600 dark:from-primary-400 dark:to-accent-400 bg-clip-text text-transparent">Git Velocity</span>
+          <i class="fas fa-rocket text-2xl bg-gradient-to-r from-primary-400 to-accent-400 bg-clip-text text-transparent"></i>
+          <span class="text-xl font-bold bg-gradient-to-r from-primary-400 to-accent-400 bg-clip-text text-transparent">Git Velocity</span>
         </RouterLink>
 
         <!-- Desktop Navigation -->
         <div class="hidden md:flex items-center space-x-6">
           <RouterLink
             to="/"
-            :class="route.path === '/' ? 'text-primary-500 font-medium' : 'text-gray-800 dark:text-gray-200 font-medium hover:text-primary-600 dark:hover:text-primary-400 transition-colors'"
+            :class="route.path === '/' ? 'text-primary-500 font-medium' : 'text-gray-200 font-medium hover:text-primary-400 transition-colors'"
           >
             Dashboard
           </RouterLink>
           <RouterLink
             to="/leaderboard"
-            :class="route.path === '/leaderboard' ? 'text-primary-500 font-medium' : 'text-gray-800 dark:text-gray-200 font-medium hover:text-primary-600 dark:hover:text-primary-400 transition-colors'"
+            :class="route.path === '/leaderboard' ? 'text-primary-500 font-medium' : 'text-gray-200 font-medium hover:text-primary-400 transition-colors'"
           >
             Leaderboard
           </RouterLink>
           <RouterLink
             to="/how-scoring-works"
-            :class="route.path === '/how-scoring-works' ? 'text-primary-500 font-medium' : 'text-gray-800 dark:text-gray-200 font-medium hover:text-primary-600 dark:hover:text-primary-400 transition-colors'"
+            :class="route.path === '/how-scoring-works' ? 'text-primary-500 font-medium' : 'text-gray-200 font-medium hover:text-primary-400 transition-colors'"
           >
             How Scoring Works
           </RouterLink>
@@ -44,27 +43,23 @@ const repositories = computed(() => globalData.value?.Repositories || [])
             v-for="repo in repositories"
             :key="`${repo.Owner}/${repo.Name}`"
             :to="`/repos/${repo.Owner}/${repo.Name}`"
-            :class="route.path.includes(`/repos/${repo.Owner}/${repo.Name}`) ? 'text-primary-500 font-medium' : 'text-gray-800 dark:text-gray-200 font-medium hover:text-primary-600 dark:hover:text-primary-400 transition-colors'"
+            :class="route.path.includes(`/repos/${repo.Owner}/${repo.Name}`) ? 'text-primary-500 font-medium' : 'text-gray-200 font-medium hover:text-primary-400 transition-colors'"
           >
             {{ repo.Name }}
           </RouterLink>
         </div>
 
-        <!-- Actions -->
-        <div class="flex items-center space-x-4">
-          <ThemeToggle />
-
-          <button
-            @click="mobileMenuOpen = !mobileMenuOpen"
-            class="md:hidden p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition"
-          >
-            <i class="fas fa-bars text-gray-700 dark:text-gray-200"></i>
-          </button>
-        </div>
+        <!-- Mobile Menu Button -->
+        <button
+          @click="mobileMenuOpen = !mobileMenuOpen"
+          class="md:hidden p-2 rounded-lg hover:bg-gray-700 transition"
+        >
+          <i class="fas fa-bars text-gray-200"></i>
+        </button>
       </div>
 
       <!-- Mobile Menu -->
-      <div v-if="mobileMenuOpen" class="md:hidden py-2 border-t border-gray-200 dark:border-gray-700">
+      <div v-if="mobileMenuOpen" class="md:hidden py-2 border-t border-gray-700">
         <div class="flex flex-col space-y-1">
           <RouterLink
             to="/"
@@ -72,8 +67,8 @@ const repositories = computed(() => globalData.value?.Repositories || [])
             :class="[
               'block px-4 py-3 rounded-lg text-base font-medium transition-colors',
               route.path === '/'
-                ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400'
-                : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800'
+                ? 'bg-primary-900/20 text-primary-400'
+                : 'text-gray-200 hover:bg-gray-800'
             ]"
           >
             <i class="fas fa-home mr-3 w-5 text-center"></i>Dashboard
@@ -84,8 +79,8 @@ const repositories = computed(() => globalData.value?.Repositories || [])
             :class="[
               'block px-4 py-3 rounded-lg text-base font-medium transition-colors',
               route.path === '/leaderboard'
-                ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400'
-                : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800'
+                ? 'bg-primary-900/20 text-primary-400'
+                : 'text-gray-200 hover:bg-gray-800'
             ]"
           >
             <i class="fas fa-trophy mr-3 w-5 text-center"></i>Leaderboard
@@ -96,8 +91,8 @@ const repositories = computed(() => globalData.value?.Repositories || [])
             :class="[
               'block px-4 py-3 rounded-lg text-base font-medium transition-colors',
               route.path === '/how-scoring-works'
-                ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400'
-                : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800'
+                ? 'bg-primary-900/20 text-primary-400'
+                : 'text-gray-200 hover:bg-gray-800'
             ]"
           >
             <i class="fas fa-calculator mr-3 w-5 text-center"></i>How Scoring Works
@@ -110,8 +105,8 @@ const repositories = computed(() => globalData.value?.Repositories || [])
             :class="[
               'block px-4 py-3 rounded-lg text-base font-medium transition-colors',
               route.path.includes(`/repos/${repo.Owner}/${repo.Name}`)
-                ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400'
-                : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800'
+                ? 'bg-primary-900/20 text-primary-400'
+                : 'text-gray-200 hover:bg-gray-800'
             ]"
           >
             <i class="fas fa-code-branch mr-3 w-5 text-center"></i>{{ repo.Name }}

@@ -244,17 +244,17 @@ const sizeClasses = {
       </div>
 
       <!-- Tooltip -->
-      <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 px-3 py-2 bg-gray-900 dark:bg-gray-800 text-white text-xs rounded-xl opacity-0 group-hover/badge:opacity-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-50 shadow-xl border border-white/10">
+      <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 px-3 py-2 bg-gray-800 text-white text-xs rounded-xl opacity-0 group-hover/badge:opacity-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-50 shadow-xl border border-white/10">
         <div class="font-bold text-sm">{{ getAchievement(achievementId).name }}</div>
         <div class="text-gray-300 text-[11px] mt-0.5">{{ getAchievement(achievementId).description }}</div>
-        <div class="absolute top-full left-1/2 -translate-x-1/2 border-[6px] border-transparent border-t-gray-900 dark:border-t-gray-800"></div>
+        <div class="absolute top-full left-1/2 -translate-x-1/2 border-[6px] border-transparent border-t-gray-800"></div>
       </div>
     </div>
 
     <!-- Label (optional) - no truncation -->
     <span
       v-if="showLabel"
-      class="text-[11px] font-medium text-gray-600 dark:text-gray-400 text-center leading-tight"
+      class="text-[11px] font-medium text-gray-400 text-center leading-tight"
       style="max-width: 72px; word-wrap: break-word;"
     >
       {{ getAchievement(achievementId).name }}

@@ -30,7 +30,7 @@ defineProps({
       class="ring-2 ring-transparent group-hover:ring-primary-500 transition-all"
     />
     <div>
-      <div class="font-medium text-gray-900 dark:text-white group-hover:text-primary-500 transition-colors">
+      <div class="font-medium text-white group-hover:text-primary-500 transition-colors">
         {{ contributor.name || contributor.login }}
       </div>
       <div class="text-sm">
@@ -39,13 +39,13 @@ defineProps({
           :href="`https://github.com/${contributor.login}`"
           target="_blank"
           rel="noopener noreferrer"
-          class="font-medium text-gray-800 dark:text-gray-400 hover:text-primary-500 transition-colors"
+          class="font-medium text-gray-400 hover:text-primary-500 transition-colors"
           @click.stop
         >
           @{{ contributor.login }}
           <i class="fas fa-external-link-alt text-xs ml-1 opacity-50"></i>
         </a>
-        <span v-else class="font-medium text-gray-800 dark:text-gray-400">
+        <span v-else class="font-medium text-gray-400">
           @{{ contributor.login }}
         </span>
       </div>
