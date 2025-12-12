@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/charmbracelet/bubbles/progress"
@@ -133,8 +134,28 @@ func fetchGQLPaginated[Q any, T any, R any](
 	}
 
 	for {
-		if err := client.Query(ctx, config.Query, variables); err != nil {
-			return nil, fmt.Errorf("graphql query failed: %w", err)
+		// Retry logic for transient errors
+		var queryErr error
+		for retries := 0; retries < 3; retries++ {
+			queryErr = client.Query(ctx, config.Query, variables)
+			if queryErr == nil {
+				break
+			}
+			// Check if error is retryable
+			if !isGQLRetryableError(queryErr) {
+				break
+			}
+			// Wait before retry with exponential backoff
+			backoff := time.Duration(1<<retries) * time.Second
+			fmt.Fprintf(os.Stderr, "\r      GraphQL retry %d/3 (waiting %s): %v\n", retries+1, backoff, queryErr)
+			select {
+			case <-ctx.Done():
+				return nil, ctx.Err()
+			case <-time.After(backoff):
+			}
+		}
+		if queryErr != nil {
+			return nil, fmt.Errorf("graphql query failed: %w", queryErr)
 		}
 
 		page := config.GetPageResult(config.Query)
@@ -519,4 +540,34 @@ func convertCommentNode(node gqlCommentNode, repoName string, issueNumber int) m
 		Body:       node.Body,
 		CreatedAt:  node.CreatedAt,
 	}
+}
+
+// isGQLRetryableError checks if a GraphQL error is transient and should be retried
+func isGQLRetryableError(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	errStr := strings.ToLower(err.Error())
+	retryablePatterns := []string{
+		"stream error",
+		"cancel",
+		"eof",
+		"connection reset",
+		"connection refused",
+		"timeout",
+		"temporary failure",
+		"broken pipe",
+		"502",
+		"503",
+		"504",
+	}
+
+	for _, pattern := range retryablePatterns {
+		if strings.Contains(errStr, pattern) {
+			return true
+		}
+	}
+
+	return false
 }

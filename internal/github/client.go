@@ -301,12 +301,16 @@ func isRetryableError(err error) bool {
 		"timeout",
 		"temporary failure",
 		"server error",
+		"stream error",
+		"CANCEL",
+		"EOF",
+		"broken pipe",
 		"502",
 		"503",
 		"504",
 	}
 	for _, msg := range retryableMessages {
-		if strings.Contains(strings.ToLower(errStr), msg) {
+		if strings.Contains(strings.ToLower(errStr), strings.ToLower(msg)) {
 			return true
 		}
 	}
