@@ -393,9 +393,9 @@ scoring:
   points:
     commit: 10
     commit_with_tests: 15
+    # Line scoring always uses meaningful lines (excludes comments/whitespace)
     lines_added: 0.1
     lines_deleted: 0.05
-    use_meaningful_lines: true  # Exclude comments/whitespace from line scoring
     pr_opened: 25
     pr_merged: 50
     pr_reviewed: 30
@@ -428,7 +428,6 @@ options:
   additional_bot_patterns:
     - "my-org-bot"
     - "jenkins*"
-  use_local_git: true
   clone_directory: "./.repos"
   user_aliases:
     - github_login: "username"
@@ -481,7 +480,7 @@ options:
 
 ### Meaningful Lines Filtering
 
-By default, Git Velocity filters out non-meaningful code changes when scoring line additions and deletions. This provides a more accurate measure of actual code contributions.
+Git Velocity always filters out non-meaningful code changes when scoring line additions and deletions. This provides an accurate measure of actual code contributions.
 
 **What's filtered out:**
 - **Comments**: Single-line (`//`, `#`, `--`), block (`/* */`, `<!-- -->`), docstrings (`"""`, `'''`)
@@ -495,14 +494,6 @@ By default, Git Velocity filters out non-meaningful code changes when scoring li
 - Assembly/Lisp/INI: `;`
 - VB: `'`
 - HTML/XML: `<!-- -->`
-
-To disable this filtering and score raw line counts:
-
-```yaml
-scoring:
-  points:
-    use_meaningful_lines: false  # Score all lines including comments/whitespace
-```
 
 ### Environment Variables
 

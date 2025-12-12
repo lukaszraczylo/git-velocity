@@ -165,20 +165,28 @@ func NewMemoryCache(ttl time.Duration) *MemoryCache {
 // Get retrieves a value from the cache
 func (c *MemoryCache) Get(key string) (interface{}, bool) {
 	c.mu.RLock()
-	defer c.mu.RUnlock()
-
 	entry, ok := c.data[key]
 	if !ok {
+		c.mu.RUnlock()
 		return nil, false
 	}
 
-	// Check expiration
+	// Check expiration - if expired, upgrade to write lock to delete
 	if time.Now().After(entry.ExpiresAt) {
-		delete(c.data, key)
+		c.mu.RUnlock()
+		// Upgrade to write lock for deletion
+		c.mu.Lock()
+		// Re-check in case another goroutine already deleted it
+		if entry, ok := c.data[key]; ok && time.Now().After(entry.ExpiresAt) {
+			delete(c.data, key)
+		}
+		c.mu.Unlock()
 		return nil, false
 	}
 
-	return entry.Value, true
+	value := entry.Value
+	c.mu.RUnlock()
+	return value, true
 }
 
 // Set stores a value in the cache

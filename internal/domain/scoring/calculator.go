@@ -80,10 +80,15 @@ func (c *Calculator) Calculate(metrics *models.GlobalMetrics) *models.GlobalMetr
 		return contributors[i].Score.Total > contributors[j].Score.Total
 	})
 
-	// Assign ranks
+	// Assign ranks (guard against empty slice for percentile calculation)
+	numContributors := len(contributors)
 	for i := range contributors {
 		contributors[i].Score.Rank = i + 1
-		contributors[i].Score.PercentileRank = float64(len(contributors)-i) / float64(len(contributors)) * 100
+		if numContributors > 0 {
+			contributors[i].Score.PercentileRank = float64(numContributors-i) / float64(numContributors) * 100
+		} else {
+			contributors[i].Score.PercentileRank = 0
+		}
 	}
 
 	// Build leaderboard
@@ -167,15 +172,10 @@ func (c *Calculator) calculateScore(cm *models.ContributorMetrics) models.Score 
 	// Commit points
 	breakdown.Commits = cm.CommitCount * points.Commit
 
-	// Line change points - use meaningful lines if configured, otherwise raw counts
-	linesAdded := cm.LinesAdded
-	linesDeleted := cm.LinesDeleted
-	if points.UseMeaningfulLines {
-		linesAdded = cm.MeaningfulLinesAdded
-		linesDeleted = cm.MeaningfulLinesDeleted
-	}
-	breakdown.LineChanges = int(float64(linesAdded)*points.LinesAdded +
-		float64(linesDeleted)*points.LinesDeleted)
+	// Line change points - always use meaningful lines (excluding comments/whitespace)
+	// to accurately reflect actual code contribution
+	breakdown.LineChanges = int(float64(cm.MeaningfulLinesAdded)*points.LinesAdded +
+		float64(cm.MeaningfulLinesDeleted)*points.LinesDeleted)
 
 	// PR points
 	breakdown.PRs = cm.PRsOpened*points.PROpened + cm.PRsMerged*points.PRMerged

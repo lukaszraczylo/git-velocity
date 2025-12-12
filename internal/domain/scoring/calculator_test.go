@@ -71,6 +71,8 @@ func TestCalculator_BasicScoring(t *testing.T) {
 						CommitCount:             10,
 						LinesAdded:              1000,
 						LinesDeleted:            500,
+						MeaningfulLinesAdded:    1000, // Same as raw for this test
+						MeaningfulLinesDeleted:  500,
 						PRsOpened:               5,
 						PRsMerged:               3,
 						ReviewsGiven:            8,
@@ -91,7 +93,7 @@ func TestCalculator_BasicScoring(t *testing.T) {
 
 	// Verify score breakdown:
 	// Commits: 10 * 10 = 100
-	// Lines: 1000 * 0.1 + 500 * 0.05 = 100 + 25 = 125
+	// Lines (meaningful): 1000 * 0.1 + 500 * 0.05 = 100 + 25 = 125
 	// PRs: 5 * 25 + 3 * 50 = 125 + 150 = 275
 	// Reviews: 8 * 30 + 20 * 5 = 240 + 100 = 340
 	// Total: 100 + 125 + 275 + 340 = 840
@@ -860,10 +862,9 @@ func TestCalculator_MeaningfulLinesScoring(t *testing.T) {
 		cfg := config.DefaultConfig()
 		cfg.Scoring.Enabled = true
 		cfg.Scoring.Points = config.PointsConfig{
-			Commit:             10,
-			LinesAdded:         0.1,
-			LinesDeleted:       0.05,
-			UseMeaningfulLines: true, // Use meaningful lines
+			Commit:       10,
+			LinesAdded:   0.1,
+			LinesDeleted: 0.05,
 		}
 		calc := NewCalculator(cfg)
 
@@ -897,58 +898,15 @@ func TestCalculator_MeaningfulLinesScoring(t *testing.T) {
 		assert.Equal(t, 200, contributor.Score.Total)
 	})
 
-	t.Run("uses raw lines when disabled", func(t *testing.T) {
-		t.Parallel()
-
-		cfg := config.DefaultConfig()
-		cfg.Scoring.Enabled = true
-		cfg.Scoring.Points = config.PointsConfig{
-			Commit:             10,
-			LinesAdded:         0.1,
-			LinesDeleted:       0.05,
-			UseMeaningfulLines: false, // Use raw lines
-		}
-		calc := NewCalculator(cfg)
-
-		metrics := &models.GlobalMetrics{
-			Repositories: []models.RepositoryMetrics{
-				{
-					FullName: "owner/repo",
-					Contributors: []models.ContributorMetrics{
-						{
-							Login:                   "user1",
-							CommitCount:             10,
-							LinesAdded:              1000, // Raw lines
-							LinesDeleted:            500,
-							MeaningfulLinesAdded:    800, // Meaningful lines (should be ignored)
-							MeaningfulLinesDeleted:  400,
-							RepositoriesContributed: []string{"owner/repo"},
-						},
-					},
-				},
-			},
-		}
-
-		result := calc.Calculate(metrics)
-
-		contributor := result.Repositories[0].Contributors[0]
-		// Line change points should use raw lines:
-		// Raw: 1000 * 0.1 + 500 * 0.05 = 100 + 25 = 125
-		assert.Equal(t, 125, contributor.Score.Breakdown.LineChanges)
-		// Total: Commits (10 * 10 = 100) + Lines (125) = 225
-		assert.Equal(t, 225, contributor.Score.Total)
-	})
-
 	t.Run("comment-only changes score zero meaningful lines", func(t *testing.T) {
 		t.Parallel()
 
 		cfg := config.DefaultConfig()
 		cfg.Scoring.Enabled = true
 		cfg.Scoring.Points = config.PointsConfig{
-			Commit:             10,
-			LinesAdded:         0.1,
-			LinesDeleted:       0.05,
-			UseMeaningfulLines: true,
+			Commit:       10,
+			LinesAdded:   0.1,
+			LinesDeleted: 0.05,
 		}
 		calc := NewCalculator(cfg)
 

@@ -90,10 +90,6 @@ type PointsConfig struct {
 	FastReview4h    int     `yaml:"fast_review_4h"`
 	FastReview24h   int     `yaml:"fast_review_24h"`
 	OutOfHours      int     `yaml:"out_of_hours"` // Bonus per commit outside 9am-5pm
-
-	// UseMeaningfulLines determines whether scoring uses meaningful lines (excluding comments/whitespace)
-	// or raw line counts. Default is true for more accurate contribution scoring.
-	UseMeaningfulLines bool `yaml:"use_meaningful_lines"`
 }
 
 // AchievementConfig defines an achievement badge
@@ -149,7 +145,6 @@ type OptionsConfig struct {
 	IncludeBots           bool        `yaml:"include_bots"`
 	AdditionalBotPatterns []string    `yaml:"additional_bot_patterns"` // User-defined patterns (added to hardcoded defaults)
 	CloneDirectory        string      `yaml:"clone_directory"`         // Directory for local git clones
-	UseLocalGit           bool        `yaml:"use_local_git"`           // Use local git for commits (faster)
 	ShallowClone          bool        `yaml:"shallow_clone"`           // Use shallow clone based on date range (faster cloning)
 	ShallowCloneBuffer    int         `yaml:"shallow_clone_buffer"`    // Extra commits to fetch beyond date range (default: 100)
 	UseGraphQL            bool        `yaml:"use_graphql"`             // Use GraphQL API for batched queries (fewer API calls)
@@ -196,23 +191,22 @@ func DefaultConfig() *Config {
 		Scoring: ScoringConfig{
 			Enabled: true,
 			Points: PointsConfig{
-				Commit:             10,
-				CommitWithTests:    15,
-				LinesAdded:         0.1,
-				LinesDeleted:       0.05,
-				PROpened:           25,
-				PRMerged:           50,
-				PRReviewed:         30,
-				ReviewComment:      5,
-				IssueOpened:        10,
-				IssueClosed:        20,
-				IssueComment:       5,
-				IssueReference:     5,
-				FastReview1h:       50,
-				FastReview4h:       25,
-				FastReview24h:      10,
-				OutOfHours:         2,
-				UseMeaningfulLines: true, // Default to meaningful lines for accurate contribution scoring
+				Commit:          10,
+				CommitWithTests: 15,
+				LinesAdded:      0.1,
+				LinesDeleted:    0.05,
+				PROpened:        25,
+				PRMerged:        50,
+				PRReviewed:      30,
+				ReviewComment:   5,
+				IssueOpened:     10,
+				IssueClosed:     20,
+				IssueComment:    5,
+				IssueReference:  5,
+				FastReview1h:    50,
+				FastReview4h:    25,
+				FastReview24h:   10,
+				OutOfHours:      2,
 			},
 		},
 		Output: OutputConfig{
@@ -233,7 +227,6 @@ func DefaultConfig() *Config {
 			IncludeBots:           false,
 			AdditionalBotPatterns: []string{}, // Users can add custom patterns here
 			CloneDirectory:        "./.repos",
-			UseLocalGit:           true, // Default to faster local git analysis
 			ShallowClone:          true, // Default to shallow clone for faster cloning
 			ShallowCloneBuffer:    25,   // Extra commits beyond date range for safety margin
 			UseGraphQL:            true, // Default to GraphQL for fewer API calls

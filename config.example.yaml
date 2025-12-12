@@ -87,10 +87,9 @@ scoring:
   points:
     commit: 10
     commit_with_tests: 15
+    # Line scoring always uses meaningful lines (excludes comments/whitespace)
     lines_added: 0.1
     lines_deleted: 0.05
-    # Use meaningful lines (excludes comments/whitespace) for scoring
-    use_meaningful_lines: true
     pr_opened: 25
     pr_merged: 50
     pr_reviewed: 30

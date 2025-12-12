@@ -58,18 +58,16 @@ func (a *App) Run(ctx context.Context) error {
 		a.log("%s", msg)
 	})
 
-	// Initialize local git repository manager if using local git
-	if a.config.Options.UseLocalGit {
-		a.log("Initializing local git repository manager...")
-		gitRepo, err := git.NewRepository(a.config.Options.CloneDirectory)
-		if err != nil {
-			return fmt.Errorf("failed to create git repository manager: %w", err)
-		}
-		gitRepo.SetProgressCallback(func(msg string) {
-			a.log("%s", msg)
-		})
-		a.gitRepo = gitRepo
+	// Initialize local git repository manager (always used for accurate commit data)
+	a.log("Initializing local git repository manager...")
+	gitRepo, err := git.NewRepository(a.config.Options.CloneDirectory)
+	if err != nil {
+		return fmt.Errorf("failed to create git repository manager: %w", err)
 	}
+	gitRepo.SetProgressCallback(func(msg string) {
+		a.log("%s", msg)
+	})
+	a.gitRepo = gitRepo
 
 	// Parse date range
 	dateRange, err := a.config.GetParsedDateRange()
@@ -163,44 +161,31 @@ func (a *App) collectRepoData(ctx context.Context, owner, name string, dateRange
 	repoName := fmt.Sprintf("%s/%s", owner, name)
 	a.log("  Fetching data from %s...", repoName)
 
-	// Fetch commits - use local git if enabled (much faster)
-	var commits []models.Commit
-	var err error
+	// Clone/update repository locally (required for accurate commit data)
+	token := a.config.Auth.GithubToken
 
-	if a.gitRepo != nil {
-		// Clone/update repository locally
-		token := a.config.Auth.GithubToken
-
-		// Determine clone options (shallow clone if enabled)
-		var cloneOpts *git.CloneOptions
-		if a.config.Options.ShallowClone && dateRange.Start != nil {
-			// Get commit count since start date to determine shallow clone depth
-			commitCount, countErr := a.client.GetCommitCountSince(ctx, owner, name, *dateRange.Start)
-			if countErr != nil {
-				a.log("    Warning: failed to get commit count for shallow clone: %v", countErr)
-				// Proceed with full clone
-			} else if commitCount > 0 {
-				// Add buffer for safety margin
-				depth := commitCount + a.config.Options.ShallowCloneBuffer
-				cloneOpts = &git.CloneOptions{Depth: depth}
-				a.log("    Using shallow clone (depth: %d = %d commits + %d buffer)", depth, commitCount, a.config.Options.ShallowCloneBuffer)
-			}
+	// Determine clone options (shallow clone if enabled)
+	var cloneOpts *git.CloneOptions
+	if a.config.Options.ShallowClone && dateRange.Start != nil {
+		// Get commit count since start date to determine shallow clone depth
+		commitCount, countErr := a.client.GetCommitCountSince(ctx, owner, name, *dateRange.Start)
+		if countErr != nil {
+			a.log("    Warning: failed to get commit count for shallow clone: %v", countErr)
+			// Proceed with full clone
+		} else if commitCount > 0 {
+			// Add buffer for safety margin
+			depth := commitCount + a.config.Options.ShallowCloneBuffer
+			cloneOpts = &git.CloneOptions{Depth: depth}
+			a.log("    Using shallow clone (depth: %d = %d commits + %d buffer)", depth, commitCount, a.config.Options.ShallowCloneBuffer)
 		}
-
-		cloneErr := a.gitRepo.EnsureClonedWithOptions(ctx, owner, name, token, cloneOpts)
-		if cloneErr != nil {
-			a.log("    Warning: failed to clone repository locally, falling back to API: %v", cloneErr)
-			// Fallback to API
-			commits, err = a.client.FetchCommits(ctx, owner, name, dateRange.Start, dateRange.End)
-		} else {
-			// Use local git for commits
-			commits, err = a.gitRepo.FetchCommits(ctx, owner, name, dateRange.Start, dateRange.End)
-		}
-	} else {
-		// Use API for commits
-		commits, err = a.client.FetchCommits(ctx, owner, name, dateRange.Start, dateRange.End)
 	}
 
+	if err := a.gitRepo.EnsureClonedWithOptions(ctx, owner, name, token, cloneOpts); err != nil {
+		return fmt.Errorf("failed to clone repository %s: %w", repoName, err)
+	}
+
+	// Fetch commits from local git clone
+	commits, err := a.gitRepo.FetchCommits(ctx, owner, name, dateRange.Start, dateRange.End)
 	if err != nil {
 		return fmt.Errorf("failed to fetch commits: %w", err)
 	}
@@ -238,8 +223,20 @@ func (a *App) collectRepoData(ctx context.Context, owner, name string, dateRange
 		}
 	} else {
 		// Use REST API
-		if _, _, err := a.fetchPRsAndReviewsREST(ctx, owner, name, dateRange, data); err != nil {
+		prs, reviews, err := a.fetchPRsAndReviewsREST(ctx, owner, name, dateRange, data)
+		if err != nil {
 			return err
+		}
+		// Filter out bots and add to data
+		for _, pr := range prs {
+			if !a.config.IsBot(pr.Author.Login) {
+				data.PullRequests = append(data.PullRequests, pr)
+			}
+		}
+		for _, r := range reviews {
+			if !a.config.IsBot(r.Author.Login) {
+				data.Reviews = append(data.Reviews, r)
+			}
 		}
 	}
 

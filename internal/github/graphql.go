@@ -39,9 +39,15 @@ func newProgressBar(label string, total int) *progressBar {
 
 func (p *progressBar) update(fetched int) {
 	p.current = fetched
-	percent := float64(p.current) / float64(p.total)
-	if percent > 1.0 {
-		percent = 1.0
+	// Guard against division by zero
+	var percent float64
+	if p.total > 0 {
+		percent = float64(p.current) / float64(p.total)
+		if percent > 1.0 {
+			percent = 1.0
+		}
+	} else {
+		percent = 0.0
 	}
 
 	labelStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("205"))

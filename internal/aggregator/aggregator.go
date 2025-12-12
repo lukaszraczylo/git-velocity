@@ -365,7 +365,12 @@ func (a *Aggregator) Aggregate(data *models.RawData, dateRange *config.ParsedDat
 		changesRequestedPRs := prChangesRequested[login]
 		// Count merged PRs that didn't have changes requested
 		for _, pr := range data.PullRequests {
-			if pr.Author.Login == login && pr.IsMerged() {
+			// Normalize PR author login before comparison
+			prLogin := pr.Author.Login
+			if mapped, ok := loginToLogin[prLogin]; ok {
+				prLogin = mapped
+			}
+			if prLogin == login && pr.IsMerged() {
 				if changesRequestedPRs == nil || !changesRequestedPRs[pr.Number] {
 					cm.PerfectPRs++
 				}
@@ -437,9 +442,15 @@ func (a *Aggregator) Aggregate(data *models.RawData, dateRange *config.ParsedDat
 	}
 
 	// Count issue references in commits (e.g., "fixes #123", "closes #456", "refs #789")
+	// Skip merge commits which naturally contain #PR numbers
 	for _, commit := range data.Commits {
 		login := commit.Author.Login
 		if login == "" {
+			continue
+		}
+
+		// Skip merge commits - they contain #PR numbers that shouldn't count as issue refs
+		if isMergeCommit(commit.Message) {
 			continue
 		}
 
@@ -465,6 +476,22 @@ func (a *Aggregator) Aggregate(data *models.RawData, dateRange *config.ParsedDat
 		}
 	}
 
+	// Build reverse mapping: raw PR author login -> normalized login
+	// This is needed because contributorMap keys are normalized but pr.Author.Login is not
+	prAuthorToNormalizedLogin := make(map[string]string)
+	for _, pr := range data.PullRequests {
+		rawLogin := pr.Author.Login
+		if rawLogin == "" {
+			continue
+		}
+		normalizedLogin := rawLogin
+		// Check if this raw login maps to a different normalized login
+		if mapped, ok := loginToLogin[rawLogin]; ok {
+			normalizedLogin = mapped
+		}
+		prAuthorToNormalizedLogin[rawLogin] = normalizedLogin
+	}
+
 	// Calculate averages and finalize contributor metrics
 	for login, cm := range contributorMap {
 		// Calculate average time to merge
@@ -481,7 +508,12 @@ func (a *Aggregator) Aggregate(data *models.RawData, dateRange *config.ParsedDat
 		if cm.PRsOpened > 0 {
 			totalPRLines := 0
 			for _, pr := range data.PullRequests {
-				if pr.Author.Login == login {
+				// Normalize PR author login before comparison
+				prLogin := pr.Author.Login
+				if normalized, ok := prAuthorToNormalizedLogin[prLogin]; ok {
+					prLogin = normalized
+				}
+				if prLogin == login {
 					totalPRLines += pr.TotalChanges()
 				}
 			}
@@ -531,7 +563,12 @@ func (a *Aggregator) Aggregate(data *models.RawData, dateRange *config.ParsedDat
 			if rcm.PRsOpened > 0 {
 				totalPRLines := 0
 				for _, pr := range data.PullRequests {
-					if pr.Author.Login == login && pr.Repository == repo {
+					// Normalize PR author login before comparison
+					prLogin := pr.Author.Login
+					if mapped, ok := loginToLogin[prLogin]; ok {
+						prLogin = mapped
+					}
+					if prLogin == login && pr.Repository == repo {
 						totalPRLines += pr.TotalChanges()
 					}
 				}
@@ -540,7 +577,12 @@ func (a *Aggregator) Aggregate(data *models.RawData, dateRange *config.ParsedDat
 
 			// Calculate perfect PRs for this repo
 			for _, pr := range data.PullRequests {
-				if pr.Author.Login == login && pr.Repository == repo && pr.IsMerged() {
+				// Normalize PR author login before comparison
+				prLogin := pr.Author.Login
+				if mapped, ok := loginToLogin[prLogin]; ok {
+					prLogin = mapped
+				}
+				if prLogin == login && pr.Repository == repo && pr.IsMerged() {
 					changesRequestedPRs := prChangesRequested[login]
 					if changesRequestedPRs == nil || !changesRequestedPRs[pr.Number] {
 						rcm.PerfectPRs++
@@ -1332,8 +1374,10 @@ func calculateStreaks(days map[string]bool) (longest, current int) {
 	streak := 1
 
 	for i := 1; i < len(dates); i++ {
-		diff := dates[i].Sub(dates[i-1]).Hours() / 24
-		if diff == 1 {
+		// Use integer day difference to avoid floating point precision issues with DST
+		diffHours := dates[i].Sub(dates[i-1]).Hours()
+		diffDays := int(diffHours/24 + 0.5) // Round to nearest integer
+		if diffDays == 1 {
 			streak++
 			if streak > longest {
 				longest = streak
@@ -1345,8 +1389,10 @@ func calculateStreaks(days map[string]bool) (longest, current int) {
 
 	// Check if current streak is still active (last activity was today or yesterday)
 	today := time.Now().Truncate(24 * time.Hour)
-	lastActive := dates[len(dates)-1]
-	daysSinceLastActive := today.Sub(lastActive).Hours() / 24
+	// Truncate lastActive to midnight as well for consistent comparison
+	lastActive := dates[len(dates)-1].Truncate(24 * time.Hour)
+	diffHours := today.Sub(lastActive).Hours()
+	daysSinceLastActive := int(diffHours/24 + 0.5) // Round to nearest integer
 
 	if daysSinceLastActive <= 1 {
 		current = streak
@@ -1384,4 +1430,26 @@ func countIssueReferences(message string) int {
 	}
 
 	return count
+}
+
+// isMergeCommit checks if a commit message indicates a merge commit
+// Merge commits should be skipped when counting issue references as they
+// naturally contain #PR numbers from the merged PR titles
+func isMergeCommit(message string) bool {
+	// Common merge commit patterns:
+	// - "Merge pull request #123 from ..."
+	// - "Merge branch 'feature' into ..."
+	// - "Merge remote-tracking branch ..."
+	// - "Merge commit ..."
+	if len(message) < 6 {
+		return false
+	}
+
+	// Check if message starts with "Merge " (case-insensitive for first letter)
+	prefix := message[:6]
+	if prefix == "Merge " || prefix == "merge " {
+		return true
+	}
+
+	return false
 }
