@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { Chart, registerables } from 'chart.js'
 
 Chart.register(...registerables)
@@ -49,7 +49,9 @@ const chartData = computed(() => {
   }
 })
 
-const chartOptions = {
+const isMobile = ref(window.innerWidth < 640)
+
+const chartOptions = computed(() => ({
   responsive: true,
   maintainAspectRatio: false,
   interaction: {
@@ -61,20 +63,21 @@ const chartOptions = {
       position: 'top',
       labels: {
         usePointStyle: true,
-        padding: 20,
+        padding: isMobile.value ? 10 : 20,
+        boxWidth: isMobile.value ? 8 : 12,
         font: {
-          size: 12
+          size: isMobile.value ? 10 : 12
         }
       }
     },
     tooltip: {
       backgroundColor: 'rgba(0, 0, 0, 0.8)',
-      padding: 12,
+      padding: isMobile.value ? 8 : 12,
       titleFont: {
-        size: 14
+        size: isMobile.value ? 12 : 14
       },
       bodyFont: {
-        size: 13
+        size: isMobile.value ? 11 : 13
       },
       callbacks: {
         label: (context) => {
@@ -90,8 +93,11 @@ const chartOptions = {
       },
       ticks: {
         font: {
-          size: 11
-        }
+          size: isMobile.value ? 9 : 11
+        },
+        maxRotation: isMobile.value ? 45 : 0,
+        autoSkip: true,
+        maxTicksLimit: isMobile.value ? 6 : 12
       }
     },
     y: {
@@ -101,7 +107,7 @@ const chartOptions = {
       },
       ticks: {
         font: {
-          size: 11
+          size: isMobile.value ? 9 : 11
         },
         callback: (value) => {
           if (value >= 1000) {
@@ -112,7 +118,7 @@ const chartOptions = {
       }
     }
   }
-}
+}))
 
 function createChart() {
   if (!chartRef.value || !chartData.value.labels.length) return
@@ -125,7 +131,7 @@ function createChart() {
   chartInstance = new Chart(ctx, {
     type: 'line',
     data: chartData.value,
-    options: chartOptions
+    options: chartOptions.value
   })
 }
 
@@ -138,8 +144,24 @@ function updateChart() {
   }
 }
 
+function handleResize() {
+  const newIsMobile = window.innerWidth < 640
+  if (newIsMobile !== isMobile.value) {
+    isMobile.value = newIsMobile
+    createChart() // Recreate chart with new options
+  }
+}
+
 onMounted(() => {
   createChart()
+  window.addEventListener('resize', handleResize)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize)
+  if (chartInstance) {
+    chartInstance.destroy()
+  }
 })
 
 watch(() => props.timeline, () => {

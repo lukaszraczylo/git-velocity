@@ -47,7 +47,7 @@ const getAlignClass = (align) => {
             v-for="col in columns"
             :key="col.key"
             :class="[
-              'px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider',
+              'px-3 sm:px-6 py-3 sm:py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider',
               getAlignClass(col.align),
               col.headerClass
             ]"
@@ -66,7 +66,7 @@ const getAlignClass = (align) => {
           <td
             v-for="col in columns"
             :key="col.key"
-            :class="['px-6 py-4', getAlignClass(col.align), col.class]"
+            :class="['px-3 sm:px-6 py-3 sm:py-4', getAlignClass(col.align), col.class]"
           >
             <slot :name="col.key" :item="item" :index="index">
               {{ item[col.key] }}

@@ -1,5 +1,5 @@
 <script setup>
-import { inject, computed } from 'vue'
+import { ref, inject, computed } from 'vue'
 import PageHeader from '../components/PageHeader.vue'
 import DataTable from '../components/DataTable.vue'
 import ContributorRow from '../components/ContributorRow.vue'
@@ -9,7 +9,20 @@ import { formatNumber } from '../composables/formatters'
 import { getHighestTierAchievements } from '../composables/achievements'
 
 const globalData = inject('globalData')
-const leaderboard = computed(() => globalData.value?.leaderboard || [])
+const searchQuery = ref('')
+
+const allContributors = computed(() => globalData.value?.leaderboard || [])
+
+const leaderboard = computed(() => {
+  if (!searchQuery.value.trim()) return allContributors.value
+
+  const query = searchQuery.value.toLowerCase().trim()
+  return allContributors.value.filter(contributor => {
+    const name = (contributor.name || '').toLowerCase()
+    const login = (contributor.login || '').toLowerCase()
+    return name.includes(query) || login.includes(query)
+  })
+})
 
 const tableColumns = [
   { key: 'rank', label: 'Rank', align: 'left' },
@@ -41,9 +54,32 @@ const categoryIcon = (category) => {
       centered
     />
 
-    <!-- Leaderboard Table -->
+    <!-- Search and Leaderboard Table -->
     <section class="py-8 px-4">
       <div class="container mx-auto max-w-5xl">
+        <!-- Search Input -->
+        <div class="mb-6">
+          <div class="relative max-w-md">
+            <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+            <input
+              v-model="searchQuery"
+              type="text"
+              placeholder="Search by name or username..."
+              class="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition"
+            />
+            <button
+              v-if="searchQuery"
+              @click="searchQuery = ''"
+              class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+            >
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+          <p v-if="searchQuery && leaderboard.length !== allContributors.length" class="mt-2 text-sm text-gray-500 dark:text-gray-400">
+            Showing {{ leaderboard.length }} of {{ allContributors.length }} contributors
+          </p>
+        </div>
+
         <DataTable
           :columns="tableColumns"
           :items="leaderboard"

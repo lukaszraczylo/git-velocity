@@ -23,12 +23,12 @@ const showScoreInChart = ref(false)
 <template>
   <div>
     <!-- Hero Section -->
-    <header class="py-16 px-4">
+    <header class="py-10 sm:py-16 px-4">
       <div class="container mx-auto text-center animate-fade-in-up">
-        <h1 class="text-4xl md:text-6xl font-bold mb-4">
+        <h1 class="text-3xl sm:text-4xl md:text-6xl font-bold mb-3 sm:mb-4">
           <span class="gradient-text">Git Velocity</span>
         </h1>
-        <p class="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+        <p class="text-base sm:text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto px-2">
           Celebrate your team's achievements and contributions with beautiful insights.
         </p>
         <!-- Period and Generation Info -->
@@ -49,10 +49,10 @@ const showScoreInChart = ref(false)
     </header>
 
     <!-- Velocity Timeline Chart -->
-    <section v-if="velocityTimeline" class="py-8 px-4">
+    <section v-if="velocityTimeline" class="py-6 sm:py-8 px-4">
       <div class="container mx-auto">
         <div class="card">
-          <div class="flex items-center justify-between mb-6">
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 sm:mb-6">
             <SectionHeader title="Velocity Timeline" icon="fas fa-chart-line" icon-color="text-primary-500" />
             <label class="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400 cursor-pointer">
               <input
@@ -63,7 +63,9 @@ const showScoreInChart = ref(false)
               <span>Show Score</span>
             </label>
           </div>
-          <VelocityChart :timeline="velocityTimeline" :show-score="showScoreInChart" height="320px" />
+          <div class="h-[200px] sm:h-[280px] md:h-[320px]">
+            <VelocityChart :timeline="velocityTimeline" :show-score="showScoreInChart" height="100%" />
+          </div>
         </div>
       </div>
     </section>
