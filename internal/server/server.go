@@ -88,8 +88,3 @@ func (s *Server) CreateHandler() (http.Handler, error) {
 func (s *Server) GetAddress() string {
 	return fmt.Sprintf(":%s", s.port)
 }
-
-// GetDirectory returns the directory being served
-func (s *Server) GetDirectory() string {
-	return s.directory
-}

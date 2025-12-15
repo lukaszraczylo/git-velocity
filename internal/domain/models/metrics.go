@@ -63,7 +63,14 @@ type ContributorMetrics struct {
 	NightOwlCount   int `json:"night_owl_count"`    // Commits after 9pm
 	MidnightCount   int `json:"midnight_count"`     // Commits between midnight and 4am
 	WeekendWarrior  int `json:"weekend_warrior"`    // Weekend commits
-	OutOfHoursCount int `json:"out_of_hours_count"` // Commits outside 9am-5pm
+	OutOfHoursCount int `json:"out_of_hours_count"` // Commits outside 9am-5pm (legacy, kept for achievements)
+
+	// Time-based commit counts for multiplier scoring
+	RegularHoursCount int `json:"regular_hours_count"` // Commits 9am-5pm (x1 multiplier)
+	EveningCount      int `json:"evening_count"`       // Commits 5pm-9pm (x2 multiplier)
+	LateNightCount    int `json:"late_night_count"`    // Commits 9pm-midnight (x2.5 multiplier)
+	OvernightCount    int `json:"overnight_count"`     // Commits midnight-6am (x5 multiplier)
+	EarlyMorningCount int `json:"early_morning_count"` // Commits 6am-9am (x2 multiplier)
 
 	// Repository participation
 	RepositoriesContributed []string `json:"repositories_contributed,omitempty"`

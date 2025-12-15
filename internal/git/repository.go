@@ -110,11 +110,6 @@ type CloneOptions struct {
 	Depth int
 }
 
-// EnsureCloned ensures a repository is cloned and up to date
-func (r *Repository) EnsureCloned(ctx context.Context, owner, name, token string) error {
-	return r.EnsureClonedWithOptions(ctx, owner, name, token, nil)
-}
-
 // EnsureClonedWithOptions ensures a repository is cloned with specific options
 func (r *Repository) EnsureClonedWithOptions(ctx context.Context, owner, name, token string, opts *CloneOptions) error {
 	repoPath := r.repoPath(owner, name)
@@ -494,47 +489,4 @@ func extractLoginFromEmail(email, fallbackName string) string {
 	login := strings.ToLower(fallbackName)
 	login = regexp.MustCompile(`[^a-z0-9-]`).ReplaceAllString(login, "-")
 	return login
-}
-
-// GetAuthorMappings fetches author login mappings
-// This helps map commit authors to GitHub usernames
-func (r *Repository) GetAuthorMappings(ctx context.Context, owner, name string) (map[string]string, error) {
-	repoPath := r.repoPath(owner, name)
-
-	repo, err := git.PlainOpen(repoPath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to open repository: %w", err)
-	}
-
-	mappings := make(map[string]string)
-
-	// Iterate all commits to collect author mappings
-	commitIter, err := repo.Log(&git.LogOptions{All: true})
-	if err != nil {
-		return nil, fmt.Errorf("failed to get commit log: %w", err)
-	}
-
-	err = commitIter.ForEach(func(c *object.Commit) error {
-		if _, exists := mappings[c.Author.Email]; !exists {
-			mappings[c.Author.Email] = extractLoginFromEmail(c.Author.Email, c.Author.Name)
-		}
-		return nil
-	})
-
-	if err != nil {
-		return nil, fmt.Errorf("failed to iterate commits: %w", err)
-	}
-
-	return mappings, nil
-}
-
-// Cleanup removes the local clone of a repository
-func (r *Repository) Cleanup(owner, name string) error {
-	repoPath := r.repoPath(owner, name)
-	return os.RemoveAll(repoPath)
-}
-
-// CleanupAll removes all local clones
-func (r *Repository) CleanupAll() error {
-	return os.RemoveAll(r.baseDir)
 }

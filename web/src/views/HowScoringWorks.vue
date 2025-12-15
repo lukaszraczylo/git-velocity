@@ -64,17 +64,23 @@ import SectionHeader from '../components/SectionHeader.vue'
               Score Formula
             </h3>
             <div class="bg-gray-900 text-gray-100 p-3 sm:p-4 rounded-lg overflow-x-auto mb-4 -mx-2 sm:mx-0">
-              <pre class="text-xs sm:text-sm font-mono whitespace-pre-wrap sm:whitespace-pre"><code>Total Score = Commits + Lines + PRs + Reviews + Comments + Issues + Bonuses
+              <pre class="text-xs sm:text-sm font-mono whitespace-pre-wrap sm:whitespace-pre"><code>Total Score = Commits + Lines + PRs + Reviews + Comments + Issues + Response
 
 Where:
-  Commits    = commit_count x 10 pts
+  Commits    = sum of (commits x 10 x time_multiplier)
   Lines      = (added x 0.1) + (deleted x 0.05) pts
   PRs        = (opened x 25) + (merged x 50) pts
   Reviews    = reviews_given x 30 pts
   Comments   = review_comments x 5 pts
   Issues     = (opened x 10) + (closed x 20) + (comments x 5) + (refs x 5) pts
   Response   = fast review bonus (0-50 pts)
-  Out of Hrs = commits outside 9-5 x 2 pts</code></pre>
+
+Time Multipliers:
+  9am - 5pm     = x1   (regular hours)
+  5pm - 9pm     = x2   (evening)
+  9pm - midnight = x2.5 (late night)
+  midnight - 6am = x5   (overnight)
+  6am - 9am     = x2   (early morning)</code></pre>
             </div>
             <p class="text-xs sm:text-sm text-gray-400">
               <i class="fas fa-info-circle mr-1"></i>
@@ -167,13 +173,46 @@ Where:
                 </div>
                 <span class="font-mono font-bold text-primary-400">10 pts</span>
               </div>
+              <!-- Time Multipliers Header -->
+              <div class="col-span-1 py-2 px-3 bg-gray-700/50 rounded-lg text-center">
+                <span class="text-xs font-semibold text-gray-300 uppercase tracking-wide">Time Multipliers</span>
+              </div>
               <div class="flex items-center justify-between p-3 bg-gray-800 rounded-lg">
                 <div class="flex items-center gap-2">
-                  <i class="fas fa-moon text-gray-400"></i>
-                  <span class="text-sm font-medium text-gray-100">Out of Hours</span>
+                  <i class="fas fa-sun text-yellow-400"></i>
+                  <span class="text-sm font-medium text-gray-100">9am - 5pm</span>
                 </div>
-                <span class="font-mono font-bold text-primary-400">2 pts</span>
+                <span class="font-mono font-bold text-gray-400">x1</span>
               </div>
+              <div class="flex items-center justify-between p-3 bg-gray-800 rounded-lg">
+                <div class="flex items-center gap-2">
+                  <i class="fas fa-cloud-sun text-orange-400"></i>
+                  <span class="text-sm font-medium text-gray-100">5pm - 9pm</span>
+                </div>
+                <span class="font-mono font-bold text-orange-400">x2</span>
+              </div>
+              <div class="flex items-center justify-between p-3 bg-gray-800 rounded-lg">
+                <div class="flex items-center gap-2">
+                  <i class="fas fa-moon text-indigo-400"></i>
+                  <span class="text-sm font-medium text-gray-100">9pm - midnight</span>
+                </div>
+                <span class="font-mono font-bold text-indigo-400">x2.5</span>
+              </div>
+              <div class="flex items-center justify-between p-3 bg-gray-800 rounded-lg">
+                <div class="flex items-center gap-2">
+                  <i class="fas fa-star text-purple-400"></i>
+                  <span class="text-sm font-medium text-gray-100">midnight - 6am</span>
+                </div>
+                <span class="font-mono font-bold text-purple-400">x5</span>
+              </div>
+              <div class="flex items-center justify-between p-3 bg-gray-800 rounded-lg">
+                <div class="flex items-center gap-2">
+                  <i class="fas fa-mug-hot text-amber-400"></i>
+                  <span class="text-sm font-medium text-gray-100">6am - 9am</span>
+                </div>
+                <span class="font-mono font-bold text-amber-400">x2</span>
+              </div>
+              <!-- Issues Section -->
               <div class="flex items-center justify-between p-3 bg-gray-800 rounded-lg">
                 <div class="flex items-center gap-2">
                   <i class="fas fa-circle-exclamation text-teal-500"></i>
@@ -217,7 +256,7 @@ Where:
                   <tr class="border-b border-gray-800">
                     <td class="py-3"><i class="fas fa-code-commit text-primary-500 mr-2"></i>Commit</td>
                     <td class="py-3 font-mono text-primary-400">10</td>
-                    <td class="py-3">Per commit pushed</td>
+                    <td class="py-3">Base points per commit (multiplied by time of day)</td>
                   </tr>
                   <tr class="border-b border-gray-800">
                     <td class="py-3"><i class="fas fa-flask text-green-500 mr-2"></i>Commit with Tests</td>
@@ -269,11 +308,38 @@ Where:
                     <td class="py-3 font-mono text-primary-400">10</td>
                     <td class="py-3">Bonus for average response under 24 hours</td>
                   </tr>
-                  <tr class="border-b border-gray-800">
-                    <td class="py-3"><i class="fas fa-moon text-gray-500 mr-2"></i>Out of Hours</td>
-                    <td class="py-3 font-mono text-primary-400">2</td>
-                    <td class="py-3">Per commit outside 9am-5pm</td>
+                  <!-- Time Multipliers Section -->
+                  <tr class="border-b border-gray-700 bg-gray-800/30">
+                    <td class="py-3 font-semibold text-gray-200" colspan="3">
+                      <i class="fas fa-clock mr-2 text-primary-400"></i>Time Multipliers (applied to commit points)
+                    </td>
                   </tr>
+                  <tr class="border-b border-gray-800">
+                    <td class="py-3 pl-6"><i class="fas fa-sun text-yellow-400 mr-2"></i>9am - 5pm</td>
+                    <td class="py-3 font-mono text-gray-400">x1</td>
+                    <td class="py-3">Regular working hours</td>
+                  </tr>
+                  <tr class="border-b border-gray-800">
+                    <td class="py-3 pl-6"><i class="fas fa-cloud-sun text-orange-400 mr-2"></i>5pm - 9pm</td>
+                    <td class="py-3 font-mono text-orange-400">x2</td>
+                    <td class="py-3">Evening commits</td>
+                  </tr>
+                  <tr class="border-b border-gray-800">
+                    <td class="py-3 pl-6"><i class="fas fa-moon text-indigo-400 mr-2"></i>9pm - midnight</td>
+                    <td class="py-3 font-mono text-indigo-400">x2.5</td>
+                    <td class="py-3">Late night commits</td>
+                  </tr>
+                  <tr class="border-b border-gray-800">
+                    <td class="py-3 pl-6"><i class="fas fa-star text-purple-400 mr-2"></i>midnight - 6am</td>
+                    <td class="py-3 font-mono text-purple-400">x5</td>
+                    <td class="py-3">Overnight commits (night shift bonus!)</td>
+                  </tr>
+                  <tr class="border-b border-gray-800">
+                    <td class="py-3 pl-6"><i class="fas fa-mug-hot text-amber-400 mr-2"></i>6am - 9am</td>
+                    <td class="py-3 font-mono text-amber-400">x2</td>
+                    <td class="py-3">Early morning commits</td>
+                  </tr>
+                  <!-- Issues Section -->
                   <tr class="border-b border-gray-800">
                     <td class="py-3"><i class="fas fa-circle-exclamation text-teal-500 mr-2"></i>Issue Opened</td>
                     <td class="py-3 font-mono text-primary-400">10</td>

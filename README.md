@@ -54,7 +54,7 @@ $ git-velocity serve --port 8080
 - **115 Achievements**: Tiered progression from "First Steps" to "Code Warrior"
 - **Leaderboards**: Compete with your team
 - **Tier Progression**: Multiple tiers per achievement category
-- **Activity Patterns**: Track early bird, night owl, weekend, and out-of-hours commits
+- **Activity Patterns**: Track early bird, night owl, weekend commits with time-based scoring multipliers (x1 to x5)
 - **Streak Tracking**: Daily streaks and work-week streaks (weekends don't break it!)
 - **General velocity chart**: Visualize your velocity over time
 
@@ -70,7 +70,7 @@ $ git-velocity serve --port 8080
 - **Bot Filtering**: Hardcoded patterns automatically exclude common bots (Dependabot, Renovate, GitHub Actions, etc.) with optional custom patterns
 
 ### 🎨 Beautiful Dashboard
-- Modern Vue.js SPA with dark/light mode
+- Modern Vue.js SPA with dark theme
 - Responsive design for desktop and mobile
 - Interactive charts and visualizations
 - GitHub Pages deployment ready
@@ -93,6 +93,25 @@ go install github.com/lukaszraczylo/git-velocity/cmd/git-velocity@latest
 
 # Or download binary from releases
 # https://github.com/lukaszraczylo/git-velocity/releases
+```
+
+### Verifying Release Signatures
+
+All release checksums and Docker images are signed with [cosign](https://github.com/sigstore/cosign) using keyless signing. To verify:
+
+```bash
+# Verify checksum signature
+cosign verify-blob \
+  --certificate-identity-regexp "https://github.com/lukaszraczylo/git-velocity-analyser/.*" \
+  --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
+  --bundle "<checksums-file>.sigstore.json" \
+  <checksums-file>
+
+# Verify Docker image
+cosign verify \
+  --certificate-identity-regexp "https://github.com/lukaszraczylo/git-velocity-analyser/.*" \
+  --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
+  ghcr.io/lukaszraczylo/git-velocity:latest
 ```
 
 ### Create Configuration
@@ -123,13 +142,14 @@ teams:
 scoring:
   enabled: true
   points:
-    commit: 10
+    commit: 10             # Base points (multiplied by time of day)
     commit_with_tests: 15
     pr_opened: 25
     pr_merged: 50
     pr_reviewed: 30
     fast_review_1h: 50
     fast_review_4h: 25
+    # Time multipliers: x1 (9-5), x2 (5-9pm, 6-9am), x2.5 (9pm-12am), x5 (12-6am)
 
 output:
   directory: "./dist"
@@ -407,7 +427,12 @@ scoring:
     fast_review_1h: 50
     fast_review_4h: 25
     fast_review_24h: 10
-    out_of_hours: 2  # Bonus per commit outside 9am-5pm
+    # Time-based commit multipliers (applied to base commit points)
+    multiplier_regular_hours: 1.0   # 9am-5pm
+    multiplier_evening: 2.0         # 5pm-9pm
+    multiplier_late_night: 2.5      # 9pm-midnight
+    multiplier_overnight: 5.0       # midnight-6am
+    multiplier_early_morning: 2.0   # 6am-9am
 
 output:
   directory: "./dist"

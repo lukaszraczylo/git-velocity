@@ -158,17 +158,17 @@ func (a *Aggregator) Aggregate(data *models.RawData, dateRange *config.ParsedDat
 		hour := commit.Date.Hour()
 		weekday := commit.Date.Weekday()
 
-		// Early bird: commits before 9am
+		// Early bird: commits before 9am (for achievements)
 		if hour >= 5 && hour < 9 {
 			cm.EarlyBirdCount++
 			rcm.EarlyBirdCount++
 		}
-		// Night owl: commits after 9pm
+		// Night owl: commits after 9pm (for achievements)
 		if hour >= 21 || hour < 5 {
 			cm.NightOwlCount++
 			rcm.NightOwlCount++
 		}
-		// Nosferatu: commits between midnight and 4am
+		// Nosferatu: commits between midnight and 4am (for achievements)
 		if hour >= 0 && hour < 4 {
 			cm.MidnightCount++
 			rcm.MidnightCount++
@@ -178,10 +178,39 @@ func (a *Aggregator) Aggregate(data *models.RawData, dateRange *config.ParsedDat
 			cm.WeekendWarrior++
 			rcm.WeekendWarrior++
 		}
-		// Out of hours: commits outside 9am-5pm (before 9am OR after 5pm)
+		// Out of hours: commits outside 9am-5pm (legacy, kept for achievements)
 		if hour < 9 || hour >= 17 {
 			cm.OutOfHoursCount++
 			rcm.OutOfHoursCount++
+		}
+
+		// Time-based commit counts for multiplier scoring:
+		// - 9am-5pm (9-16): Regular hours x1
+		// - 5pm-9pm (17-20): Evening x2
+		// - 9pm-midnight (21-23): Late night x2.5
+		// - midnight-6am (0-5): Overnight x5
+		// - 6am-9am (6-8): Early morning x2
+		switch {
+		case hour >= 9 && hour < 17:
+			// Regular hours: 9am-5pm (x1)
+			cm.RegularHoursCount++
+			rcm.RegularHoursCount++
+		case hour >= 17 && hour < 21:
+			// Evening: 5pm-9pm (x2)
+			cm.EveningCount++
+			rcm.EveningCount++
+		case hour >= 21 && hour <= 23:
+			// Late night: 9pm-midnight (x2.5)
+			cm.LateNightCount++
+			rcm.LateNightCount++
+		case hour >= 0 && hour < 6:
+			// Overnight: midnight-6am (x5)
+			cm.OvernightCount++
+			rcm.OvernightCount++
+		case hour >= 6 && hour < 9:
+			// Early morning: 6am-9am (x2)
+			cm.EarlyMorningCount++
+			rcm.EarlyMorningCount++
 		}
 
 		// Track activity days (global)

@@ -149,93 +149,6 @@ func TestFileCache_CreateDirectory(t *testing.T) {
 	assert.Equal(t, "value", value)
 }
 
-func TestMemoryCache_Basic(t *testing.T) {
-	t.Parallel()
-
-	cache := NewMemoryCache(time.Hour)
-
-	// Test Set and Get
-	cache.Set("test-key", "test-value")
-
-	value, ok := cache.Get("test-key")
-	assert.True(t, ok)
-	assert.Equal(t, "test-value", value)
-}
-
-func TestMemoryCache_GetNonExistent(t *testing.T) {
-	t.Parallel()
-
-	cache := NewMemoryCache(time.Hour)
-
-	value, ok := cache.Get("non-existent")
-	assert.False(t, ok)
-	assert.Nil(t, value)
-}
-
-func TestMemoryCache_Expiration(t *testing.T) {
-	t.Parallel()
-
-	cache := NewMemoryCache(50 * time.Millisecond)
-
-	cache.Set("expire-key", "expire-value")
-
-	// Should be available immediately
-	value, ok := cache.Get("expire-key")
-	assert.True(t, ok)
-	assert.Equal(t, "expire-value", value)
-
-	// Wait for expiration
-	time.Sleep(100 * time.Millisecond)
-
-	// Should be expired now
-	value, ok = cache.Get("expire-key")
-	assert.False(t, ok)
-	assert.Nil(t, value)
-}
-
-func TestMemoryCache_Delete(t *testing.T) {
-	t.Parallel()
-
-	cache := NewMemoryCache(time.Hour)
-
-	cache.Set("delete-key", "delete-value")
-
-	// Verify it exists
-	_, ok := cache.Get("delete-key")
-	assert.True(t, ok)
-
-	// Delete it
-	cache.Delete("delete-key")
-
-	// Should be gone
-	value, ok := cache.Get("delete-key")
-	assert.False(t, ok)
-	assert.Nil(t, value)
-}
-
-func TestMemoryCache_Clear(t *testing.T) {
-	t.Parallel()
-
-	cache := NewMemoryCache(time.Hour)
-
-	// Add multiple entries
-	cache.Set("key1", "value1")
-	cache.Set("key2", "value2")
-	cache.Set("key3", "value3")
-
-	// Clear the cache
-	err := cache.Clear()
-	require.NoError(t, err)
-
-	// All should be gone
-	_, ok := cache.Get("key1")
-	assert.False(t, ok)
-	_, ok = cache.Get("key2")
-	assert.False(t, ok)
-	_, ok = cache.Get("key3")
-	assert.False(t, ok)
-}
-
 func TestNoopCache_AlwaysReturnsFalse(t *testing.T) {
 	t.Parallel()
 
@@ -285,6 +198,5 @@ func TestCacheInterface(t *testing.T) {
 
 	// Ensure all cache types implement the interface
 	var _ Cache = (*FileCache)(nil)
-	var _ Cache = (*MemoryCache)(nil)
 	var _ Cache = (*NoopCache)(nil)
 }

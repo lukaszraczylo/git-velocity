@@ -89,7 +89,14 @@ type PointsConfig struct {
 	FastReview1h    int     `yaml:"fast_review_1h"`
 	FastReview4h    int     `yaml:"fast_review_4h"`
 	FastReview24h   int     `yaml:"fast_review_24h"`
-	OutOfHours      int     `yaml:"out_of_hours"` // Bonus per commit outside 9am-5pm
+	OutOfHours      int     `yaml:"out_of_hours"` // Legacy: kept for backwards compatibility
+
+	// Time-based commit multipliers (applied to base commit points)
+	MultiplierRegularHours float64 `yaml:"multiplier_regular_hours"` // 9am-5pm (default: 1.0)
+	MultiplierEvening      float64 `yaml:"multiplier_evening"`       // 5pm-9pm (default: 2.0)
+	MultiplierLateNight    float64 `yaml:"multiplier_late_night"`    // 9pm-midnight (default: 2.5)
+	MultiplierOvernight    float64 `yaml:"multiplier_overnight"`     // midnight-6am (default: 5.0)
+	MultiplierEarlyMorning float64 `yaml:"multiplier_early_morning"` // 6am-9am (default: 2.0)
 }
 
 // AchievementConfig defines an achievement badge
@@ -105,18 +112,6 @@ type AchievementConfig struct {
 type AchievementCondition struct {
 	Type      string  `yaml:"type"` // commit_count, pr_count, review_count, avg_review_time, etc.
 	Threshold float64 `yaml:"threshold"`
-}
-
-// TierFromThreshold returns the tier level (1-11) based on threshold value
-// Tiers: 1=1, 2=10, 3=25, 4=50, 5=100, 6=250, 7=500, 8=1000, 9=5000, 10=10000, 11=25000+
-func TierFromThreshold(threshold float64) int {
-	tiers := []float64{1, 10, 25, 50, 100, 250, 500, 1000, 5000, 10000, 25000}
-	for i := len(tiers) - 1; i >= 0; i-- {
-		if threshold >= tiers[i] {
-			return i + 1
-		}
-	}
-	return 1
 }
 
 // OutputConfig specifies output generation settings
@@ -191,22 +186,27 @@ func DefaultConfig() *Config {
 		Scoring: ScoringConfig{
 			Enabled: true,
 			Points: PointsConfig{
-				Commit:          10,
-				CommitWithTests: 15,
-				LinesAdded:      0.1,
-				LinesDeleted:    0.05,
-				PROpened:        25,
-				PRMerged:        50,
-				PRReviewed:      30,
-				ReviewComment:   5,
-				IssueOpened:     10,
-				IssueClosed:     20,
-				IssueComment:    5,
-				IssueReference:  5,
-				FastReview1h:    50,
-				FastReview4h:    25,
-				FastReview24h:   10,
-				OutOfHours:      2,
+				Commit:                 10,
+				CommitWithTests:        15,
+				LinesAdded:             0.1,
+				LinesDeleted:           0.05,
+				PROpened:               25,
+				PRMerged:               50,
+				PRReviewed:             30,
+				ReviewComment:          5,
+				IssueOpened:            10,
+				IssueClosed:            20,
+				IssueComment:           5,
+				IssueReference:         5,
+				FastReview1h:           50,
+				FastReview4h:           25,
+				FastReview24h:          10,
+				OutOfHours:             0, // Legacy, now replaced by time multipliers
+				MultiplierRegularHours: 1.0,
+				MultiplierEvening:      2.0,
+				MultiplierLateNight:    2.5,
+				MultiplierOvernight:    5.0,
+				MultiplierEarlyMorning: 2.0,
 			},
 		},
 		Output: OutputConfig{

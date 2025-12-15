@@ -26,26 +26,3 @@ type Commit struct {
 	// Derived fields
 	HasTests bool `json:"has_tests"`
 }
-
-// TotalChanges returns the total lines changed (additions + deletions)
-func (c *Commit) TotalChanges() int {
-	return c.Additions + c.Deletions
-}
-
-// ShortSHA returns the first 7 characters of the SHA
-func (c *Commit) ShortSHA() string {
-	if len(c.SHA) >= 7 {
-		return c.SHA[:7]
-	}
-	return c.SHA
-}
-
-// ShortMessage returns the first line of the commit message
-func (c *Commit) ShortMessage() string {
-	for i, r := range c.Message {
-		if r == '\n' {
-			return c.Message[:i]
-		}
-	}
-	return c.Message
-}

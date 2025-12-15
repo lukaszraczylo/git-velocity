@@ -269,13 +269,6 @@ func TestServer_GetAddress(t *testing.T) {
 	}
 }
 
-func TestServer_GetDirectory(t *testing.T) {
-	t.Parallel()
-
-	s := New("/some/path", "8080")
-	assert.Equal(t, "/some/path", s.GetDirectory())
-}
-
 func TestServer_ServesJSONWithCorrectContentType(t *testing.T) {
 	tempDir := t.TempDir()
 

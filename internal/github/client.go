@@ -14,7 +14,6 @@ import (
 	"github.com/google/go-github/v68/github"
 
 	"github.com/lukaszraczylo/git-velocity/internal/config"
-	"github.com/lukaszraczylo/git-velocity/internal/diff"
 	"github.com/lukaszraczylo/git-velocity/internal/domain/models"
 	"github.com/lukaszraczylo/git-velocity/internal/github/cache"
 )
@@ -180,11 +179,6 @@ func (c *Client) FetchIssuesWithCommentsGraphQL(ctx context.Context, owner, repo
 	c.cache.Set(cacheKey, cachedData{Issues: issues, Comments: comments})
 
 	return issues, comments, nil
-}
-
-// SetRetryConfig sets the retry configuration
-func (c *Client) SetRetryConfig(rc RetryConfig) {
-	c.retry = rc
 }
 
 // retryWithBackoff executes a function with retry logic
@@ -396,62 +390,6 @@ func (c *Client) GetCommitCountSince(ctx context.Context, owner, repo string, si
 	}
 
 	return 1, nil
-}
-
-// FetchCommits fetches commits from a repository within a date range
-func (c *Client) FetchCommits(ctx context.Context, owner, repo string, since, until *time.Time) ([]models.Commit, error) {
-	cacheKey := fmt.Sprintf("commits:%s/%s:%v:%v", owner, repo, since, until)
-
-	opts := &github.CommitsListOptions{
-		ListOptions: github.ListOptions{PerPage: 100},
-	}
-
-	if since != nil {
-		opts.Since = *since
-	}
-	if until != nil {
-		opts.Until = *until
-	}
-
-	fetcher := &EnrichingFetcher[*github.RepositoryCommit, models.Commit]{
-		FetchFn: func(ctx context.Context, page int) ([]*github.RepositoryCommit, *github.Response, error) {
-			opts.Page = page
-			var commits []*github.RepositoryCommit
-			var resp *github.Response
-			err := c.retryWithBackoff(ctx, "list commits", func() error {
-				var err error
-				commits, resp, err = c.gh.Repositories.ListCommits(ctx, owner, repo, opts)
-				return err
-			})
-			return commits, resp, err
-		},
-		EnrichFn: func(ctx context.Context, commit *github.RepositoryCommit) (models.Commit, error) {
-			// Fetch detailed commit info for stats
-			var detailed *github.RepositoryCommit
-			err := c.retryWithBackoff(ctx, fmt.Sprintf("get commit %s", commit.GetSHA()[:7]), func() error {
-				var err error
-				detailed, _, err = c.gh.Repositories.GetCommit(ctx, owner, repo, commit.GetSHA(), nil)
-				return err
-			})
-			if err != nil {
-				return models.Commit{}, err
-			}
-			return convertCommit(detailed, owner, repo), nil
-		},
-		GetDateFn: func(commit *github.RepositoryCommit) time.Time {
-			if commit.Commit != nil && commit.Commit.Author != nil {
-				return commit.Commit.Author.GetDate().Time
-			}
-			return time.Time{}
-		},
-		Since: since,
-		Until: until,
-	}
-
-	config := DefaultFetchConfig("commits")
-	config.EarlyTermination = false // GitHub API already filters by since/until
-
-	return FetchAllPagesWithEnrichment(ctx, c, cacheKey, config, fetcher, 10)
 }
 
 // mainBranches are the branches we consider as "main" branches
@@ -738,101 +676,6 @@ func (c *Client) FetchUserProfiles(ctx context.Context, logins []string) (map[st
 }
 
 // Helper functions
-
-func convertCommit(c *github.RepositoryCommit, owner, repo string) models.Commit {
-	var author models.Author
-	if c.Author != nil {
-		author = models.Author{
-			Login:     c.Author.GetLogin(),
-			AvatarURL: c.Author.GetAvatarURL(),
-		}
-	}
-	if c.Commit != nil && c.Commit.Author != nil {
-		author.Name = c.Commit.Author.GetName()
-		author.Email = c.Commit.Author.GetEmail()
-	}
-
-	var committer models.Author
-	if c.Committer != nil {
-		committer = models.Author{
-			Login:     c.Committer.GetLogin(),
-			AvatarURL: c.Committer.GetAvatarURL(),
-		}
-	}
-	if c.Commit != nil && c.Commit.Committer != nil {
-		committer.Name = c.Commit.Committer.GetName()
-		committer.Email = c.Commit.Committer.GetEmail()
-	}
-
-	var date time.Time
-	if c.Commit != nil && c.Commit.Author != nil {
-		date = c.Commit.Author.GetDate().Time
-	}
-
-	var additions, deletions, filesChanged int
-	if c.Stats != nil {
-		additions = c.Stats.GetAdditions()
-		deletions = c.Stats.GetDeletions()
-	}
-	filesChanged = len(c.Files)
-
-	// Detect if commit includes tests and calculate meaningful/comment line counts
-	hasTests := false
-	var meaningfulAdditions, meaningfulDeletions int
-	var commentAdditions, commentDeletions int
-
-	for _, f := range c.Files {
-		filename := f.GetFilename()
-
-		// Check for test files
-		if strings.Contains(filename, "_test.go") ||
-			strings.Contains(filename, ".test.") ||
-			strings.Contains(filename, ".spec.") ||
-			strings.Contains(filename, "/tests/") ||
-			strings.Contains(filename, "/test/") ||
-			strings.Contains(filename, "__tests__") {
-			hasTests = true
-		}
-
-		// Skip documentation files for meaningful line calculation
-		if diff.IsDocumentationFile(filename) {
-			continue
-		}
-
-		// Analyze file patch to get meaningful and comment line counts
-		patch := f.GetPatch()
-		if patch != "" {
-			stats := diff.AnalyzePatch(patch)
-			meaningfulAdditions += stats.MeaningfulAdditions
-			meaningfulDeletions += stats.MeaningfulDeletions
-			commentAdditions += stats.CommentAdditions
-			commentDeletions += stats.CommentDeletions
-		}
-	}
-
-	message := ""
-	if c.Commit != nil {
-		message = c.Commit.GetMessage()
-	}
-
-	return models.Commit{
-		SHA:                 c.GetSHA(),
-		Message:             message,
-		Author:              author,
-		Committer:           committer,
-		Date:                date,
-		Additions:           additions,
-		Deletions:           deletions,
-		MeaningfulAdditions: meaningfulAdditions,
-		MeaningfulDeletions: meaningfulDeletions,
-		CommentAdditions:    commentAdditions,
-		CommentDeletions:    commentDeletions,
-		FilesChanged:        filesChanged,
-		Repository:          fmt.Sprintf("%s/%s", owner, repo),
-		URL:                 c.GetHTMLURL(),
-		HasTests:            hasTests,
-	}
-}
 
 func convertPullRequest(pr *github.PullRequest, owner, repo string) models.PullRequest {
 	var author models.Author

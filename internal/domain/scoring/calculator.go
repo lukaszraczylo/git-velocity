@@ -53,6 +53,18 @@ func (c *Calculator) Calculate(metrics *models.GlobalMetrics) *models.GlobalMetr
 				existing.IssuesClosed += cm.IssuesClosed
 				existing.IssueComments += cm.IssueComments
 				existing.IssueReferencesInCommits += cm.IssueReferencesInCommits
+				// Activity pattern metrics (for achievements)
+				existing.EarlyBirdCount += cm.EarlyBirdCount
+				existing.NightOwlCount += cm.NightOwlCount
+				existing.MidnightCount += cm.MidnightCount
+				existing.WeekendWarrior += cm.WeekendWarrior
+				existing.OutOfHoursCount += cm.OutOfHoursCount
+				// Time-based commit counts (for multiplier scoring)
+				existing.RegularHoursCount += cm.RegularHoursCount
+				existing.EveningCount += cm.EveningCount
+				existing.LateNightCount += cm.LateNightCount
+				existing.OvernightCount += cm.OvernightCount
+				existing.EarlyMorningCount += cm.EarlyMorningCount
 				// Combine unique repositories
 				for _, r := range cm.RepositoriesContributed {
 					if !contains(existing.RepositoriesContributed, r) {
@@ -169,8 +181,53 @@ func (c *Calculator) calculateScore(cm *models.ContributorMetrics) models.Score 
 	points := c.config.Scoring.Points
 	breakdown := models.ScoreBreakdown{}
 
-	// Commit points
-	breakdown.Commits = cm.CommitCount * points.Commit
+	// Get multipliers with defaults if not set
+	multRegular := points.MultiplierRegularHours
+	if multRegular == 0 {
+		multRegular = 1.0
+	}
+	multEvening := points.MultiplierEvening
+	if multEvening == 0 {
+		multEvening = 2.0
+	}
+	multLateNight := points.MultiplierLateNight
+	if multLateNight == 0 {
+		multLateNight = 2.5
+	}
+	multOvernight := points.MultiplierOvernight
+	if multOvernight == 0 {
+		multOvernight = 5.0
+	}
+	multEarlyMorning := points.MultiplierEarlyMorning
+	if multEarlyMorning == 0 {
+		multEarlyMorning = 2.0
+	}
+
+	// Commit points with time-based multipliers:
+	// - 9am-5pm: base × 1.0
+	// - 5pm-9pm: base × 2.0
+	// - 9pm-midnight: base × 2.5
+	// - midnight-6am: base × 5.0
+	// - 6am-9am: base × 2.0
+	baseCommitPoints := float64(points.Commit)
+
+	// Check if we have time-based breakdown data
+	timeBasedTotal := cm.RegularHoursCount + cm.EveningCount + cm.LateNightCount +
+		cm.OvernightCount + cm.EarlyMorningCount
+
+	var commitScore float64
+	if timeBasedTotal > 0 {
+		// Use time-based multipliers
+		commitScore = float64(cm.RegularHoursCount)*baseCommitPoints*multRegular +
+			float64(cm.EveningCount)*baseCommitPoints*multEvening +
+			float64(cm.LateNightCount)*baseCommitPoints*multLateNight +
+			float64(cm.OvernightCount)*baseCommitPoints*multOvernight +
+			float64(cm.EarlyMorningCount)*baseCommitPoints*multEarlyMorning
+	} else {
+		// Fallback: use CommitCount with regular hours multiplier (backwards compatibility)
+		commitScore = float64(cm.CommitCount) * baseCommitPoints * multRegular
+	}
+	breakdown.Commits = int(commitScore)
 
 	// Line change points - always use meaningful lines (excluding comments/whitespace)
 	// to accurately reflect actual code contribution
@@ -203,7 +260,7 @@ func (c *Calculator) calculateScore(cm *models.ContributorMetrics) models.Score 
 		}
 	}
 
-	// Out of hours bonus (commits outside 9am-5pm)
+	// Out of hours bonus (legacy - kept for backwards compatibility but default is 0)
 	breakdown.OutOfHours = cm.OutOfHoursCount * points.OutOfHours
 
 	// Calculate total
