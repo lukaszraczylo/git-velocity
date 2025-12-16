@@ -397,6 +397,11 @@ func (r *Repository) getCommitStats(c *object.Commit, testPatterns []string) com
 	filesSet := make(map[string]bool)
 
 	for _, change := range changes {
+		// Skip rename/move operations - they don't represent actual code contribution
+		if diff.IsRenameOrMove(change.From.Name, change.To.Name) {
+			continue
+		}
+
 		// Get the file path
 		var filePath string
 		if change.To.Name != "" {

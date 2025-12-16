@@ -167,3 +167,38 @@ func TestIsMeaningfulLine(t *testing.T) {
 		})
 	}
 }
+
+func TestIsRenameOrMove(t *testing.T) {
+	tests := []struct {
+		name     string
+		fromName string
+		toName   string
+		expected bool
+	}{
+		// Rename/move operations - should return true
+		{"simple rename", "old.go", "new.go", true},
+		{"move to subdirectory", "file.go", "pkg/file.go", true},
+		{"move from subdirectory", "pkg/file.go", "file.go", true},
+		{"rename in subdirectory", "pkg/old.go", "pkg/new.go", true},
+		{"move between directories", "src/file.go", "lib/file.go", true},
+		{"complex path rename", "internal/api/v1/handler.go", "internal/api/v2/handler.go", true},
+
+		// NOT rename/move - should return false
+		{"new file", "", "new.go", false},
+		{"deleted file", "old.go", "", false},
+		{"modify same file", "file.go", "file.go", false},
+		{"both empty", "", "", false},
+		{"same path different case is not rename", "File.go", "File.go", false},
+
+		// Edge cases
+		{"whitespace in path rename", "my file.go", "my-file.go", true},
+		{"deeply nested rename", "a/b/c/d/e/f.go", "a/b/c/d/e/g.go", true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := IsRenameOrMove(tt.fromName, tt.toName)
+			assert.Equal(t, tt.expected, result, "IsRenameOrMove(%q, %q)", tt.fromName, tt.toName)
+		})
+	}
+}
