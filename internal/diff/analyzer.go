@@ -63,3 +63,10 @@ func IsDocumentationFile(filename string) bool {
 func IsMeaningfulLine(line string) bool {
 	return !IsWhitespaceLine(line) && !IsCommentLine(line)
 }
+
+// IsRenameOrMove checks if a file change represents a rename or move operation
+// rather than actual content modification. A rename/move is detected when both
+// the source (fromName) and destination (toName) paths exist and differ.
+func IsRenameOrMove(fromName, toName string) bool {
+	return fromName != "" && toName != "" && fromName != toName
+}
