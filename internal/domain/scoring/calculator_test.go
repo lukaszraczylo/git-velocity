@@ -452,6 +452,8 @@ func TestCalculator_AllAchievementTypes(t *testing.T) {
 						ReviewComments:          25,
 						LinesAdded:              1500,
 						LinesDeleted:            600,
+						MeaningfulLinesAdded:    1500,
+						MeaningfulLinesDeleted:  600,
 						AvgReviewTime:           1.5,
 						UniqueReviewees:         7,
 						RepositoriesContributed: []string{"owner/repo1", "owner/repo2"},

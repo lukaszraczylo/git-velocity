@@ -293,9 +293,11 @@ func (c *Calculator) checkAchievements(cm *models.ContributorMetrics) []string {
 		case "comment_count":
 			earned = float64(cm.ReviewComments) >= ach.Condition.Threshold
 		case "lines_added":
-			earned = float64(cm.LinesAdded) >= ach.Condition.Threshold
+			// Use meaningful lines to match scoring calculation (excludes comments/whitespace)
+			earned = float64(cm.MeaningfulLinesAdded) >= ach.Condition.Threshold
 		case "lines_deleted":
-			earned = float64(cm.LinesDeleted) >= ach.Condition.Threshold
+			// Use meaningful lines to match scoring calculation (excludes comments/whitespace)
+			earned = float64(cm.MeaningfulLinesDeleted) >= ach.Condition.Threshold
 		case "avg_review_time_hours":
 			// For avg review time, lower is better, so lower threshold = harder achievement
 			if cm.AvgReviewTime > 0 && cm.AvgReviewTime <= ach.Condition.Threshold {

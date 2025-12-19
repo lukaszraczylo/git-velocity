@@ -29,14 +29,14 @@ defineProps({
       </div>
 
       <div class="flex items-center space-x-2 mb-4">
-        <template v-for="(member, i) in (team.members || []).slice(0, 5)" :key="member">
-          <Avatar :name="member" size="sm" />
+        <template v-for="member in (team.member_metrics || []).slice(0, 5)" :key="member.login">
+          <Avatar :name="member.name || member.login" :src="member.avatar_url" size="sm" />
         </template>
         <span
-          v-if="(team.members?.length || 0) > 5"
+          v-if="(team.member_metrics?.length || 0) > 5"
           class="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-gray-300 text-xs font-bold"
         >
-          +{{ team.members.length - 5 }}
+          +{{ team.member_metrics.length - 5 }}
         </span>
       </div>
 
