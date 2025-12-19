@@ -72,6 +72,11 @@ func (a *Aggregator) Aggregate(data *models.RawData, dateRange *config.ParsedDat
 	// Per-repo activity days
 	repoActivityDays := make(map[string]map[string]map[string]bool) // repo -> login -> set of date strings
 
+	// Track unique files per contributor for accurate FilesChanged count
+	contributorFiles := make(map[string]map[string]bool) // login -> set of file paths
+	// Per-repo unique files per contributor
+	repoContributorFiles := make(map[string]map[string]map[string]bool) // repo -> login -> set of file paths
+
 	// Helper to get or create per-repo contributor
 	getRepoContributor := func(repo, login, name, avatarURL string) *models.ContributorMetrics {
 		if repoContributorMap[repo] == nil {
@@ -141,7 +146,13 @@ func (a *Aggregator) Aggregate(data *models.RawData, dateRange *config.ParsedDat
 		cm.MeaningfulLinesDeleted += commit.MeaningfulDeletions
 		cm.CommentLinesAdded += commit.CommentAdditions
 		cm.CommentLinesDeleted += commit.CommentDeletions
-		cm.FilesChanged += commit.FilesChanged
+		// Track unique files (don't sum - we'll count unique files at the end)
+		if contributorFiles[login] == nil {
+			contributorFiles[login] = make(map[string]bool)
+		}
+		for _, filePath := range commit.FilesModified {
+			contributorFiles[login][filePath] = true
+		}
 
 		// Update per-repo contributor stats
 		rcm := getRepoContributor(commit.Repository, login, cm.Name, cm.AvatarURL)
@@ -152,7 +163,16 @@ func (a *Aggregator) Aggregate(data *models.RawData, dateRange *config.ParsedDat
 		rcm.MeaningfulLinesDeleted += commit.MeaningfulDeletions
 		rcm.CommentLinesAdded += commit.CommentAdditions
 		rcm.CommentLinesDeleted += commit.CommentDeletions
-		rcm.FilesChanged += commit.FilesChanged
+		// Track unique files per repo (don't sum - we'll count unique files at the end)
+		if repoContributorFiles[commit.Repository] == nil {
+			repoContributorFiles[commit.Repository] = make(map[string]map[string]bool)
+		}
+		if repoContributorFiles[commit.Repository][login] == nil {
+			repoContributorFiles[commit.Repository][login] = make(map[string]bool)
+		}
+		for _, filePath := range commit.FilesModified {
+			repoContributorFiles[commit.Repository][login][filePath] = true
+		}
 
 		// Track activity patterns based on commit time
 		hour := commit.Date.Hour()
@@ -250,6 +270,13 @@ func (a *Aggregator) Aggregate(data *models.RawData, dateRange *config.ParsedDat
 			cm.ActiveDays = len(days)
 			cm.LongestStreak, cm.CurrentStreak = calculateStreaks(days)
 			cm.WorkWeekStreak = calculateWorkWeekStreak(days)
+		}
+	}
+
+	// Calculate unique files changed for each contributor
+	for login, files := range contributorFiles {
+		if cm, ok := contributorMap[login]; ok {
+			cm.FilesChanged = len(files)
 		}
 	}
 
@@ -575,6 +602,15 @@ func (a *Aggregator) Aggregate(data *models.RawData, dateRange *config.ParsedDat
 					rcm.ActiveDays = len(days)
 					rcm.LongestStreak, rcm.CurrentStreak = calculateStreaks(days)
 					rcm.WorkWeekStreak = calculateWorkWeekStreak(days)
+				}
+			}
+		}
+
+		// Calculate unique files changed for per-repo contributors
+		if repoFiles, ok := repoContributorFiles[repo]; ok {
+			for login, files := range repoFiles {
+				if rcm, ok := repoContribs[login]; ok {
+					rcm.FilesChanged = len(files)
 				}
 			}
 		}

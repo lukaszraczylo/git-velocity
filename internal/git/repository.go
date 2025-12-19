@@ -310,17 +310,22 @@ func (r *Repository) FetchCommits(ctx context.Context, owner, name string, since
 					Name:  c.Committer.Name,
 					Email: c.Committer.Email,
 				},
-				Date:                commitTime,
-				Additions:           stats.Additions,
-				Deletions:           stats.Deletions,
-				MeaningfulAdditions: stats.MeaningfulAdditions,
-				MeaningfulDeletions: stats.MeaningfulDeletions,
-				CommentAdditions:    stats.CommentAdditions,
-				CommentDeletions:    stats.CommentDeletions,
-				FilesChanged:        stats.FilesChanged,
-				Repository:          fmt.Sprintf("%s/%s", owner, name),
-				URL:                 fmt.Sprintf("https://github.com/%s/%s/commit/%s", owner, name, c.Hash.String()),
-				HasTests:            stats.HasTests,
+				Date:                   commitTime,
+				Additions:              stats.Additions,
+				Deletions:              stats.Deletions,
+				MeaningfulAdditions:    stats.MeaningfulAdditions,
+				MeaningfulDeletions:    stats.MeaningfulDeletions,
+				CommentAdditions:       stats.CommentAdditions,
+				CommentDeletions:       stats.CommentDeletions,
+				DocCommentAdditions:    stats.DocCommentAdditions,
+				DocCommentDeletions:    stats.DocCommentDeletions,
+				CommentedCodeAdditions: stats.CommentedCodeAdditions,
+				CommentedCodeDeletions: stats.CommentedCodeDeletions,
+				FilesChanged:           stats.FilesChanged,
+				FilesModified:          stats.FilesModified,
+				Repository:             fmt.Sprintf("%s/%s", owner, name),
+				URL:                    fmt.Sprintf("https://github.com/%s/%s/commit/%s", owner, name, c.Hash.String()),
+				HasTests:               stats.HasTests,
 			}
 
 			commits = append(commits, commit)
@@ -353,14 +358,19 @@ func (r *Repository) FetchCommits(ctx context.Context, owner, name string, since
 
 // commitStats holds the statistics for a commit
 type commitStats struct {
-	Additions           int
-	Deletions           int
-	MeaningfulAdditions int
-	MeaningfulDeletions int
-	CommentAdditions    int
-	CommentDeletions    int
-	FilesChanged        int
-	HasTests            bool
+	Additions              int
+	Deletions              int
+	MeaningfulAdditions    int
+	MeaningfulDeletions    int
+	CommentAdditions       int
+	CommentDeletions       int
+	DocCommentAdditions    int
+	DocCommentDeletions    int
+	CommentedCodeAdditions int
+	CommentedCodeDeletions int
+	FilesChanged           int
+	FilesModified          []string // List of file paths modified
+	HasTests               bool
 }
 
 // getCommitStats calculates additions, deletions, files changed for a commit
@@ -397,12 +407,7 @@ func (r *Repository) getCommitStats(c *object.Commit, testPatterns []string) com
 	filesSet := make(map[string]bool)
 
 	for _, change := range changes {
-		// Skip rename/move operations - they don't represent actual code contribution
-		if diff.IsRenameOrMove(change.From.Name, change.To.Name) {
-			continue
-		}
-
-		// Get the file path
+		// Get the file path (prefer destination for renames/moves, fallback to source)
 		var filePath string
 		if change.To.Name != "" {
 			filePath = change.To.Name
@@ -410,15 +415,24 @@ func (r *Repository) getCommitStats(c *object.Commit, testPatterns []string) com
 			filePath = change.From.Name
 		}
 
-		// Skip documentation files
+		// Skip if no file path (shouldn't happen, but defensive)
+		if filePath == "" {
+			continue
+		}
+
+		// Skip documentation files entirely
 		if diff.IsDocumentationFile(filePath) {
 			continue
 		}
 
-		// Count unique files
-		if !filesSet[filePath] {
+		// Check if this is a rename/move operation
+		isRename := diff.IsRenameOrMove(change.From.Name, change.To.Name)
+
+		// Count unique files (but NOT for renames - the file already existed)
+		if !isRename && !filesSet[filePath] {
 			filesSet[filePath] = true
 			stats.FilesChanged++
+			stats.FilesModified = append(stats.FilesModified, filePath)
 
 			// Check for test files
 			for _, pattern := range testPatterns {
@@ -429,13 +443,18 @@ func (r *Repository) getCommitStats(c *object.Commit, testPatterns []string) com
 			}
 		}
 
-		// Get patch to count lines
+		// Get patch to count lines (even for renames, there may be content changes)
 		patch, err := change.Patch()
 		if err != nil {
 			continue
 		}
 
 		for _, filePatch := range patch.FilePatches() {
+			// For binary files, skip line counting
+			if filePatch.IsBinary() {
+				continue
+			}
+
 			for _, chunk := range filePatch.Chunks() {
 				content := chunk.Content()
 				lines := strings.Split(content, "\n")
@@ -446,18 +465,32 @@ func (r *Repository) getCommitStats(c *object.Commit, testPatterns []string) com
 						stats.Additions++
 						if diff.IsMeaningfulLine(line) {
 							stats.MeaningfulAdditions++
-						} else if diff.IsCommentLine(line) && !diff.IsWhitespaceLine(line) {
+						} else if diff.IsCommentLine(line) {
 							stats.CommentAdditions++
+							// Further classify the comment type
+							if diff.IsDocCommentLine(line) {
+								stats.DocCommentAdditions++
+							} else if diff.IsCommentedOutCode(line) {
+								stats.CommentedCodeAdditions++
+							}
 						}
+						// Whitespace lines are neither meaningful nor comments
 					}
 				case 2: // Delete
 					for _, line := range lines {
 						stats.Deletions++
 						if diff.IsMeaningfulLine(line) {
 							stats.MeaningfulDeletions++
-						} else if diff.IsCommentLine(line) && !diff.IsWhitespaceLine(line) {
+						} else if diff.IsCommentLine(line) {
 							stats.CommentDeletions++
+							// Further classify the comment type
+							if diff.IsDocCommentLine(line) {
+								stats.DocCommentDeletions++
+							} else if diff.IsCommentedOutCode(line) {
+								stats.CommentedCodeDeletions++
+							}
 						}
+						// Whitespace lines are neither meaningful nor comments
 					}
 				}
 			}
