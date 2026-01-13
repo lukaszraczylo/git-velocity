@@ -221,7 +221,7 @@ type gqlPRQuery struct {
 			TotalCount int
 			PageInfo   PageInfo
 			Nodes      []gqlPRNode
-		} `graphql:"pullRequests(first: 100, after: $cursor, states: [MERGED], orderBy: {field: UPDATED_AT, direction: DESC})"`
+		} `graphql:"pullRequests(first: 100, after: $cursor, states: [OPEN, MERGED, CLOSED], orderBy: {field: UPDATED_AT, direction: DESC})"`
 	} `graphql:"repository(owner: $owner, name: $repo)"`
 }
 
@@ -329,23 +329,29 @@ func (g *GraphQLClient) FetchPRsWithReviews(ctx context.Context, owner, repo str
 			}
 		},
 		ProcessNode: func(node gqlPRNode, repoName string) ([]prWithReviews, bool, bool) {
-			// Skip if not merged - not counted as "old"
-			if node.MergedAt == nil {
-				return nil, false, false
+			// Determine the relevant date for filtering:
+			// - For merged PRs: use MergedAt
+			// - For closed PRs: use ClosedAt
+			// - For open PRs: use CreatedAt (they're still active)
+			var relevantDate time.Time
+			if node.MergedAt != nil {
+				relevantDate = *node.MergedAt
+			} else if node.ClosedAt != nil {
+				relevantDate = *node.ClosedAt
+			} else {
+				relevantDate = node.CreatedAt
 			}
 
-			mergedAt := *node.MergedAt
-
 			// Hard cutoff check - stop entirely if past this date
-			if hardCutoff != nil && mergedAt.Before(*hardCutoff) {
+			if hardCutoff != nil && relevantDate.Before(*hardCutoff) {
 				return nil, true, true // Hard stop
 			}
 
 			// Check date range - skip if outside range
-			if until != nil && mergedAt.After(*until) {
+			if until != nil && relevantDate.After(*until) {
 				return nil, false, false // Too new, not "old"
 			}
-			if since != nil && mergedAt.Before(*since) {
+			if since != nil && relevantDate.Before(*since) {
 				return nil, true, false // Too old - signal for early termination tracking
 			}
 

@@ -61,7 +61,13 @@ async function loadRepository() {
 }
 
 onMounted(loadRepository)
-watch(() => route.params, loadRepository)
+
+// Watch for route changes (navigation to different repository)
+watch(() => [route.params.owner, route.params.name], ([newOwner, newName], [oldOwner, oldName]) => {
+  if ((newOwner && newName) && (newOwner !== oldOwner || newName !== oldName)) {
+    loadRepository()
+  }
+})
 </script>
 
 <template>

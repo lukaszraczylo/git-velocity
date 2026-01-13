@@ -18,10 +18,11 @@ type ContributorMetrics struct {
 	Period    Period `json:"period"`
 
 	// Commit metrics
-	CommitCount  int `json:"commit_count"`
-	LinesAdded   int `json:"lines_added"`
-	LinesDeleted int `json:"lines_deleted"`
-	FilesChanged int `json:"files_changed"`
+	CommitCount      int `json:"commit_count"`
+	CommitsWithTests int `json:"commits_with_tests"` // Commits that include test files
+	LinesAdded       int `json:"lines_added"`
+	LinesDeleted     int `json:"lines_deleted"`
+	FilesChanged     int `json:"files_changed"`
 
 	// Meaningful line counts (excludes comments and whitespace)
 	MeaningfulLinesAdded   int `json:"meaningful_lines_added"`
@@ -98,7 +99,8 @@ type ScoreBreakdown struct {
 	Issues        int `json:"issues"`   // Issue-related points (opened, closed, comments, references)
 	ResponseBonus int `json:"response_bonus"`
 	LineChanges   int `json:"line_changes"`
-	OutOfHours    int `json:"out_of_hours"` // Bonus for out-of-hours commits
+	TestsBonus    int `json:"tests_bonus"`    // Bonus for commits that include test files
+	OutOfHours    int `json:"out_of_hours"`   // Bonus for out-of-hours commits
 }
 
 // RepositoryMetrics holds aggregated metrics for a single repository

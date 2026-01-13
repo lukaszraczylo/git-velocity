@@ -79,8 +79,22 @@ async function loadContributor() {
 }
 
 onMounted(loadContributor)
-watch(() => route.params, loadContributor)
-watch(globalData, loadContributor)
+
+// Watch for route changes (navigation to different contributor)
+watch(() => route.params.login, (newLogin, oldLogin) => {
+  if (newLogin && newLogin !== oldLogin) {
+    loadContributor()
+  }
+})
+
+// Watch for globalData changes, but only reload if we don't have contributor data yet
+// This prevents double-loading when both route and globalData change on initial navigation
+watch(globalData, (newData, oldData) => {
+  // Only reload if globalData became available and we have an error or no data
+  if (newData && !oldData && (error.value || !contributor.value)) {
+    loadContributor()
+  }
+})
 </script>
 
 <template>

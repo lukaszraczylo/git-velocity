@@ -38,8 +38,20 @@ function loadTeam() {
 }
 
 onMounted(loadTeam)
-watch(() => route.params, loadTeam)
-watch(globalData, loadTeam)
+
+// Watch for route changes (navigation to different team)
+watch(() => route.params.slug, (newSlug, oldSlug) => {
+  if (newSlug && newSlug !== oldSlug) {
+    loadTeam()
+  }
+})
+
+// Watch for globalData changes, but only reload if we don't have team data yet
+watch(globalData, (newData, oldData) => {
+  if (newData && !oldData && (error.value || !team.value)) {
+    loadTeam()
+  }
+})
 </script>
 
 <template>
