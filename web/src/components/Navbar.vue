@@ -51,8 +51,8 @@ const repositories = computed(() => globalData.value?.Repositories || [])
 
         <!-- Mobile Menu Button -->
         <button
-          @click="mobileMenuOpen = !mobileMenuOpen"
           class="md:hidden p-2 rounded-lg hover:bg-gray-700 transition"
+          @click="mobileMenuOpen = !mobileMenuOpen"
         >
           <i class="fas fa-bars text-gray-200"></i>
         </button>
@@ -63,37 +63,37 @@ const repositories = computed(() => globalData.value?.Repositories || [])
         <div class="flex flex-col space-y-1">
           <RouterLink
             to="/"
-            @click="mobileMenuOpen = false"
             :class="[
               'block px-4 py-3 rounded-lg text-base font-medium transition-colors',
               route.path === '/'
                 ? 'bg-primary-900/20 text-primary-400'
                 : 'text-gray-200 hover:bg-gray-800'
             ]"
+            @click="mobileMenuOpen = false"
           >
             <i class="fas fa-home mr-3 w-5 text-center"></i>Dashboard
           </RouterLink>
           <RouterLink
             to="/leaderboard"
-            @click="mobileMenuOpen = false"
             :class="[
               'block px-4 py-3 rounded-lg text-base font-medium transition-colors',
               route.path === '/leaderboard'
                 ? 'bg-primary-900/20 text-primary-400'
                 : 'text-gray-200 hover:bg-gray-800'
             ]"
+            @click="mobileMenuOpen = false"
           >
             <i class="fas fa-trophy mr-3 w-5 text-center"></i>Leaderboard
           </RouterLink>
           <RouterLink
             to="/how-scoring-works"
-            @click="mobileMenuOpen = false"
             :class="[
               'block px-4 py-3 rounded-lg text-base font-medium transition-colors',
               route.path === '/how-scoring-works'
                 ? 'bg-primary-900/20 text-primary-400'
                 : 'text-gray-200 hover:bg-gray-800'
             ]"
+            @click="mobileMenuOpen = false"
           >
             <i class="fas fa-calculator mr-3 w-5 text-center"></i>How Scoring Works
           </RouterLink>
@@ -101,13 +101,13 @@ const repositories = computed(() => globalData.value?.Repositories || [])
             v-for="repo in repositories"
             :key="`${repo.Owner}/${repo.Name}`"
             :to="`/repos/${repo.Owner}/${repo.Name}`"
-            @click="mobileMenuOpen = false"
             :class="[
               'block px-4 py-3 rounded-lg text-base font-medium transition-colors',
               route.path.includes(`/repos/${repo.Owner}/${repo.Name}`)
                 ? 'bg-primary-900/20 text-primary-400'
                 : 'text-gray-200 hover:bg-gray-800'
             ]"
+            @click="mobileMenuOpen = false"
           >
             <i class="fas fa-code-branch mr-3 w-5 text-center"></i>{{ repo.Name }}
           </RouterLink>

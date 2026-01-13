@@ -138,8 +138,8 @@ watch(() => [route.params.owner, route.params.name], ([newOwner, newName], [oldO
               />
               <button
                 v-if="searchQuery"
-                @click="searchQuery = ''"
                 class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200"
+                @click="searchQuery = ''"
               >
                 <i class="fas fa-times"></i>
               </button>

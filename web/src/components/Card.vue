@@ -13,6 +13,6 @@ defineProps({
       hover ? 'hover:shadow-lg transition-shadow' : ''
     ]"
   >
-    <slot />
+    <slot></slot>
   </div>
 </template>

@@ -1,6 +1,7 @@
 package scoring
 
 import (
+	"slices"
 	"sort"
 
 	"github.com/lukaszraczylo/git-velocity/internal/config"
@@ -87,7 +88,7 @@ func (c *Calculator) Calculate(metrics *models.GlobalMetrics) *models.GlobalMetr
 					existing.EarlyMorningCount += cm.EarlyMorningCount
 					// Combine unique repositories
 					for _, r := range cm.RepositoriesContributed {
-						if !contains(existing.RepositoriesContributed, r) {
+						if !slices.Contains(existing.RepositoriesContributed, r) {
 							existing.RepositoriesContributed = append(existing.RepositoriesContributed, r)
 						}
 					}
@@ -429,13 +430,4 @@ func (c *Calculator) findTopAchievers(contributors []models.ContributorMetrics, 
 	if topPRAuthor != "" {
 		topAchievers["pull_requests"] = topPRAuthor
 	}
-}
-
-func contains(slice []string, item string) bool {
-	for _, s := range slice {
-		if s == item {
-			return true
-		}
-	}
-	return false
 }

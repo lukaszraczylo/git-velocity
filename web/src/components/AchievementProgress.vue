@@ -234,7 +234,6 @@ const progressItems = computed(() => {
 
 // Get count of remaining achievements (all unearned across all types)
 const remainingCount = computed(() => {
-  const earnedSet = new Set(props.contributor.achievements || [])
   let totalUnearned = 0
 
   for (const type of achievementTypes) {

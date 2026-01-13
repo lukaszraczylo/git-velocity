@@ -57,8 +57,8 @@ const showScoreInChart = ref(false)
             <SectionHeader title="Velocity Timeline" icon="fas fa-chart-line" icon-color="text-primary-500" />
             <label class="flex items-center space-x-2 text-sm text-gray-400 cursor-pointer">
               <input
-                type="checkbox"
                 v-model="showScoreInChart"
+                type="checkbox"
                 class="rounded border-gray-600 text-primary-500 focus:ring-primary-500"
               />
               <span>Show Score</span>

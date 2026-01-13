@@ -8,6 +8,7 @@ import StatCard from '../components/StatCard.vue'
 import MemberCard from '../components/MemberCard.vue'
 import SectionHeader from '../components/SectionHeader.vue'
 import { slugify } from '../composables/formatters'
+import { DEFAULT_TEAM_COLOR } from '../composables/constants'
 
 const route = useRoute()
 const globalData = inject('globalData')
@@ -68,7 +69,7 @@ watch(globalData, (newData, oldData) => {
         <template #prefix>
           <div
             class="w-4 h-4 rounded-full mr-4"
-            :style="{ backgroundColor: team.color || '#8b5cf6' }"
+            :style="{ backgroundColor: team.color || DEFAULT_TEAM_COLOR }"
           ></div>
         </template>
       </PageHeader>

@@ -1,6 +1,7 @@
 package aggregator
 
 import (
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -271,7 +272,7 @@ func (a *Aggregator) Aggregate(data *models.RawData, dateRange *config.ParsedDat
 		trackActivityDay(login, commit.Repository, commit.Date)
 
 		// Track repository participation
-		if !contains(cm.RepositoriesContributed, commit.Repository) {
+		if !slices.Contains(cm.RepositoriesContributed, commit.Repository) {
 			cm.RepositoriesContributed = append(cm.RepositoriesContributed, commit.Repository)
 		}
 
@@ -367,7 +368,7 @@ func (a *Aggregator) Aggregate(data *models.RawData, dateRange *config.ParsedDat
 		}
 
 		// Track repository participation
-		if !contains(cm.RepositoriesContributed, pr.Repository) {
+		if !slices.Contains(cm.RepositoriesContributed, pr.Repository) {
 			cm.RepositoriesContributed = append(cm.RepositoriesContributed, pr.Repository)
 		}
 
@@ -495,7 +496,7 @@ func (a *Aggregator) Aggregate(data *models.RawData, dateRange *config.ParsedDat
 		trackActivityDay(login, issue.Repository, issue.CreatedAt)
 
 		// Track repository participation
-		if !contains(cm.RepositoriesContributed, issue.Repository) {
+		if !slices.Contains(cm.RepositoriesContributed, issue.Repository) {
 			cm.RepositoriesContributed = append(cm.RepositoriesContributed, issue.Repository)
 		}
 
@@ -525,7 +526,7 @@ func (a *Aggregator) Aggregate(data *models.RawData, dateRange *config.ParsedDat
 		cm.IssuesClosed++
 
 		// Track repository participation for the closer
-		if !contains(cm.RepositoriesContributed, issue.Repository) {
+		if !slices.Contains(cm.RepositoriesContributed, issue.Repository) {
 			cm.RepositoriesContributed = append(cm.RepositoriesContributed, issue.Repository)
 		}
 
@@ -556,7 +557,7 @@ func (a *Aggregator) Aggregate(data *models.RawData, dateRange *config.ParsedDat
 		trackActivityDay(login, comment.Repository, comment.CreatedAt)
 
 		// Track repository participation
-		if !contains(cm.RepositoriesContributed, comment.Repository) {
+		if !slices.Contains(cm.RepositoriesContributed, comment.Repository) {
 			cm.RepositoriesContributed = append(cm.RepositoriesContributed, comment.Repository)
 		}
 
@@ -839,15 +840,6 @@ func parseRepoName(fullName string) (owner, name string) {
 		}
 	}
 	return fullName, ""
-}
-
-func contains(slice []string, item string) bool {
-	for _, s := range slice {
-		if s == item {
-			return true
-		}
-	}
-	return false
 }
 
 // normalizeForComparison normalizes a string for fuzzy comparison
