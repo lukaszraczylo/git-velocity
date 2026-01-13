@@ -843,18 +843,6 @@ func TestCalculator_WorkWeekStreakAchievement(t *testing.T) {
 	assert.Contains(t, contributor.Achievements, "workweek-5")
 }
 
-func TestContains(t *testing.T) {
-	t.Parallel()
-
-	slice := []string{"a", "b", "c"}
-
-	assert.True(t, contains(slice, "a"))
-	assert.True(t, contains(slice, "b"))
-	assert.True(t, contains(slice, "c"))
-	assert.False(t, contains(slice, "d"))
-	assert.False(t, contains([]string{}, "a"))
-}
-
 func TestCalculator_MeaningfulLinesScoring(t *testing.T) {
 	t.Parallel()
 

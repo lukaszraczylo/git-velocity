@@ -1,6 +1,7 @@
 package scoring
 
 import (
+	"slices"
 	"sort"
 
 	"github.com/lukaszraczylo/git-velocity/internal/config"
@@ -23,52 +24,73 @@ func (c *Calculator) Calculate(metrics *models.GlobalMetrics) *models.GlobalMetr
 		return metrics
 	}
 
-	// Collect all contributor metrics across repositories
+	// Build contributor map for scoring
+	// IMPORTANT: Prefer metrics.Contributors if populated (from aggregator) since it contains
+	// properly calculated values that can't be reconstructed from per-repo data:
+	// - Weighted average times (AvgReviewTime, AvgTimeToMerge)
+	// - Cross-repo streaks (ActiveDays, LongestStreak, WorkWeekStreak)
+	// - Max values (LargestPRSize)
+	// - Deduplicated counts (UniqueReviewees, FilesChanged)
+	// - Summed counts (SmallPRCount, PerfectPRs)
+	// Fall back to aggregating from repos only for tests that don't use the full pipeline.
 	contributorMap := make(map[string]*models.ContributorMetrics)
 
-	for _, repo := range metrics.Repositories {
-		for i := range repo.Contributors {
-			login := repo.Contributors[i].Login
-			if _, ok := contributorMap[login]; !ok {
-				// Copy the contributor metrics
-				cm := repo.Contributors[i]
-				contributorMap[login] = &cm
-			} else {
-				// Aggregate metrics from multiple repos
-				existing := contributorMap[login]
-				cm := repo.Contributors[i]
-				existing.CommitCount += cm.CommitCount
-				existing.LinesAdded += cm.LinesAdded
-				existing.LinesDeleted += cm.LinesDeleted
-				existing.MeaningfulLinesAdded += cm.MeaningfulLinesAdded
-				existing.MeaningfulLinesDeleted += cm.MeaningfulLinesDeleted
-				existing.CommentLinesAdded += cm.CommentLinesAdded
-				existing.CommentLinesDeleted += cm.CommentLinesDeleted
-				existing.PRsOpened += cm.PRsOpened
-				existing.PRsMerged += cm.PRsMerged
-				existing.ReviewsGiven += cm.ReviewsGiven
-				existing.ReviewComments += cm.ReviewComments
-				// Issue metrics
-				existing.IssuesOpened += cm.IssuesOpened
-				existing.IssuesClosed += cm.IssuesClosed
-				existing.IssueComments += cm.IssueComments
-				existing.IssueReferencesInCommits += cm.IssueReferencesInCommits
-				// Activity pattern metrics (for achievements)
-				existing.EarlyBirdCount += cm.EarlyBirdCount
-				existing.NightOwlCount += cm.NightOwlCount
-				existing.MidnightCount += cm.MidnightCount
-				existing.WeekendWarrior += cm.WeekendWarrior
-				existing.OutOfHoursCount += cm.OutOfHoursCount
-				// Time-based commit counts (for multiplier scoring)
-				existing.RegularHoursCount += cm.RegularHoursCount
-				existing.EveningCount += cm.EveningCount
-				existing.LateNightCount += cm.LateNightCount
-				existing.OvernightCount += cm.OvernightCount
-				existing.EarlyMorningCount += cm.EarlyMorningCount
-				// Combine unique repositories
-				for _, r := range cm.RepositoriesContributed {
-					if !contains(existing.RepositoriesContributed, r) {
-						existing.RepositoriesContributed = append(existing.RepositoriesContributed, r)
+	if len(metrics.Contributors) > 0 {
+		// Use already-aggregated global contributors (production path)
+		for i := range metrics.Contributors {
+			login := metrics.Contributors[i].Login
+			cm := metrics.Contributors[i]
+			contributorMap[login] = &cm
+		}
+	} else {
+		// Fallback: aggregate from per-repo contributors (test compatibility path)
+		// Note: This path cannot properly aggregate computed fields like AvgReviewTime,
+		// LongestStreak, etc. - it only sums count-based metrics.
+		for _, repo := range metrics.Repositories {
+			for i := range repo.Contributors {
+				login := repo.Contributors[i].Login
+				if _, ok := contributorMap[login]; !ok {
+					// Copy the contributor metrics
+					cm := repo.Contributors[i]
+					contributorMap[login] = &cm
+				} else {
+					// Aggregate metrics from multiple repos
+					existing := contributorMap[login]
+					cm := repo.Contributors[i]
+					existing.CommitCount += cm.CommitCount
+					existing.CommitsWithTests += cm.CommitsWithTests
+					existing.LinesAdded += cm.LinesAdded
+					existing.LinesDeleted += cm.LinesDeleted
+					existing.MeaningfulLinesAdded += cm.MeaningfulLinesAdded
+					existing.MeaningfulLinesDeleted += cm.MeaningfulLinesDeleted
+					existing.CommentLinesAdded += cm.CommentLinesAdded
+					existing.CommentLinesDeleted += cm.CommentLinesDeleted
+					existing.PRsOpened += cm.PRsOpened
+					existing.PRsMerged += cm.PRsMerged
+					existing.ReviewsGiven += cm.ReviewsGiven
+					existing.ReviewComments += cm.ReviewComments
+					// Issue metrics
+					existing.IssuesOpened += cm.IssuesOpened
+					existing.IssuesClosed += cm.IssuesClosed
+					existing.IssueComments += cm.IssueComments
+					existing.IssueReferencesInCommits += cm.IssueReferencesInCommits
+					// Activity pattern metrics (for achievements)
+					existing.EarlyBirdCount += cm.EarlyBirdCount
+					existing.NightOwlCount += cm.NightOwlCount
+					existing.MidnightCount += cm.MidnightCount
+					existing.WeekendWarrior += cm.WeekendWarrior
+					existing.OutOfHoursCount += cm.OutOfHoursCount
+					// Time-based commit counts (for multiplier scoring)
+					existing.RegularHoursCount += cm.RegularHoursCount
+					existing.EveningCount += cm.EveningCount
+					existing.LateNightCount += cm.LateNightCount
+					existing.OvernightCount += cm.OvernightCount
+					existing.EarlyMorningCount += cm.EarlyMorningCount
+					// Combine unique repositories
+					for _, r := range cm.RepositoriesContributed {
+						if !slices.Contains(existing.RepositoriesContributed, r) {
+							existing.RepositoriesContributed = append(existing.RepositoriesContributed, r)
+						}
 					}
 				}
 			}
@@ -260,13 +282,16 @@ func (c *Calculator) calculateScore(cm *models.ContributorMetrics) models.Score 
 		}
 	}
 
+	// Tests bonus - bonus points for commits that include test files
+	breakdown.TestsBonus = cm.CommitsWithTests * points.CommitWithTests
+
 	// Out of hours bonus (legacy - kept for backwards compatibility but default is 0)
 	breakdown.OutOfHours = cm.OutOfHoursCount * points.OutOfHours
 
 	// Calculate total
 	total := breakdown.Commits + breakdown.LineChanges + breakdown.PRs +
 		breakdown.Reviews + breakdown.ResponseBonus + breakdown.Comments +
-		breakdown.Issues + breakdown.OutOfHours
+		breakdown.Issues + breakdown.TestsBonus + breakdown.OutOfHours
 
 	return models.Score{
 		Total:     total,
@@ -405,13 +430,4 @@ func (c *Calculator) findTopAchievers(contributors []models.ContributorMetrics, 
 	if topPRAuthor != "" {
 		topAchievers["pull_requests"] = topPRAuthor
 	}
-}
-
-func contains(slice []string, item string) bool {
-	for _, s := range slice {
-		if s == item {
-			return true
-		}
-	}
-	return false
 }

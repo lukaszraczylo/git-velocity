@@ -61,7 +61,13 @@ async function loadRepository() {
 }
 
 onMounted(loadRepository)
-watch(() => route.params, loadRepository)
+
+// Watch for route changes (navigation to different repository)
+watch(() => [route.params.owner, route.params.name], ([newOwner, newName], [oldOwner, oldName]) => {
+  if ((newOwner && newName) && (newOwner !== oldOwner || newName !== oldName)) {
+    loadRepository()
+  }
+})
 </script>
 
 <template>
@@ -132,8 +138,8 @@ watch(() => route.params, loadRepository)
               />
               <button
                 v-if="searchQuery"
-                @click="searchQuery = ''"
                 class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200"
+                @click="searchQuery = ''"
               >
                 <i class="fas fa-times"></i>
               </button>

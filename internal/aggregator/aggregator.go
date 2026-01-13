@@ -1,6 +1,7 @@
 package aggregator
 
 import (
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -72,10 +73,37 @@ func (a *Aggregator) Aggregate(data *models.RawData, dateRange *config.ParsedDat
 	// Per-repo activity days
 	repoActivityDays := make(map[string]map[string]map[string]bool) // repo -> login -> set of date strings
 
+	// Helper to track activity day for a contributor
+	trackActivityDay := func(login, repo string, date time.Time) {
+		dateStr := date.Format("2006-01-02")
+		// Global activity tracking
+		if activityDays[login] == nil {
+			activityDays[login] = make(map[string]bool)
+		}
+		activityDays[login][dateStr] = true
+		// Per-repo activity tracking
+		if repo != "" {
+			if repoActivityDays[repo] == nil {
+				repoActivityDays[repo] = make(map[string]map[string]bool)
+			}
+			if repoActivityDays[repo][login] == nil {
+				repoActivityDays[repo][login] = make(map[string]bool)
+			}
+			repoActivityDays[repo][login][dateStr] = true
+		}
+	}
+
 	// Track unique files per contributor for accurate FilesChanged count
 	contributorFiles := make(map[string]map[string]bool) // login -> set of file paths
 	// Per-repo unique files per contributor
 	repoContributorFiles := make(map[string]map[string]map[string]bool) // repo -> login -> set of file paths
+
+	// Track counts of items with valid time data (for accurate average calculations)
+	// These track only PRs/reviews that have valid time data, not total counts
+	reviewsWithResponseTime := make(map[string]int)         // login -> count of reviews with valid ResponseTime
+	repoReviewsWithResponseTime := make(map[string]map[string]int) // repo -> login -> count
+	prsWithTimeToMerge := make(map[string]int)              // login -> count of PRs with valid TimeToMerge
+	repoPRsWithTimeToMerge := make(map[string]map[string]int)      // repo -> login -> count
 
 	// Helper to get or create per-repo contributor
 	getRepoContributor := func(repo, login, name, avatarURL string) *models.ContributorMetrics {
@@ -140,6 +168,9 @@ func (a *Aggregator) Aggregate(data *models.RawData, dateRange *config.ParsedDat
 
 		cm := contributorMap[login]
 		cm.CommitCount++
+		if commit.HasTests {
+			cm.CommitsWithTests++
+		}
 		cm.LinesAdded += commit.Additions
 		cm.LinesDeleted += commit.Deletions
 		cm.MeaningfulLinesAdded += commit.MeaningfulAdditions
@@ -157,6 +188,9 @@ func (a *Aggregator) Aggregate(data *models.RawData, dateRange *config.ParsedDat
 		// Update per-repo contributor stats
 		rcm := getRepoContributor(commit.Repository, login, cm.Name, cm.AvatarURL)
 		rcm.CommitCount++
+		if commit.HasTests {
+			rcm.CommitsWithTests++
+		}
 		rcm.LinesAdded += commit.Additions
 		rcm.LinesDeleted += commit.Deletions
 		rcm.MeaningfulLinesAdded += commit.MeaningfulAdditions
@@ -178,8 +212,9 @@ func (a *Aggregator) Aggregate(data *models.RawData, dateRange *config.ParsedDat
 		hour := commit.Date.Hour()
 		weekday := commit.Date.Weekday()
 
-		// Early bird: commits before 9am (for achievements)
-		if hour >= 5 && hour < 9 {
+		// Early bird: commits between 6am-9am (for achievements)
+		// Aligned with the early morning multiplier range
+		if hour >= 6 && hour < 9 {
 			cm.EarlyBirdCount++
 			rcm.EarlyBirdCount++
 		}
@@ -233,24 +268,11 @@ func (a *Aggregator) Aggregate(data *models.RawData, dateRange *config.ParsedDat
 			rcm.EarlyMorningCount++
 		}
 
-		// Track activity days (global)
-		if activityDays[login] == nil {
-			activityDays[login] = make(map[string]bool)
-		}
-		dateStr := commit.Date.Format("2006-01-02")
-		activityDays[login][dateStr] = true
-
-		// Track activity days (per-repo)
-		if repoActivityDays[commit.Repository] == nil {
-			repoActivityDays[commit.Repository] = make(map[string]map[string]bool)
-		}
-		if repoActivityDays[commit.Repository][login] == nil {
-			repoActivityDays[commit.Repository][login] = make(map[string]bool)
-		}
-		repoActivityDays[commit.Repository][login][dateStr] = true
+		// Track activity day for this commit
+		trackActivityDay(login, commit.Repository, commit.Date)
 
 		// Track repository participation
-		if !contains(cm.RepositoriesContributed, commit.Repository) {
+		if !slices.Contains(cm.RepositoriesContributed, commit.Repository) {
 			cm.RepositoriesContributed = append(cm.RepositoriesContributed, commit.Repository)
 		}
 
@@ -307,6 +329,9 @@ func (a *Aggregator) Aggregate(data *models.RawData, dateRange *config.ParsedDat
 		rcm := getRepoContributor(pr.Repository, login, cm.Name, cm.AvatarURL)
 		rcm.PRsOpened++
 
+		// Track activity day for PR creation
+		trackActivityDay(login, pr.Repository, pr.CreatedAt)
+
 		prSize := pr.Additions + pr.Deletions
 
 		if pr.IsMerged() {
@@ -316,6 +341,12 @@ func (a *Aggregator) Aggregate(data *models.RawData, dateRange *config.ParsedDat
 				// Accumulate for average calculation
 				cm.AvgTimeToMerge += pr.TimeToMerge.Hours()
 				rcm.AvgTimeToMerge += pr.TimeToMerge.Hours()
+				// Track count of PRs with valid time data for accurate average
+				prsWithTimeToMerge[login]++
+				if repoPRsWithTimeToMerge[pr.Repository] == nil {
+					repoPRsWithTimeToMerge[pr.Repository] = make(map[string]int)
+				}
+				repoPRsWithTimeToMerge[pr.Repository][login]++
 			}
 
 			// Track largest PR
@@ -337,7 +368,7 @@ func (a *Aggregator) Aggregate(data *models.RawData, dateRange *config.ParsedDat
 		}
 
 		// Track repository participation
-		if !contains(cm.RepositoriesContributed, pr.Repository) {
+		if !slices.Contains(cm.RepositoriesContributed, pr.Repository) {
 			cm.RepositoriesContributed = append(cm.RepositoriesContributed, pr.Repository)
 		}
 
@@ -372,6 +403,9 @@ func (a *Aggregator) Aggregate(data *models.RawData, dateRange *config.ParsedDat
 		rcm.ReviewsGiven++
 		rcm.ReviewComments += review.CommentsCount
 
+		// Track activity day for review submission
+		trackActivityDay(login, review.Repository, review.SubmittedAt)
+
 		if review.IsApproval() {
 			cm.ApprovalsGiven++
 			rcm.ApprovalsGiven++
@@ -395,6 +429,12 @@ func (a *Aggregator) Aggregate(data *models.RawData, dateRange *config.ParsedDat
 		if review.ResponseTime != nil {
 			cm.AvgReviewTime += review.ResponseTime.Hours()
 			rcm.AvgReviewTime += review.ResponseTime.Hours()
+			// Track count of reviews with valid time data for accurate average
+			reviewsWithResponseTime[login]++
+			if repoReviewsWithResponseTime[review.Repository] == nil {
+				repoReviewsWithResponseTime[review.Repository] = make(map[string]int)
+			}
+			repoReviewsWithResponseTime[review.Repository][login]++
 		}
 
 		// Track unique reviewees
@@ -452,21 +492,47 @@ func (a *Aggregator) Aggregate(data *models.RawData, dateRange *config.ParsedDat
 		cm := contributorMap[login]
 		cm.IssuesOpened++
 
-		if issue.IsClosed() && issue.ClosedBy != nil && issue.ClosedBy.Login == login {
-			cm.IssuesClosed++
-		}
+		// Track activity day for issue creation
+		trackActivityDay(login, issue.Repository, issue.CreatedAt)
 
 		// Track repository participation
-		if !contains(cm.RepositoriesContributed, issue.Repository) {
+		if !slices.Contains(cm.RepositoriesContributed, issue.Repository) {
 			cm.RepositoriesContributed = append(cm.RepositoriesContributed, issue.Repository)
 		}
 
 		// Update per-repo contributor metrics
 		rcm := getRepoContributor(issue.Repository, login, cm.Name, cm.AvatarURL)
 		rcm.IssuesOpened++
-		if issue.IsClosed() && issue.ClosedBy != nil && issue.ClosedBy.Login == login {
-			rcm.IssuesClosed++
+	}
+
+	// Count issues closed by each contributor (separate from who opened them)
+	// This gives credit to whoever closed the issue, even if they didn't open it
+	for _, issue := range data.Issues {
+		if !issue.IsClosed() || issue.ClosedBy == nil || issue.ClosedBy.Login == "" {
+			continue
 		}
+
+		closerLogin := issue.ClosedBy.Login
+
+		// Initialize contributor if needed (someone who closes issues but didn't open any)
+		if _, ok := contributorMap[closerLogin]; !ok {
+			contributorMap[closerLogin] = &models.ContributorMetrics{
+				Login:  closerLogin,
+				Period: period,
+			}
+		}
+
+		cm := contributorMap[closerLogin]
+		cm.IssuesClosed++
+
+		// Track repository participation for the closer
+		if !slices.Contains(cm.RepositoriesContributed, issue.Repository) {
+			cm.RepositoriesContributed = append(cm.RepositoriesContributed, issue.Repository)
+		}
+
+		// Update per-repo contributor metrics for the closer
+		rcm := getRepoContributor(issue.Repository, closerLogin, cm.Name, cm.AvatarURL)
+		rcm.IssuesClosed++
 	}
 
 	// Process issue comments
@@ -487,8 +553,11 @@ func (a *Aggregator) Aggregate(data *models.RawData, dateRange *config.ParsedDat
 		cm := contributorMap[login]
 		cm.IssueComments++
 
+		// Track activity day for issue comment
+		trackActivityDay(login, comment.Repository, comment.CreatedAt)
+
 		// Track repository participation
-		if !contains(cm.RepositoriesContributed, comment.Repository) {
+		if !slices.Contains(cm.RepositoriesContributed, comment.Repository) {
 			cm.RepositoriesContributed = append(cm.RepositoriesContributed, comment.Repository)
 		}
 
@@ -550,20 +619,23 @@ func (a *Aggregator) Aggregate(data *models.RawData, dateRange *config.ParsedDat
 
 	// Calculate averages and finalize contributor metrics
 	for login, cm := range contributorMap {
-		// Calculate average time to merge
+		// Calculate average time to merge (only from PRs that have TimeToMerge data)
+		if count := prsWithTimeToMerge[login]; count > 0 {
+			cm.AvgTimeToMerge = cm.AvgTimeToMerge / float64(count)
+		}
+
+		// Calculate average review time (only from reviews that have ResponseTime data)
+		if count := reviewsWithResponseTime[login]; count > 0 {
+			cm.AvgReviewTime = cm.AvgReviewTime / float64(count)
+		}
+
+		// Calculate average PR size (only for merged PRs to exclude abandoned PRs)
 		if cm.PRsMerged > 0 {
-			cm.AvgTimeToMerge = cm.AvgTimeToMerge / float64(cm.PRsMerged)
-		}
-
-		// Calculate average review time
-		if cm.ReviewsGiven > 0 {
-			cm.AvgReviewTime = cm.AvgReviewTime / float64(cm.ReviewsGiven)
-		}
-
-		// Calculate average PR size
-		if cm.PRsOpened > 0 {
 			totalPRLines := 0
 			for _, pr := range data.PullRequests {
+				if !pr.IsMerged() {
+					continue // Only count merged PRs
+				}
 				// Normalize PR author login before comparison
 				prLogin := pr.Author.Login
 				if normalized, ok := prAuthorToNormalizedLogin[prLogin]; ok {
@@ -573,7 +645,7 @@ func (a *Aggregator) Aggregate(data *models.RawData, dateRange *config.ParsedDat
 					totalPRLines += pr.TotalChanges()
 				}
 			}
-			cm.AvgPRSize = float64(totalPRLines) / float64(cm.PRsOpened)
+			cm.AvgPRSize = float64(totalPRLines) / float64(cm.PRsMerged)
 		}
 
 		// Set unique reviewees count
@@ -617,17 +689,26 @@ func (a *Aggregator) Aggregate(data *models.RawData, dateRange *config.ParsedDat
 
 		// Calculate averages for per-repo contributors
 		for login, rcm := range repoContribs {
-			if rcm.PRsMerged > 0 {
-				rcm.AvgTimeToMerge = rcm.AvgTimeToMerge / float64(rcm.PRsMerged)
+			// Use count of PRs with valid time data for accurate average
+			if repoPRCounts, ok := repoPRsWithTimeToMerge[repo]; ok {
+				if count := repoPRCounts[login]; count > 0 {
+					rcm.AvgTimeToMerge = rcm.AvgTimeToMerge / float64(count)
+				}
 			}
-			if rcm.ReviewsGiven > 0 {
-				rcm.AvgReviewTime = rcm.AvgReviewTime / float64(rcm.ReviewsGiven)
+			// Use count of reviews with valid time data for accurate average
+			if repoReviewCounts, ok := repoReviewsWithResponseTime[repo]; ok {
+				if count := repoReviewCounts[login]; count > 0 {
+					rcm.AvgReviewTime = rcm.AvgReviewTime / float64(count)
+				}
 			}
 
-			// Calculate average PR size for this repo
-			if rcm.PRsOpened > 0 {
+			// Calculate average PR size for this repo (only for merged PRs to exclude abandoned PRs)
+			if rcm.PRsMerged > 0 {
 				totalPRLines := 0
 				for _, pr := range data.PullRequests {
+					if !pr.IsMerged() {
+						continue // Only count merged PRs
+					}
 					// Normalize PR author login before comparison
 					prLogin := pr.Author.Login
 					if mapped, ok := loginToLogin[prLogin]; ok {
@@ -637,7 +718,7 @@ func (a *Aggregator) Aggregate(data *models.RawData, dateRange *config.ParsedDat
 						totalPRLines += pr.TotalChanges()
 					}
 				}
-				rcm.AvgPRSize = float64(totalPRLines) / float64(rcm.PRsOpened)
+				rcm.AvgPRSize = float64(totalPRLines) / float64(rcm.PRsMerged)
 			}
 
 			// Calculate perfect PRs for this repo
@@ -759,15 +840,6 @@ func parseRepoName(fullName string) (owner, name string) {
 		}
 	}
 	return fullName, ""
-}
-
-func contains(slice []string, item string) bool {
-	for _, s := range slice {
-		if s == item {
-			return true
-		}
-	}
-	return false
 }
 
 // normalizeForComparison normalizes a string for fuzzy comparison
@@ -1282,7 +1354,47 @@ func buildVelocityTimeline(data *models.RawData, period models.Period, scoringCo
 		pointsReview = 30
 	}
 
-	// Aggregate commits by week
+	// Get time-based multipliers with defaults
+	multRegular := scoringConfig.Points.MultiplierRegularHours
+	if multRegular == 0 {
+		multRegular = 1.0
+	}
+	multEvening := scoringConfig.Points.MultiplierEvening
+	if multEvening == 0 {
+		multEvening = 2.0
+	}
+	multLateNight := scoringConfig.Points.MultiplierLateNight
+	if multLateNight == 0 {
+		multLateNight = 2.5
+	}
+	multOvernight := scoringConfig.Points.MultiplierOvernight
+	if multOvernight == 0 {
+		multOvernight = 5.0
+	}
+	multEarlyMorning := scoringConfig.Points.MultiplierEarlyMorning
+	if multEarlyMorning == 0 {
+		multEarlyMorning = 2.0
+	}
+
+	// Helper to get time-based multiplier for a commit
+	getTimeMultiplier := func(hour int) float64 {
+		switch {
+		case hour >= 9 && hour < 17:
+			return multRegular // Regular hours: 9am-5pm
+		case hour >= 17 && hour < 21:
+			return multEvening // Evening: 5pm-9pm
+		case hour >= 21 && hour <= 23:
+			return multLateNight // Late night: 9pm-midnight
+		case hour >= 0 && hour < 6:
+			return multOvernight // Overnight: midnight-6am
+		case hour >= 6 && hour < 9:
+			return multEarlyMorning // Early morning: 6am-9am
+		default:
+			return multRegular
+		}
+	}
+
+	// Aggregate commits by week (with time-based multipliers)
 	for _, commit := range data.Commits {
 		if commit.Date.Before(start) || commit.Date.After(end) {
 			continue
@@ -1290,7 +1402,9 @@ func buildVelocityTimeline(data *models.RawData, period models.Period, scoringCo
 		idx := findWeekIndex(commit.Date)
 		if idx >= 0 && idx < len(weeks) {
 			weekCommits[idx]++
-			weekScore[idx] += float64(pointsCommit)
+			// Apply time-based multiplier to commit score
+			multiplier := getTimeMultiplier(commit.Date.Hour())
+			weekScore[idx] += float64(pointsCommit) * multiplier
 		}
 	}
 

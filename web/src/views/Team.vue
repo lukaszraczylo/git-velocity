@@ -8,6 +8,7 @@ import StatCard from '../components/StatCard.vue'
 import MemberCard from '../components/MemberCard.vue'
 import SectionHeader from '../components/SectionHeader.vue'
 import { slugify } from '../composables/formatters'
+import { DEFAULT_TEAM_COLOR } from '../composables/constants'
 
 const route = useRoute()
 const globalData = inject('globalData')
@@ -38,8 +39,20 @@ function loadTeam() {
 }
 
 onMounted(loadTeam)
-watch(() => route.params, loadTeam)
-watch(globalData, loadTeam)
+
+// Watch for route changes (navigation to different team)
+watch(() => route.params.slug, (newSlug, oldSlug) => {
+  if (newSlug && newSlug !== oldSlug) {
+    loadTeam()
+  }
+})
+
+// Watch for globalData changes, but only reload if we don't have team data yet
+watch(globalData, (newData, oldData) => {
+  if (newData && !oldData && (error.value || !team.value)) {
+    loadTeam()
+  }
+})
 </script>
 
 <template>
@@ -56,7 +69,7 @@ watch(globalData, loadTeam)
         <template #prefix>
           <div
             class="w-4 h-4 rounded-full mr-4"
-            :style="{ backgroundColor: team.color || '#8b5cf6' }"
+            :style="{ backgroundColor: team.color || DEFAULT_TEAM_COLOR }"
           ></div>
         </template>
       </PageHeader>

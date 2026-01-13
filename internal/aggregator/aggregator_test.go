@@ -349,18 +349,6 @@ func TestAggregator_MultipleRepositories(t *testing.T) {
 	assert.Len(t, metrics.Repositories, 2)
 }
 
-func TestContains(t *testing.T) {
-	t.Parallel()
-
-	slice := []string{"a", "b", "c"}
-
-	assert.True(t, contains(slice, "a"))
-	assert.True(t, contains(slice, "b"))
-	assert.True(t, contains(slice, "c"))
-	assert.False(t, contains(slice, "d"))
-	assert.False(t, contains([]string{}, "a"))
-}
-
 func TestParseRepoName(t *testing.T) {
 	t.Parallel()
 

@@ -64,7 +64,7 @@ import SectionHeader from '../components/SectionHeader.vue'
               Score Formula
             </h3>
             <div class="bg-gray-900 text-gray-100 p-3 sm:p-4 rounded-lg overflow-x-auto mb-4 -mx-2 sm:mx-0">
-              <pre class="text-xs sm:text-sm font-mono whitespace-pre-wrap sm:whitespace-pre"><code>Total Score = Commits + Lines + PRs + Reviews + Comments + Issues + Response
+              <pre class="text-xs sm:text-sm font-mono whitespace-pre-wrap sm:whitespace-pre"><code>Total Score = Commits + Lines + PRs + Reviews + Comments + Issues + Tests + Response
 
 Where:
   Commits    = sum of (commits x 10 x time_multiplier)
@@ -73,6 +73,7 @@ Where:
   Reviews    = reviews_given x 30 pts
   Comments   = review_comments x 5 pts
   Issues     = (opened x 10) + (closed x 20) + (comments x 5) + (refs x 5) pts
+  Tests      = commits_with_tests x 15 pts
   Response   = fast review bonus (0-50 pts)
 
 Time Multipliers:

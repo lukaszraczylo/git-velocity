@@ -34,16 +34,6 @@ const tableColumns = [
   { key: 'team', label: 'Team', align: 'left', headerClass: 'hidden xl:table-cell' },
   { key: 'score', label: 'Score', align: 'right' }
 ]
-
-const categoryIcon = (category) => {
-  const icons = {
-    'Commits': 'fas fa-code-commit text-green-500',
-    'PRs': 'fas fa-code-pull-request text-blue-500',
-    'Reviews': 'fas fa-eye text-purple-500',
-    'Comments': 'fas fa-comment text-orange-500'
-  }
-  return icons[category] || ''
-}
 </script>
 
 <template>
@@ -71,8 +61,8 @@ const categoryIcon = (category) => {
             />
             <button
               v-if="searchQuery"
-              @click="searchQuery = ''"
               class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200"
+              @click="searchQuery = ''"
             >
               <i class="fas fa-times"></i>
             </button>

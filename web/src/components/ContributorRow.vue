@@ -1,7 +1,6 @@
 <script setup>
 import { RouterLink } from 'vue-router'
 import Avatar from './Avatar.vue'
-import { formatNumber } from '../composables/formatters'
 
 defineProps({
   contributor: {

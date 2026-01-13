@@ -3,6 +3,7 @@ import { RouterLink } from 'vue-router'
 import Card from './Card.vue'
 import Avatar from './Avatar.vue'
 import { formatNumber, slugify } from '../composables/formatters'
+import { DEFAULT_TEAM_COLOR } from '../composables/constants'
 
 defineProps({
   team: {
@@ -24,7 +25,7 @@ defineProps({
         </h3>
         <span
           class="w-3 h-3 rounded-full"
-          :style="{ backgroundColor: team.color || '#8b5cf6' }"
+          :style="{ backgroundColor: team.color || DEFAULT_TEAM_COLOR }"
         ></span>
       </div>
 
