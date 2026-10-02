@@ -1,0 +1,38 @@
+name: Git Velocity Analysis
+
+# Template for users. Copy it to .github/workflows/ in your repository and add a .git-velocity.yaml (see config.example.yaml).
+on:
+  workflow_dispatch:
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run Git Velocity Analysis
+        uses: lukaszraczylo/git-velocity@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          config_file: '.git-velocity.yaml'
+          output_dir: './dist'
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: velocity-dashboard
+          path: ./dist
+          retention-days: 30
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          force_orphan: true
