@@ -1,19 +1,28 @@
-run:
-  timeout: 5m
-
+version: "2"
 linters:
   enable:
     - gosec
-    - staticcheck
-
-linters-settings:
-  gosec:
-    excludes: []
-    confidence: low
-    severity: medium
-
-issues:
-  exclude-dirs:
-    - .repos
-    - web
-  exclude-dirs-use-default: true
+  settings:
+    gosec:
+      severity: medium
+      confidence: low
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    paths:
+      - .repos
+      - web
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
