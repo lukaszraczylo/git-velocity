@@ -1,6 +1,6 @@
 name: Git Velocity Analysis
 
-# Template for users: this repo has no .git-velocity.yaml, so it runs on demand only.
+# Template for users. Copy it to .github/workflows/ in your repository and add a .git-velocity.yaml (see config.example.yaml).
 on:
   workflow_dispatch:
 
