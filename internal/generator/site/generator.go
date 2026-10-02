@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	json "github.com/goccy/go-json"
+	"encoding/json"
 	"github.com/lukaszraczylo/git-velocity/internal/config"
 	"github.com/lukaszraczylo/git-velocity/internal/domain/models"
 )
