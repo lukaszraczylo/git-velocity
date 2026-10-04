@@ -14,10 +14,15 @@ export default defineConfig({
     outDir: 'dist',
     assetsDir: 'assets',
     emptyOutDir: true,
-    rollupOptions: {
+    rolldownOptions: {
       output: {
-        manualChunks: {
-          'chart': ['chart.js']
+        codeSplitting: {
+          groups: [
+            {
+              name: 'chart',
+              test: /node_modules\/(chart\.js|@kurkle\/color)\//
+            }
+          ]
         }
       }
     }
