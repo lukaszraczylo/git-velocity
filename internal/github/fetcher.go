@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/google/go-github/v68/github"
+	"github.com/google/go-github/v92/github"
 )
 
 // DateFilterResult represents the result of date filtering

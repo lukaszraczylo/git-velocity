@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/bradleyfalzon/ghinstallation/v2"
-	"github.com/google/go-github/v68/github"
+	"github.com/google/go-github/v92/github"
 
 	"github.com/lukaszraczylo/git-velocity/internal/config"
 	"github.com/lukaszraczylo/git-velocity/internal/domain/models"
@@ -50,10 +50,14 @@ type Client struct {
 // NewClient creates a new GitHub client with the appropriate authentication
 func NewClient(ctx context.Context, cfg *config.Config) (*Client, error) {
 	var gh *github.Client
+	var err error
 
 	// Determine authentication method
 	if cfg.HasGithubToken() {
-		gh = github.NewClient(nil).WithAuthToken(cfg.Auth.GithubToken)
+		gh, err = github.NewClient(github.WithAuthToken(cfg.Auth.GithubToken))
+		if err != nil {
+			return nil, fmt.Errorf("failed to create GitHub client: %w", err)
+		}
 	} else if cfg.HasGithubApp() {
 		// GitHub App authentication
 		privateKey, err := cfg.GetGithubAppPrivateKey()
@@ -71,7 +75,10 @@ func NewClient(ctx context.Context, cfg *config.Config) (*Client, error) {
 			return nil, fmt.Errorf("failed to create GitHub App transport: %w", err)
 		}
 
-		gh = github.NewClient(&http.Client{Transport: itr})
+		gh, err = github.NewClient(github.WithHTTPClient(&http.Client{Transport: itr}))
+		if err != nil {
+			return nil, fmt.Errorf("failed to create GitHub client: %w", err)
+		}
 	} else {
 		return nil, fmt.Errorf("no authentication method configured")
 	}
@@ -528,7 +535,7 @@ func (c *Client) FetchIssues(ctx context.Context, owner, repo string, since, unt
 
 	fetcher := &DateFilteredFetcher[*github.Issue, models.Issue]{
 		FetchFn: func(ctx context.Context, page int) ([]*github.Issue, *github.Response, error) {
-			opts.Page = page
+			opts.ListOptions.Page = page
 			var issues []*github.Issue
 			var resp *github.Response
 			err := c.retryWithBackoff(ctx, "list issues", func() error {
@@ -561,8 +568,8 @@ func (c *Client) FetchIssueComments(ctx context.Context, owner, repo string, sin
 	cacheKey := fmt.Sprintf("issue_comments:%s/%s:%v:%v", owner, repo, since, until)
 
 	opts := &github.IssueListCommentsOptions{
-		Sort:      github.Ptr("created"),
-		Direction: github.Ptr("desc"),
+		Sort:      new("created"),
+		Direction: new("desc"),
 		ListOptions: github.ListOptions{
 			PerPage: 100,
 		},
