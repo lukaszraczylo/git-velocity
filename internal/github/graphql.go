@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/charmbracelet/bubbles/progress"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/progress"
+	"charm.land/lipgloss/v2"
 	"github.com/lukaszraczylo/git-velocity/internal/domain/models"
 	"github.com/shurcooL/githubv4"
 	"golang.org/x/oauth2"
@@ -26,7 +26,7 @@ type progressBar struct {
 
 func newProgressBar(label string, total int) *progressBar {
 	p := progress.New(
-		progress.WithDefaultGradient(),
+		progress.WithDefaultBlend(),
 		progress.WithWidth(40),
 	)
 	return &progressBar{
