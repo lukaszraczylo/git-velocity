@@ -16,7 +16,7 @@ defineProps({
     <div class="text-center">
       <i :class="icon" class="text-4xl text-red-500 mb-4"></i>
       <p class="text-gray-400">{{ message }}</p>
-      <slot name="actions"></slot>
+      <slot name="actions" />
     </div>
   </div>
 </template>

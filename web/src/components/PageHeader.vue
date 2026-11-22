@@ -35,7 +35,7 @@ defineProps({
       <Breadcrumb v-if="breadcrumbs.length" :items="breadcrumbs" />
 
       <div class="flex items-center" :class="centered ? 'justify-center' : ''">
-        <slot name="prefix"></slot>
+        <slot name="prefix" />
         <h1 class="text-4xl font-bold mb-4">
           <i v-if="icon" :class="[icon, iconColor]" class="mr-3"></i>
           <span class="bg-gradient-to-r from-primary-400 to-accent-400 bg-clip-text text-transparent">{{ title }}</span>
@@ -46,7 +46,7 @@ defineProps({
         <slot name="subtitle">{{ subtitle }}</slot>
       </p>
 
-      <slot name="extra"></slot>
+      <slot name="extra" />
     </div>
   </header>
 </template>
