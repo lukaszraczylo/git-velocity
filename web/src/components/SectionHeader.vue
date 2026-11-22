@@ -18,6 +18,6 @@ defineProps({
 <template>
   <h2 class="text-2xl font-bold text-white mb-6">
     <i v-if="icon" :class="[icon, iconColor]" class="mr-2"></i>{{ title }}
-    <slot name="suffix"></slot>
+    <slot name="suffix" />
   </h2>
 </template>
